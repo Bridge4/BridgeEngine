@@ -1822,6 +1822,7 @@ private:
         }
     }
 
+    
     // Reading in SPIRV shaders
     static std::vector<char> readFile(const std::string& filename) {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -1843,7 +1844,8 @@ private:
         return buffer;
     }
 
-    void cleanupSwapChain() {
+
+        void cleanupSwapChain() {
         vkDestroyImageView(m_logical_device, m_depthImageView, nullptr);
         vkDestroyImage(m_logical_device, m_depthImage, nullptr);
         vkFreeMemory(m_logical_device, m_depthImageMemory, nullptr);
@@ -1894,6 +1896,7 @@ private:
             vkDestroyFence(m_logical_device, m_inFlightFences[i], nullptr);
         }
         vkDestroyCommandPool(m_logical_device, m_commandPool, nullptr);
+        
         // DEVICE DESTRUCTION
         init.destroy();
         // GLFW DESTRUCTION
