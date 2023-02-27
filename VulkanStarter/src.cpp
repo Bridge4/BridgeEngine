@@ -1844,7 +1844,6 @@ private:
         return buffer;
     }
 
-
     void cleanupSwapChain() {
         vkDestroyImageView(m_logical_device, m_depthImageView, nullptr);
         vkDestroyImage(m_logical_device, m_depthImage, nullptr);
