@@ -158,6 +158,8 @@
     <ClCompile Include="Modules\Renderer\Includes\SwapChain.cpp" />
     <ClCompile Include="Modules\Renderer\Includes\Textures.cpp" />
     <ClCompile Include="Modules\Renderer\Includes\Window.cpp" />
+    <ClCompile Include="Modules\Renderer\ModelLoader.h" />
+    <ClCompile Include="Modules\Renderer\Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Modules\Renderer\DataStructures.h" />
