@@ -11,6 +11,7 @@ public:
     /*void handleInput() {
         glfwSetKeyCallback(glfwKeyCalback);
     };*/
+    void Create();
 
     bool framebufferResized = false;
 

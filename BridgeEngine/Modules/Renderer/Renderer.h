@@ -124,6 +124,10 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 proj;
 };
 
+
+/*
+*   For now, this Renderer is actually the Vulkan Instance class that will be placed in Modules/Renderer/API/Vulkan
+*/
 class Renderer {
 public:
 
@@ -133,9 +137,57 @@ public:
         renderLoop();
         cleanup();
     }
+
+    void Create();
+
     Window window;
     bool customModelLoader = false;
 
+    /*
+    * 
+    * 
+    * 
+    * The renderer draws things to the screen, different APIs have different ways of drawing things to the screen, therefore, 
+    * the renderer draw call should be a virtual function implemented by the API instance we have created.
+    * 
+    * GRAPHICS PIPELINE
+    * 
+    * The graphics pipeline needs a reference to several things:
+    *   - Swap Chain Extent
+    *   - Descriptor Set Layout
+    *   - Logical Device
+    *   - Pipeline Layout
+    *   - Render Pass
+    * 
+    *   We will get this info by accessing the Vulkan instance
+    *   
+    *   The Graphics Pipeline needs a pointer to a Vulkan Instance.
+    *   When the Pipeline is initialized, the Instance Pointer is pointed towards the current Vulkan Instance.
+    *   From there we can then access all the information we need to setup the pipeline.
+    * 
+    *   This also means that our Vulkan Instance needs to have a pointer to its constituent parts
+    * 
+    *   We can have many Graphics Pipelines, each time a Pipeline is created Vulkan will need to add it to a data structure 
+    *   that will keep track of all the active Pipelines.
+    * 
+    *   As a base case we will only be creating one pipeline, keeping in mind that in the future we will need to store pipelines
+    *   in a data structure.
+    *   
+    * 
+    *   Start app -> Initialize Renderer -> Vulkan API selected -> Spin up an instance of Vulkan
+    * 
+    *   Vulkan Init -> RenderPassCreator.Create() 
+    *               -> Vulkan Instance RenderPass set to value returned by RenderPassCreator.Create()
+    *               -> RenderPassCreator.Clean();
+    * 
+    *   Repeat process with each member
+    * 
+    *   Vulkan Instance will have 
+    *   
+    *   TODO: Proof of concept using existing abstractions. Will try first with window.
+    * 
+    * 
+    */
 private:
     
     // INSTANCES
