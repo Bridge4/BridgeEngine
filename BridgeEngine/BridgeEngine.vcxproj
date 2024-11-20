@@ -168,7 +168,7 @@
     <ClInclude Include="Modules\Renderer\Includes\SwapChain.h" />
     <ClInclude Include="Modules\Renderer\Includes\Textures.h" />
     <ClInclude Include="Modules\Renderer\Includes\Window.h" />
-    <ClInclude Include="Modules\Renderer\VulkanInstance.h" />
+    <ClInclude Include="Modules\Renderer\VulkanBridge.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
