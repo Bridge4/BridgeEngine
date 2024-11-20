@@ -122,13 +122,6 @@ public:
     std::vector<VkFence>* getInFlightFences() { return &m_inFlightFences; }
     uint32_t* getCurrentFrame() { return &m_currentFrame; }
 
-private:
-    /*VkSwapchainKHR swapChain;
-    VkFormat swapChainImageFormat;
-    VkExtent2D swapChainExtent;
-    std::vector<VkImageView> swapChainImageViews;*/
-
-
     VkSurfaceKHR m_surface;
     VkPhysicalDevice m_physicalDevice;
     VkDevice m_logicalDevice;
@@ -180,4 +173,63 @@ private:
     std::vector<VkSemaphore> m_renderFinishedSemaphores;
     std::vector<VkFence> m_inFlightFences;
     uint32_t m_currentFrame = 0;
+
+private:
+    /*VkSwapchainKHR swapChain;
+    VkFormat swapChainImageFormat;
+    VkExtent2D swapChainExtent;
+    std::vector<VkImageView> swapChainImageViews;*/
+
+
+    //VkSurfaceKHR m_surface;
+    //VkPhysicalDevice m_physicalDevice;
+    //VkDevice m_logicalDevice;
+    //VkQueue m_graphicsQueue;
+    //VkQueue m_presentQueue;
+
+    //VkSwapchainKHR m_swapChain;
+    //VkFormat m_swapChainImageFormat;
+    //VkExtent2D m_swapChainExtent;
+    //std::vector<VkImageView> m_swapChainImageViews;
+
+    //VkRenderPass m_renderPass;
+
+    //VkDescriptorSetLayout m_descriptorSetLayout;
+    //VkDescriptorPool m_descriptorPool;
+    //std::vector<VkDescriptorSet> m_descriptorSets;
+
+    //VkPipelineLayout m_pipelineLayout;
+
+    //VkPipeline m_graphicsPipeline;
+    //std::vector<VkFramebuffer> m_swapChainFramebuffers;
+    //VkCommandPool m_commandPool;
+
+    //std::vector<Vertex> m_vertices;
+    //std::vector<uint32_t> m_indices;
+
+    //VkBuffer m_vertexBuffer;
+    //VkDeviceMemory m_vertexBufferMemory;
+
+    //VkBuffer m_indexBuffer;
+    //VkDeviceMemory m_indexBufferMemory;
+
+    //VkImage m_textureImage;
+    //VkImageView m_textureImageView;
+    //VkSampler m_textureSampler;
+    //VkDeviceMemory m_textureImageMemory;
+
+    //std::vector<VkBuffer> m_uniformBuffers;
+    //std::vector<VkDeviceMemory> m_uniformBuffersMemory;
+    //std::vector<void*> m_uniformBuffersMapped;
+
+    //VkImage m_depthImage;
+    //VkDeviceMemory m_depthImageMemory;
+    //VkImageView m_depthImageView;
+
+    //// Frames in flight require their own command buffers, semaphores and fences
+    //std::vector<VkCommandBuffer> m_commandBuffers;
+    //std::vector<VkSemaphore> m_imageAvailableSemaphores;
+    //std::vector<VkSemaphore> m_renderFinishedSemaphores;
+    //std::vector<VkFence> m_inFlightFences;
+    //uint32_t m_currentFrame = 0;
 };
