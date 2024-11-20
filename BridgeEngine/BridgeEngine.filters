@@ -18,48 +18,45 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src.cpp">
+    <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Initializer.cpp">
+    <ClCompile Include="Modules\Renderer\Includes\ImageView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Window.cpp">
+    <ClCompile Include="Modules\Renderer\Includes\Initializer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ImageView.cpp">
+    <ClCompile Include="Modules\Renderer\Includes\SwapChain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SwapChain.cpp">
+    <ClCompile Include="Modules\Renderer\Includes\Textures.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Textures.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Buffer.cpp">
+    <ClCompile Include="Modules\Renderer\Includes\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Devices.h">
+    <ClInclude Include="Modules\Renderer\Includes\GraphicsPipeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Initializer.hpp">
+    <ClInclude Include="Modules\Renderer\Includes\ImageView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Window.hpp">
+    <ClInclude Include="Modules\Renderer\Includes\Initializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ImageView.hpp">
+    <ClInclude Include="Modules\Renderer\Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SwapChain.hpp">
+    <ClInclude Include="Modules\Renderer\Includes\SwapChain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Textures.hpp">
+    <ClInclude Include="Modules\Renderer\Includes\Textures.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Buffer.hpp">
+    <ClInclude Include="Modules\Renderer\Includes\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
