@@ -15,7 +15,7 @@ void Window::createWindow(uint32_t w, uint32_t h) {
 
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-    r_window = glfwCreateWindow(w, h, "Vulkan", nullptr, nullptr);
+    r_window = glfwCreateWindow(w, h, "Bridge Engine", nullptr, nullptr);
     // Very important line, if you forget this then the callback with cause an access violation due to nullptr
     glfwSetWindowUserPointer(r_window, this);
     glfwSetFramebufferSizeCallback(r_window, framebufferResizeCallback);

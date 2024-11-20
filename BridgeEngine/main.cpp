@@ -12,7 +12,6 @@ int main() {
     try {
         renderer.window = windowRef;
         renderer.window.createWindow(1980, 1080);
-        renderer.customModelLoader = false;
         renderer.run();
     }
     catch (const std::exception& e) {
