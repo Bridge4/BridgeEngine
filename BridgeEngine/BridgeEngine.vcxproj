@@ -160,6 +160,7 @@
     <ClCompile Include="Modules\Renderer\Includes\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Modules\Renderer\DataStructures.h" />
     <ClInclude Include="Modules\Renderer\Includes\GraphicsPipeline.h" />
     <ClInclude Include="Modules\Renderer\Includes\ImageView.h" />
     <ClInclude Include="Modules\Renderer\Includes\Initializer.h" />
@@ -167,6 +168,7 @@
     <ClInclude Include="Modules\Renderer\Includes\SwapChain.h" />
     <ClInclude Include="Modules\Renderer\Includes\Textures.h" />
     <ClInclude Include="Modules\Renderer\Includes\Window.h" />
+    <ClInclude Include="Modules\Renderer\VulkanInstance.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

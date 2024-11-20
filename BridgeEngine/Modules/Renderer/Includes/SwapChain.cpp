@@ -74,6 +74,7 @@ void SwapChain::createImageViews(VkDevice device, ImageView imgV) {
 
 void SwapChain::assign(VkSwapchainKHR* swapChain, VkFormat* scFormat, VkExtent2D* scExtent, std::vector<VkImageView>* scImageViews)
 {
+    // TODO: Use the VulkanInstance to access these, rather than passing them in directly.
     *swapChain = get();
     *scFormat = getImageFormat();
     *scExtent = getExtent();
