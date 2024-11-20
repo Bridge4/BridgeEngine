@@ -1,3 +1,0 @@
-C:/dev/BridgeEngine/cmake-build-debug/CMakeFiles/BridgeEngine.dir
-C:/dev/BridgeEngine/cmake-build-debug/CMakeFiles/edit_cache.dir
-C:/dev/BridgeEngine/cmake-build-debug/CMakeFiles/rebuild_cache.dir
