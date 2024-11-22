@@ -37,7 +37,7 @@
 #include "../../DataStructures.h"
 #include "Components/Initializer.h"
 #include "Components/ImageView.h"
-#include "Components/SwapChain.h"
+#include "Components/SwapChainBuilder.h"
 #include "Components/Window.h"
 
 class VulkanBridge {
@@ -108,7 +108,7 @@ public:
     // INSTANCES
     Initializer* vulkanInitializer;
     //Window window;
-    SwapChain* swapChainBuilder;
+    SwapChainBuilder* swapChainBuilder;
     ImageView* imageViewBuilder;
 
     VkSurfaceKHR m_surface;
@@ -185,7 +185,7 @@ private:
     
 
     void createInstance();
-    void recreateSwapChain();
+    void rebuildSwapChain();
 
     // RENDER PASSES
     void createRenderPass();

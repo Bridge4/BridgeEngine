@@ -157,7 +157,7 @@
     <ClCompile Include="Modules\Renderer\API\Vulkan\VulkanDataStructures.h" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\Components\ImageView.cpp" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Initializer.cpp" />
-    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\SwapChain.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\SwapChainBuilder.cpp" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -166,7 +166,7 @@
     <ClInclude Include="Modules\Renderer\API\Vulkan\Components\ImageView.h" />
     <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Initializer.h" />
     <ClInclude Include="Modules\Renderer\Renderer.h" />
-    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\SwapChain.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\SwapChainBuilder.h" />
     <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Window.h" />
     <ClInclude Include="Modules\Renderer\API\Vulkan\VulkanBridge.h" />
   </ItemGroup>

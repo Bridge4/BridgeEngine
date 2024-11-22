@@ -1,13 +1,19 @@
 #pragma once
-#include "SwapChain.h"
+#include "SwapChainBuilder.h"
 #include "ImageView.h"
 #include "Initializer.h"
 #include <stdexcept>
 #include <cstdlib>
 #include <vector>
 #include <algorithm>
+#include "../VulkanBridge.h"
 
-void SwapChain::create(Initializer* vulkanInitializer, Window window) {
+void SwapChainBuilder::Build() {
+    VkSwapchainKHR m_swapChain;
+    std::vector<VkImage> m_swapChainImages;
+    std::vector<VkImageView> m_swapChainImageViews;
+    VkFormat m_swapChainImageFormat;
+    VkExtent2D  m_swapChainExtent;
     VkPhysicalDevice physDevice = vulkanInitializer->physDevice();
     VkDevice device = vulkanInitializer->logDevice();
     VkSurfaceKHR surface = vulkanInitializer->surface();
@@ -16,7 +22,7 @@ void SwapChain::create(Initializer* vulkanInitializer, Window window) {
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-    VkExtent2D extent = chooseSwapExtent(window, swapChainSupport.capabilities);
+    VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
 
     // the reason we do +1 is because we will have to wait for the driver to complete internal operations before acquiring another image.
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
@@ -67,29 +73,22 @@ void SwapChain::create(Initializer* vulkanInitializer, Window window) {
 
     m_swapChainImageFormat = surfaceFormat.format;
     m_swapChainExtent = extent;
-}
 
-// IMAGE VIEWS
-void SwapChain::createImageViews(VkDevice device, ImageView* imgV) {
     m_swapChainImageViews.resize(m_swapChainImages.size());
     for (size_t i = 0; i < m_swapChainImages.size(); i++) {
         // Moved definition for createImageView() to a class and turned into a static function
-        m_swapChainImageViews[i] = imgV->create(device, m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+        m_swapChainImageViews[i] = imageView->create(vulkanBridgeContext->m_logicalDevice, m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
     }
-}
 
-void SwapChain::assign(VkSwapchainKHR* swapChain, VkFormat* scFormat, VkExtent2D* scExtent, std::vector<VkImageView>* scImageViews)
-{
-    // TODO: Use the VulkanBridge to access these, rather than passing them in directly.
-    *swapChain = get();
-    *scFormat = getImageFormat();
-    *scExtent = getExtent();
-    *scImageViews = getImageViews();
-}
 
+    vulkanBridgeContext->m_swapChain = m_swapChain;
+    vulkanBridgeContext->m_swapChainImageFormat = m_swapChainImageFormat;
+    vulkanBridgeContext->m_swapChainExtent = m_swapChainExtent;
+    vulkanBridgeContext->m_swapChainImageViews = m_swapChainImageViews;
+}
 
 // HELPERS
-VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
+VkSurfaceFormatKHR SwapChainBuilder::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
     for (const auto& availableFormat : availableFormats) {
         if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             return availableFormat;
@@ -99,7 +98,7 @@ VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfac
     return availableFormats[0];
 }
 
-VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
+VkPresentModeKHR SwapChainBuilder::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
     for (const auto& availablePresentMode : availablePresentModes) {
         if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
             return availablePresentMode;
@@ -109,14 +108,14 @@ VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentMod
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D SwapChain::chooseSwapExtent(Window window, const VkSurfaceCapabilitiesKHR& capabilities) {
+VkExtent2D SwapChainBuilder::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
     //Fun fact: wrapping a function call with parentheses can prevent macro expansions
     if (capabilities.currentExtent.width != (std::numeric_limits<uint32_t>::max)()) {
         return capabilities.currentExtent;
     }
     else {
         int width, height;
-        window.getFramebufferSize(&width, &height);
+        windowRef->getFramebufferSize(&width, &height);
 
         VkExtent2D actualExtent = {
             static_cast<uint32_t>(width),

@@ -22,9 +22,9 @@
 
 void VulkanBridge::Construct() {
     vulkanInitializer = new Initializer();
-    swapChainBuilder = new SwapChain(this);
-    imageViewBuilder = new ImageView();
     
+    imageViewBuilder = new ImageView();
+    swapChainBuilder = new SwapChainBuilder(this, vulkanInitializer, &window, imageViewBuilder);
     
     // Initialization
     vulkanInitializer->init(&window);
@@ -32,9 +32,10 @@ void VulkanBridge::Construct() {
     vulkanInitializer->assign(&m_surface, &m_physicalDevice, &m_logicalDevice, &m_graphicsQueue, &m_presentQueue);
     // Swap Chain
     //swapChainBuilder.Construct(&vulkanBridge);
-    swapChainBuilder->create(vulkanInitializer, window);
-    swapChainBuilder->createImageViews(m_logicalDevice, imageViewBuilder);
-    swapChainBuilder->assign(&m_swapChain, &m_swapChainImageFormat, &m_swapChainExtent, &m_swapChainImageViews);
+
+
+    swapChainBuilder->Build();
+    //swapChainBuilder->assign(&m_swapChain, &m_swapChainImageFormat, &m_swapChainExtent, &m_swapChainImageViews);
 
     createRenderPass();
     createDescriptorSetLayout();
@@ -759,7 +760,7 @@ void VulkanBridge::drawFrame() {
     // SWAP CHAIN RECREATION
     VkResult result = vkAcquireNextImageKHR(m_logicalDevice, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        recreateSwapChain();
+        rebuildSwapChain();
         return;
     }
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
@@ -813,7 +814,7 @@ void VulkanBridge::drawFrame() {
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.framebufferResized) {
         window.framebufferResized = false;
-        recreateSwapChain();
+        rebuildSwapChain();
     }
     else if (result != VK_SUCCESS) {
         throw std::runtime_error("failed to present swap chain image!");
@@ -928,7 +929,7 @@ void VulkanBridge::createInstance()
 // END_REGION createInstance()
 
 
-void VulkanBridge::recreateSwapChain() {
+void VulkanBridge::rebuildSwapChain() {
     // Handling minimization
     window.handleMinimization();
 
@@ -936,9 +937,8 @@ void VulkanBridge::recreateSwapChain() {
 
     destroySwapChain();
 
-    swapChainBuilder->create(vulkanInitializer, window);
-    swapChainBuilder->createImageViews(m_logicalDevice, imageViewBuilder);
-    swapChainBuilder->assign(&m_swapChain, &m_swapChainImageFormat, &m_swapChainExtent, &m_swapChainImageViews);
+    swapChainBuilder->Build();
+    //swapChainBuilder->assign(&m_swapChain, &m_swapChainImageFormat, &m_swapChainExtent, &m_swapChainImageViews);
 
     createDepthResources();
     createFramebuffers();
