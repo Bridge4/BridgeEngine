@@ -1,9 +1,7 @@
 #pragma once
 
 #include "Modules/Renderer/Renderer.h"
-
-
-//#include <iostream>
+#include <iostream>
 
 int main() {
     Renderer renderer;

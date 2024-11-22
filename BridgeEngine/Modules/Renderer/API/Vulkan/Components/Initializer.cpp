@@ -1,5 +1,9 @@
 #include "Initializer.h"
-
+#include "Window.h"
+#include <iostream>
+#include <array>
+#include <set>
+#include <cstdint> // Necessary for uint32_t
 // CORE FUNCTIONS
 
 
@@ -8,7 +12,7 @@ void Initializer::init(Window* window)
     createInstance();
     createDebugMessenger();
     if (window->createSurface(m_instance, &r_surface) != VK_SUCCESS)
-        throw std::runtime_error("failed to create window surface!");
+        throw std::runtime_error("Failed to create window surface");
     pickPhysicalDevice();
     createLogicalDevice();
 }
@@ -23,17 +27,9 @@ void Initializer::assign(VkSurfaceKHR* rSurface, VkPhysicalDevice* pDevice, VkDe
 }
 
 
-void Initializer::destroy() {
-    vkDestroyDevice(r_device, nullptr);
-    if (enableValidationLayers) {
-        DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
-    }
-    vkDestroySurfaceKHR(m_instance, r_surface, nullptr);
-    vkDestroyInstance(m_instance, nullptr);
-}
-
 void Initializer::createInstance() {
     // A lot of information is passed through structs rather than function parameters
+
     if (enableValidationLayers && !checkValidationLayerSupport()) {
         throw std::runtime_error("validation layers requested but not available...");
     }
@@ -41,9 +37,9 @@ void Initializer::createInstance() {
     // optional but helpful information for the driver
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "Hello Triangle";
+    appInfo.pApplicationName = "Bridge Engine";
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "No Engine";
+    appInfo.pEngineName = "Bridge Engine";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion = VK_API_VERSION_1_3;
 
@@ -66,9 +62,13 @@ void Initializer::createInstance() {
     if (enableValidationLayers) {
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
-
-        populateDebugMessengerCreateInfo(debugCreateInfo);
-        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+        //populateDebugMessengerCreateInfo(debugCreateInfo);
+        debugCreateInfo = {};
+        debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        debugCreateInfo.pfnUserCallback = debugCallback;
+        debugCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
     }
     else {
         createInfo.enabledLayerCount = 0;
@@ -84,7 +84,11 @@ void Initializer::createDebugMessenger() {
     if (!enableValidationLayers) return;
 
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
-    populateDebugMessengerCreateInfo(createInfo);
+    createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    createInfo.pfnUserCallback = debugCallback;
 
     if (CreateDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &m_debugMessenger) != VK_SUCCESS) {
         throw std::runtime_error("failed to set up debug messenger!");
@@ -170,6 +174,14 @@ void Initializer::createLogicalDevice() {
 
 }
 
+void Initializer::destroy() {
+    vkDestroyDevice(r_device, nullptr);
+    if (enableValidationLayers) {
+        DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
+    }
+    vkDestroySurfaceKHR(m_instance, r_surface, nullptr);
+    vkDestroyInstance(m_instance, nullptr);
+}
 // HELPERS
 
 // createInstance()
@@ -211,14 +223,6 @@ std::vector<const char*> Initializer::getRequiredExtensions() {
     }
 
     return extensions;
-}
-
-void Initializer::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
-    createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    createInfo.pfnUserCallback = debugCallback;
 }
 
 // pickPhysicalDevice()
@@ -325,7 +329,7 @@ QueueFamilyIndices Initializer::findQueueFamilies(VkPhysicalDevice device) {
     return indices;
 }
 
-// populateDebugMessengerCreateInfo()
+
 VKAPI_ATTR VkBool32 VKAPI_CALL Initializer::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
     std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 

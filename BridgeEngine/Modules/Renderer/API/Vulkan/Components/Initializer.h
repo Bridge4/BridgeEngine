@@ -1,28 +1,10 @@
 #pragma once
+#ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR
-
-#include <iostream>
-#include <array>
-#include <set>
-#include <vector>
-#include <optional>
-#include <cstdint> // Necessary for uint32_t
+#endif // !VK_USE_PLATFORM_WIN32_KHR
 #include "Window.h"
+#include "../VulkanDataStructures.h"
 
-struct QueueFamilyIndices {
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-
-    bool isComplete() {
-        return graphicsFamily.has_value();
-    }
-};
-
-struct SwapChainSupportDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
-};
 
 class Initializer {
 
@@ -81,10 +63,9 @@ private:
     void createLogicalDevice();
 
     // HELPER FUNCTIONS
-        // Used by createInstance()
+    // Used by createInstance()
     bool checkValidationLayerSupport();
     std::vector<const char*> getRequiredExtensions();
-    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
     // Used by pickPhysicalDevice()
     bool isDeviceSuitable(VkPhysicalDevice device);
