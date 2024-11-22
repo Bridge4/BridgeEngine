@@ -9,6 +9,7 @@
 #include <cstdint> // Necessary for uint32_t
 #include "Window.h"
 
+
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
@@ -81,10 +82,9 @@ private:
     void createLogicalDevice();
 
     // HELPER FUNCTIONS
-        // Used by createInstance()
+    // Used by createInstance()
     bool checkValidationLayerSupport();
     std::vector<const char*> getRequiredExtensions();
-    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
     // Used by pickPhysicalDevice()
     bool isDeviceSuitable(VkPhysicalDevice device);

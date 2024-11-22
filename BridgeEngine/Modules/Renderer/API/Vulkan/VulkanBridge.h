@@ -99,6 +99,11 @@ class VulkanBridge {
     * we need a VkSwapchainKHR m_swapChain;
     */
 public:
+#ifdef NDEBUG
+    const bool enableValidationLayers = false;
+#else
+    const bool enableValidationLayers = true;
+#endif
     // These getters return pointers to the VulkanBridge's private members
     // INSTANCES
     Initializer init;
@@ -163,7 +168,9 @@ public:
     uint32_t HEIGHT = 600;
     std::string MODEL_PATH = "Models/VikingRoom/VikingRoom.obj";
     std::string TEXTURE_PATH = "Models/VikingRoom/Textures/VikingRoom.png";
-
+    const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
+    VkInstance m_instance;
+    VkDebugUtilsMessengerEXT m_debugMessenger;
     int MAX_FRAMES_IN_FLIGHT = 2;
 
 
@@ -177,7 +184,7 @@ private:
     */
     
 
-
+    void createInstance();
     void recreateSwapChain();
 
     // RENDER PASSES
