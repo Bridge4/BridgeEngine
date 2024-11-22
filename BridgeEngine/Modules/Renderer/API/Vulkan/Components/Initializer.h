@@ -2,32 +2,9 @@
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif // !VK_USE_PLATFORM_WIN32_KHR
-
-
-
-#include <iostream>
-#include <array>
-#include <set>
-#include <vector>
-#include <optional>
-#include <cstdint> // Necessary for uint32_t
 #include "Window.h"
+#include "../VulkanDataStructures.h"
 
-
-struct QueueFamilyIndices {
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-
-    bool isComplete() {
-        return graphicsFamily.has_value();
-    }
-};
-
-struct SwapChainSupportDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
-};
 
 class Initializer {
 

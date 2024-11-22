@@ -1,5 +1,9 @@
 #include "Initializer.h"
-
+#include "Window.h"
+#include <iostream>
+#include <array>
+#include <set>
+#include <cstdint> // Necessary for uint32_t
 // CORE FUNCTIONS
 
 

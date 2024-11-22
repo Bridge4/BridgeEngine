@@ -1,45 +1,45 @@
 #pragma once
 
-
+// VULKAN PLATFORM DEFINITION
+#ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3native.h>
+#endif // !VK_USE_PLATFORM_WIN32_KHR
 
+// GLM FORCE USE RADIANS
+#ifndef GLM_FORCE_RADIANS
 #define GLM_FORCE_RADIANS
-// To meet Vulkan data alignment specs
+#endif // !GLM_FORCE_RADIANS
+
+// GLM VULKAN DATA ALIGNMENT 
+#ifndef GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#endif // !GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+
+// NOT QUITE SURE WHAT THIS DOES 
+#ifndef GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#endif // !GLM_FORCE_DEPTH_ZERO_TO_ONE
+
+// VULKAN INCLUDE
+#include <vulkan/vulkan.h>
+
+// GLM INCLUDES
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/hash.hpp>
 
-
-#include <chrono>
-#include <iostream>
-#include <array>
-#include <stdexcept>
-#include <cstdlib>
-#include <vector>
-#include <cstring>
-#include <map>
-#include <optional>
-#include <set>
+// C++ STANDARD INCLUDES
 #include <cstdint> // Necessary for uint32_t
-#include <limits> // Necessary for std::numeric_limits
-#include <algorithm> // Necessary for std::clamp
 #include <fstream>
-#include <glm/glm.hpp>
-#include <unordered_map>
-
 #include <vector>
+
+// VULKAN BRIDGE RENDERER COMPONENTS INCLUDES
 #include "../../DataStructures.h"
-#include "../../Includes/Window.h"
-#include "../../Includes/Initializer.h"
-#include "../../Includes/ImageView.h"
-#include "../../Includes/SwapChain.h"
-#include "../../Includes/Window.h"
+#include "Components/Initializer.h"
+#include "Components/ImageView.h"
+#include "Components/SwapChain.h"
+#include "Components/Window.h"
+
 class VulkanBridge {
     /*
     *

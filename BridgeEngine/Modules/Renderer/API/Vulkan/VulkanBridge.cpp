@@ -8,6 +8,16 @@
 #include <tiny_obj_loader.h>
 
 
+#include <chrono>
+#include <iostream>
+#include <array>
+#include <stdexcept>
+#include <cstdlib>
+#include <vector>
+#include <cstring>
+#include <map>
+#include <optional>
+#include <set>
     
 
 void VulkanBridge::Construct() {
@@ -681,11 +691,9 @@ void VulkanBridge::createDescriptorSets() {
         descriptorWrites[1].descriptorCount = 1;
         descriptorWrites[1].pImageInfo = &imageInfo;
 
-
-        vkUpdateDescriptorSets(m_logicalDevice, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+        uint32_t descriptorCopyCount = 0;
+        vkUpdateDescriptorSets(m_logicalDevice, (uint32_t)descriptorWrites.size(), descriptorWrites.data(), descriptorCopyCount, nullptr);
     }
-
-
 }
 
 void VulkanBridge::createCommandBuffers() {

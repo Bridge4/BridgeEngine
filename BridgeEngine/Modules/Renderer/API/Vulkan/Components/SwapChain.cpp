@@ -1,3 +1,4 @@
+#pragma once
 #include "SwapChain.h"
 #include <stdexcept>
 #include <cstdlib>

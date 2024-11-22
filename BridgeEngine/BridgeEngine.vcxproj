@@ -154,23 +154,20 @@
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\VulkanBridge.cpp" />
-    <ClCompile Include="Modules\Renderer\Includes\ImageView.cpp" />
-    <ClCompile Include="Modules\Renderer\Includes\Initializer.cpp" />
-    <ClCompile Include="Modules\Renderer\Includes\SwapChain.cpp" />
-    <ClCompile Include="Modules\Renderer\Includes\Textures.cpp" />
-    <ClCompile Include="Modules\Renderer\Includes\Window.cpp" />
-    <ClCompile Include="Modules\Renderer\ModelLoader.h" />
-    <ClCompile Include="Modules\Renderer\Renderer.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\VulkanDataStructures.h" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\ImageView.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Initializer.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\SwapChain.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Modules\Renderer\DataStructures.h" />
-    <ClInclude Include="Modules\Renderer\Includes\GraphicsPipeline.h" />
-    <ClInclude Include="Modules\Renderer\Includes\ImageView.h" />
-    <ClInclude Include="Modules\Renderer\Includes\Initializer.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\GraphicsPipeline.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\ImageView.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Initializer.h" />
     <ClInclude Include="Modules\Renderer\Renderer.h" />
-    <ClInclude Include="Modules\Renderer\Includes\SwapChain.h" />
-    <ClInclude Include="Modules\Renderer\Includes\Textures.h" />
-    <ClInclude Include="Modules\Renderer\Includes\Window.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\SwapChain.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Window.h" />
     <ClInclude Include="Modules\Renderer\API\Vulkan\VulkanBridge.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
