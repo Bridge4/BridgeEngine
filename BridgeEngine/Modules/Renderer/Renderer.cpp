@@ -16,9 +16,9 @@ void Renderer::SetWindowRef(Window* window) {
     this->windowRef = window;
 }
 
-void Renderer::run()
+void Renderer::RenderLoop()
 {
-    vulkanContext->renderLoop();
+    vulkanContext->RenderLoop();
 }
 
 

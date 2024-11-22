@@ -32,21 +32,12 @@ void VulkanBridge::Construct() {
     imageViewBuilder = new ImageView();
     swapChainBuilder = new SwapChainBuilder(this, vulkanInitializer, windowRef, imageViewBuilder);
     
-    // Initialization
-    //vulkanInitializer->init();
-    /*createDebugMessenger();
-    if (windowRef->createSurface(vulkanContext->m_instance, &r_surface) != VK_SUCCESS)
-        throw std::runtime_error("Failed to create window surface");
-    pickPhysicalDevice();
-    createLogicalDevice();*/
-    /*vulkanInitializer->createVulkanInstance();
-    vulkanInitializer->createDebugMessenger();*/
-    createInstance();
+    CreateVulkanContext();
     windowRef->vulkanContext = this;
     if (windowRef->createSurface() != VK_SUCCESS)
         throw std::runtime_error("Failed to create window surface");
-    vulkanInitializer->pickPhysicalDevice();
-    vulkanInitializer->createLogicalDevice(this->m_physicalDevice);
+    vulkanInitializer->GetPhysicalDevice();
+    vulkanInitializer->CreateLogicalDevice();
 
     //vulkanInitializer.assign(&m_surface, &m_physicalDevice, &m_logicalDevice, &m_graphicsQueue, &m_presentQueue);
     //vulkanInitializer->assign(&m_surface, &m_physicalDevice, &m_logicalDevice, &m_graphicsQueue, &m_presentQueue);
@@ -83,7 +74,7 @@ void VulkanBridge::Construct() {
 }
 
 // TODO: Move this to the Renderer.
-void VulkanBridge::renderLoop() {
+void VulkanBridge::RenderLoop() {
     while (!windowRef->shouldClose()) {
         windowRef->poll();
         drawFrame();
@@ -417,6 +408,7 @@ void VulkanBridge::createCommandPool() {
     }
 }
 
+// TODO: Move this to SwapChainBuilder
 void VulkanBridge::createFramebuffers() {
     m_swapChainFramebuffers.resize(m_swapChainImageViews.size());
 
@@ -895,7 +887,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
 }
 // END_REGION createInstance_helpers
 
-void VulkanBridge::createInstance()
+void VulkanBridge::CreateVulkanContext()
 {
     // A lot of information is passed through structs rather than function parameters
     if (enableValidationLayers && !checkValidationLayerSupport(&validationLayers)) {
@@ -1018,7 +1010,7 @@ void VulkanBridge::Destroy() {
     vkDestroyCommandPool(m_logicalDevice, m_commandPool, nullptr);
 
     // DEVICE DESTRUCTION
-    vulkanInitializer->destroy();
+    vulkanInitializer->Destroy();
     // GLFW DESTRUCTION
     windowRef->Destroy();
 }

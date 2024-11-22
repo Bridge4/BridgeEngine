@@ -114,6 +114,7 @@ public:
     std::string MODEL_PATH = "Models/VikingRoom/VikingRoom.obj";
     std::string TEXTURE_PATH = "Models/VikingRoom/Textures/VikingRoom.png";
     const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
+    const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     VkInstance m_instance;
     VkDebugUtilsMessengerEXT m_debugMessenger;
     int MAX_FRAMES_IN_FLIGHT = 2;
@@ -121,7 +122,7 @@ public:
 
     void Construct();
 
-    void renderLoop();
+    void RenderLoop();
 private:
 
     /*
@@ -129,7 +130,8 @@ private:
     */
     
 
-    void createInstance();
+    void CreateVulkanContext();
+
     void rebuildSwapChain();
 
     // RENDER PASSES

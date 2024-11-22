@@ -20,16 +20,13 @@ public:
         windowRef = window;
     }
 
-    void init();
-    void createVulkanInstance();
-    void createDebugMessenger();
-    void createSurface();
-    void pickPhysicalDevice();
-    void createLogicalDevice(VkPhysicalDevice physicalDevice);
+    void CreateDebugMessenger();
+    void GetPhysicalDevice();
+    void CreateLogicalDevice();
     //void assign(VkSurfaceKHR* rSurface, VkPhysicalDevice* pDevice, VkDevice* device, VkQueue* gQueue, VkQueue* pQueue);
 
 
-    void destroy();
+    void Destroy();
 
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice physicalDevice);
 
@@ -42,17 +39,13 @@ private:
     // CONSTANTS
     const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
     const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-    VkSurfaceKHR r_surface;
 
     // CORE FUNCTIONS
-    
-    
-    
 
     // HELPER FUNCTIONS
     // Used by createInstance()
     bool checkValidationLayerSupport();
-    std::vector<const char*> getRequiredExtensions();
+    //std::vector<const char*> getRequiredExtensions();
 
     // Used by pickPhysicalDevice()
     bool isDeviceSuitable(VkPhysicalDevice device);

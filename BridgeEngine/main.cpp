@@ -15,7 +15,7 @@ int main() {
         
         window->SetApiContext(renderer->vulkanContext);
         
-        renderer->run();
+        renderer->RenderLoop();
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;

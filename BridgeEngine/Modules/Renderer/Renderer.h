@@ -2,6 +2,7 @@
 class Window;
 class VulkanBridge;
 
+
 class Renderer {
 public:
 
@@ -9,11 +10,11 @@ public:
         windowRef = window;
     }
     // Window Ref
-    Window* windowRef;
+    Window* windowRef = 0;
     // API Context
-    VulkanBridge* vulkanContext;
+    VulkanBridge* vulkanContext = 0;
 
     void CreateAPIContext();
     void SetWindowRef(Window* window);
-    void run();
+    void RenderLoop();
 };

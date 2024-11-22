@@ -8,80 +8,7 @@
 #include "Window.h"
 #include "../VulkanBridge.h"
 
-void Initializer::init()
-{
-    //createVulkanInstance();
-    //createDebugMessenger();
-    /*if (windowRef->createSurface() != VK_SUCCESS)
-        throw std::runtime_error("Failed to create window surface");*/
-        /*pickPhysicalDevice();
-    createLogicalDevice();*/
-}
-
-//void Initializer::assign(VkSurfaceKHR* rSurface, VkPhysicalDevice* pDevice, VkDevice* device, VkQueue* gQueue, VkQueue* pQueue)
-//{
-//    *rSurface = surface();
-//    *pDevice = physDevice();
-//    *device = logDevice();
-//    *gQueue = graphicsQueue();
-//    *pQueue = presentQueue();
-//}
-
-
-void Initializer::createVulkanInstance() {
-    // A lot of information is passed through structs rather than function parameters
-
-    //if (enableValidationLayers && !checkValidationLayerSupport()) {
-    //    throw std::runtime_error("validation layers requested but not available...");
-    //}
-
-    //// optional but helpful information for the driver
-    //VkApplicationInfo appInfo{};
-    //appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    //appInfo.pApplicationName = "Bridge Engine";
-    //appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    //appInfo.pEngineName = "Bridge Engine";
-    //appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    //appInfo.apiVersion = VK_API_VERSION_1_3;
-
-    //// MANDATORY for instance creation
-    //// Telling Vulkan what global (program) extensions and validations we want to use
-    //VkInstanceCreateInfo createInfo{};
-    //createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-
-
-    //// ADDING appInfo to createInfo
-    //createInfo.pApplicationInfo = &appInfo;
-
-    //
-    //// Vulkan is platform agnostic. Here we provide the GLFW extension to interface with the window system
-    //std::vector<const char*> extensions = vulkanContext->getRequiredExtensions();
-    //createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    //createInfo.ppEnabledExtensionNames = extensions.data();
-
-    //VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-    //if (enableValidationLayers) {
-    //    createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-    //    createInfo.ppEnabledLayerNames = validationLayers.data();
-    //    //populateDebugMessengerCreateInfo(debugCreateInfo);
-    //    debugCreateInfo = {};
-    //    debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    //    debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    //    debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    //    debugCreateInfo.pfnUserCallback = debugCallback;
-    //    debugCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
-    //}
-    //else {
-    //    createInfo.enabledLayerCount = 0;
-    //    createInfo.pNext = nullptr;
-    //}
-
-    //if (vkCreateInstance(&createInfo, nullptr, &vulkanContext->m_instance) != VK_SUCCESS) {
-    //    throw std::runtime_error("failed to create instance!");
-    //}
-}
-
-void Initializer::createDebugMessenger() {
+void Initializer::CreateDebugMessenger() {
     if (!enableValidationLayers) return;
 
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
@@ -96,11 +23,7 @@ void Initializer::createDebugMessenger() {
     }
 }
 
-void Initializer::createSurface() {
-    windowRef->createSurface();
-}
-
-void Initializer::pickPhysicalDevice() {
+void Initializer::GetPhysicalDevice() {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(vulkanContext->m_instance, &deviceCount, nullptr);
     // check if there are no compatible devices (GPUs)
@@ -125,9 +48,9 @@ void Initializer::pickPhysicalDevice() {
     }
 }
 
-void Initializer::createLogicalDevice(VkPhysicalDevice physicalDevice) {
+void Initializer::CreateLogicalDevice() {
     // Specifying queues to be created
-    QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+    QueueFamilyIndices indices = findQueueFamilies(vulkanContext->m_physicalDevice);
     VkDeviceQueueCreateInfo queueCreateInfo{};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
@@ -156,10 +79,10 @@ void Initializer::createLogicalDevice(VkPhysicalDevice physicalDevice) {
     createInfo.pEnabledFeatures = &deviceFeatures;
 
     // COMPATIBILITY WITH OLDER VULKAN
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(vulkanContext->deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
     if (enableValidationLayers) {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.enabledLayerCount = static_cast<uint32_t>(vulkanContext->validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
     }
     else {
@@ -175,12 +98,12 @@ void Initializer::createLogicalDevice(VkPhysicalDevice physicalDevice) {
 
 }
 
-void Initializer::destroy() {
+void Initializer::Destroy() {
     vkDestroyDevice(vulkanContext->m_logicalDevice, nullptr);
     if (enableValidationLayers) {
         DestroyDebugUtilsMessengerEXT(nullptr);
     }
-    vkDestroySurfaceKHR(vulkanContext->m_instance, r_surface, nullptr);
+    vkDestroySurfaceKHR(vulkanContext->m_instance, vulkanContext->m_surface, nullptr);
     vkDestroyInstance(vulkanContext->m_instance, nullptr);
 }
 // HELPERS
@@ -212,19 +135,6 @@ bool Initializer::checkValidationLayerSupport() {
     return true;
 }
 
-//std::vector<const char*> Initializer::getRequiredExtensions() {
-//    uint32_t glfwExtensionCount = 0;
-//    const char** glfwExtensions;
-//    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-//
-//    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-//
-//    if (enableValidationLayers) {
-//        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-//    }
-//
-//    return extensions;
-//}
 
 // pickPhysicalDevice()
 bool Initializer::isDeviceSuitable(VkPhysicalDevice device) {
