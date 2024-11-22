@@ -2,10 +2,7 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <stdexcept>
-#include <cstdlib>
-#include <vector>
-#include <algorithm>
+
 #include "ImageView.h"
 // This is a heavy include I'd like to clean up later. 
 #include "Initializer.h"
