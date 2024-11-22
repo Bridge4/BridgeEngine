@@ -159,6 +159,7 @@
     <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Initializer.cpp" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\Components\SwapChainBuilder.cpp" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Window.cpp" />
+    <ClCompile Include="Modules\Renderer\Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Modules\Renderer\DataStructures.h" />

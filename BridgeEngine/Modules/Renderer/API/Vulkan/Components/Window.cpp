@@ -1,9 +1,12 @@
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 #include "Window.h"
+#include "../VulkanBridge.h"
 #include <string>
 
-VkResult Window::createSurface(VkInstance instance, VkSurfaceKHR* surface, VkAllocationCallbacks* allocationCallbacks)
+VkResult Window::createSurface()
 {
-    return glfwCreateWindowSurface(instance, r_window, nullptr, surface);
+    return glfwCreateWindowSurface(vulkanContext->m_instance, r_window, nullptr, &vulkanContext->m_surface);
 }
 
 void Window::createWindow(uint32_t w, uint32_t h) {
@@ -39,11 +42,18 @@ void Window::getFramebufferSize(int* width, int* height)
     glfwGetFramebufferSize(r_window, width, height);
 }
 
-void Window::destroy() {
+void Window::Destroy() {
     glfwDestroyWindow(r_window);
     glfwTerminate();
 }
 
+int Window::shouldClose() {
+    return glfwWindowShouldClose(r_window);
+}
+
+void Window::poll() {
+    glfwPollEvents();
+}
 // Checks if the framebuffer has been resized using GLFW function
 void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height) {
     // glfwWindowUserPointer returns a reference to our app, so we cast it to HelloTriangleApplication then set that app object's 

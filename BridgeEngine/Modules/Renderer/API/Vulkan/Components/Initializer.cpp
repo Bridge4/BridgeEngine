@@ -5,79 +5,80 @@
 #include <set>
 #include <cstdint> // Necessary for uint32_t
 // CORE FUNCTIONS
+#include "Window.h"
+#include "../VulkanBridge.h"
 
-
-void Initializer::init(Window* window)
+void Initializer::init()
 {
-    createInstance();
-    createDebugMessenger();
-    if (window->createSurface(m_instance, &r_surface) != VK_SUCCESS)
-        throw std::runtime_error("Failed to create window surface");
-    pickPhysicalDevice();
-    createLogicalDevice();
+    //createVulkanInstance();
+    //createDebugMessenger();
+    /*if (windowRef->createSurface() != VK_SUCCESS)
+        throw std::runtime_error("Failed to create window surface");*/
+        /*pickPhysicalDevice();
+    createLogicalDevice();*/
 }
 
-void Initializer::assign(VkSurfaceKHR* rSurface, VkPhysicalDevice* pDevice, VkDevice* device, VkQueue* gQueue, VkQueue* pQueue)
-{
-    *rSurface = surface();
-    *pDevice = physDevice();
-    *device = logDevice();
-    *gQueue = graphicsQueue();
-    *pQueue = presentQueue();
-}
+//void Initializer::assign(VkSurfaceKHR* rSurface, VkPhysicalDevice* pDevice, VkDevice* device, VkQueue* gQueue, VkQueue* pQueue)
+//{
+//    *rSurface = surface();
+//    *pDevice = physDevice();
+//    *device = logDevice();
+//    *gQueue = graphicsQueue();
+//    *pQueue = presentQueue();
+//}
 
 
-void Initializer::createInstance() {
+void Initializer::createVulkanInstance() {
     // A lot of information is passed through structs rather than function parameters
 
-    if (enableValidationLayers && !checkValidationLayerSupport()) {
-        throw std::runtime_error("validation layers requested but not available...");
-    }
+    //if (enableValidationLayers && !checkValidationLayerSupport()) {
+    //    throw std::runtime_error("validation layers requested but not available...");
+    //}
 
-    // optional but helpful information for the driver
-    VkApplicationInfo appInfo{};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "Bridge Engine";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "Bridge Engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_3;
+    //// optional but helpful information for the driver
+    //VkApplicationInfo appInfo{};
+    //appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    //appInfo.pApplicationName = "Bridge Engine";
+    //appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+    //appInfo.pEngineName = "Bridge Engine";
+    //appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+    //appInfo.apiVersion = VK_API_VERSION_1_3;
 
-    // MANDATORY for instance creation
-    // Telling Vulkan what global (program) extensions and validations we want to use
-    VkInstanceCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    //// MANDATORY for instance creation
+    //// Telling Vulkan what global (program) extensions and validations we want to use
+    //VkInstanceCreateInfo createInfo{};
+    //createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 
 
-    // ADDING appInfo to createInfo
-    createInfo.pApplicationInfo = &appInfo;
+    //// ADDING appInfo to createInfo
+    //createInfo.pApplicationInfo = &appInfo;
 
-    
-    // Vulkan is platform agnostic. Here we provide the GLFW extension to interface with the window system
-    std::vector<const char*> extensions = getRequiredExtensions();
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    createInfo.ppEnabledExtensionNames = extensions.data();
+    //
+    //// Vulkan is platform agnostic. Here we provide the GLFW extension to interface with the window system
+    //std::vector<const char*> extensions = vulkanContext->getRequiredExtensions();
+    //createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+    //createInfo.ppEnabledExtensionNames = extensions.data();
 
-    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-    if (enableValidationLayers) {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
-        //populateDebugMessengerCreateInfo(debugCreateInfo);
-        debugCreateInfo = {};
-        debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        debugCreateInfo.pfnUserCallback = debugCallback;
-        debugCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
-    }
-    else {
-        createInfo.enabledLayerCount = 0;
-        createInfo.pNext = nullptr;
-    }
+    //VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+    //if (enableValidationLayers) {
+    //    createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+    //    createInfo.ppEnabledLayerNames = validationLayers.data();
+    //    //populateDebugMessengerCreateInfo(debugCreateInfo);
+    //    debugCreateInfo = {};
+    //    debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    //    debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    //    debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    //    debugCreateInfo.pfnUserCallback = debugCallback;
+    //    debugCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+    //}
+    //else {
+    //    createInfo.enabledLayerCount = 0;
+    //    createInfo.pNext = nullptr;
+    //}
 
-    if (vkCreateInstance(&createInfo, nullptr, &m_instance) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create instance!");
-    }
+    //if (vkCreateInstance(&createInfo, nullptr, &vulkanContext->m_instance) != VK_SUCCESS) {
+    //    throw std::runtime_error("failed to create instance!");
+    //}
 }
 
 void Initializer::createDebugMessenger() {
@@ -90,18 +91,18 @@ void Initializer::createDebugMessenger() {
     createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     createInfo.pfnUserCallback = debugCallback;
 
-    if (CreateDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &m_debugMessenger) != VK_SUCCESS) {
+    if (CreateDebugUtilsMessengerEXT(&createInfo, nullptr, &vulkanContext->m_debugMessenger) != VK_SUCCESS) {
         throw std::runtime_error("failed to set up debug messenger!");
     }
 }
 
-void Initializer::createSurface(Window window) {
-    window.createSurface(m_instance, &r_surface);
+void Initializer::createSurface() {
+    windowRef->createSurface();
 }
 
 void Initializer::pickPhysicalDevice() {
     uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
+    vkEnumeratePhysicalDevices(vulkanContext->m_instance, &deviceCount, nullptr);
     // check if there are no compatible devices (GPUs)
     if (deviceCount == 0) {
         throw std::runtime_error("failed to find GPUs with Vulkan support.");
@@ -109,24 +110,24 @@ void Initializer::pickPhysicalDevice() {
 
     // Allocate array to hold all VKPhysicalDevice handles
     std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
+    vkEnumeratePhysicalDevices(vulkanContext->m_instance, &deviceCount, devices.data());
 
 
     for (const auto& device : devices) {
         if (isDeviceSuitable(device)) {
-            r_physicalDevice = device;
+            vulkanContext->m_physicalDevice = device;
             break;
         }
     }
 
-    if (r_physicalDevice == VK_NULL_HANDLE) {
+    if (vulkanContext->m_physicalDevice == VK_NULL_HANDLE) {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
 }
 
-void Initializer::createLogicalDevice() {
+void Initializer::createLogicalDevice(VkPhysicalDevice physicalDevice) {
     // Specifying queues to be created
-    QueueFamilyIndices indices = findQueueFamilies(r_physicalDevice);
+    QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
     VkDeviceQueueCreateInfo queueCreateInfo{};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
@@ -165,22 +166,22 @@ void Initializer::createLogicalDevice() {
         createInfo.enabledLayerCount = 0;
     }
 
-    if (vkCreateDevice(r_physicalDevice, &createInfo, nullptr, &r_device) != VK_SUCCESS) {
+    if (vkCreateDevice(vulkanContext->m_physicalDevice, &createInfo, nullptr, &vulkanContext->m_logicalDevice) != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device!");
     }
 
-    vkGetDeviceQueue(r_device, indices.graphicsFamily.value(), 0, &r_graphicsQueue);
-    vkGetDeviceQueue(r_device, indices.presentFamily.value(), 0, &r_presentQueue);
+    vkGetDeviceQueue(vulkanContext->m_logicalDevice, indices.graphicsFamily.value(), 0, &vulkanContext->m_graphicsQueue);
+    vkGetDeviceQueue(vulkanContext->m_logicalDevice, indices.presentFamily.value(), 0, &vulkanContext->m_presentQueue);
 
 }
 
 void Initializer::destroy() {
-    vkDestroyDevice(r_device, nullptr);
+    vkDestroyDevice(vulkanContext->m_logicalDevice, nullptr);
     if (enableValidationLayers) {
-        DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
+        DestroyDebugUtilsMessengerEXT(nullptr);
     }
-    vkDestroySurfaceKHR(m_instance, r_surface, nullptr);
-    vkDestroyInstance(m_instance, nullptr);
+    vkDestroySurfaceKHR(vulkanContext->m_instance, r_surface, nullptr);
+    vkDestroyInstance(vulkanContext->m_instance, nullptr);
 }
 // HELPERS
 
@@ -193,7 +194,7 @@ bool Initializer::checkValidationLayerSupport() {
     std::vector<VkLayerProperties> availableLayers(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-    for (const char* layerName : validationLayers) {
+    for (const char* layerName : vulkanContext->validationLayers) {
         bool layerFound = false;
 
         for (const auto& layerProperties : availableLayers) {
@@ -211,19 +212,19 @@ bool Initializer::checkValidationLayerSupport() {
     return true;
 }
 
-std::vector<const char*> Initializer::getRequiredExtensions() {
-    uint32_t glfwExtensionCount = 0;
-    const char** glfwExtensions;
-    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
-    if (enableValidationLayers) {
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    }
-
-    return extensions;
-}
+//std::vector<const char*> Initializer::getRequiredExtensions() {
+//    uint32_t glfwExtensionCount = 0;
+//    const char** glfwExtensions;
+//    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+//
+//    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+//
+//    if (enableValidationLayers) {
+//        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+//    }
+//
+//    return extensions;
+//}
 
 // pickPhysicalDevice()
 bool Initializer::isDeviceSuitable(VkPhysicalDevice device) {
@@ -271,44 +272,44 @@ bool Initializer::checkDeviceExtensionSupport(VkPhysicalDevice device) {
     return requiredExtensions.empty();
 }
 
-SwapChainSupportDetails Initializer::querySwapChainSupport(VkPhysicalDevice device) {
+SwapChainSupportDetails Initializer::querySwapChainSupport(VkPhysicalDevice physicalDevice) {
 
     // Fetching the capabilities of the device and surface
 
 
     // Getting supported surface formats
     SwapChainSupportDetails details;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, r_surface, &details.capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, vulkanContext->m_surface, &details.capabilities);
 
     uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, r_surface, &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, vulkanContext->m_surface, &formatCount, nullptr);
 
     if (formatCount != 0) {
         details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, r_surface, &formatCount, details.formats.data());
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, vulkanContext->m_surface, &formatCount, details.formats.data());
     }
 
     // Getting supported present modes
     uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device, r_surface, &presentModeCount, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, vulkanContext->m_surface, &presentModeCount, nullptr);
 
     if (presentModeCount != 0) {
         details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, r_surface, &presentModeCount, details.presentModes.data());
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, vulkanContext->m_surface, &presentModeCount, details.presentModes.data());
     }
 
     return details;
 }
 
 // isDeviceSuitable() + createLogicalDevice()
-QueueFamilyIndices Initializer::findQueueFamilies(VkPhysicalDevice device) {
+QueueFamilyIndices Initializer::findQueueFamilies(VkPhysicalDevice physicalDevice) {
     QueueFamilyIndices indices;
     uint32_t queueFamilyCount = 0;
 
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
     int i = 0;
     for (const auto& queueFamily : queueFamilies) {
@@ -316,7 +317,7 @@ QueueFamilyIndices Initializer::findQueueFamilies(VkPhysicalDevice device) {
             indices.graphicsFamily = i;
         }
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, r_surface, &presentSupport);
+        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, vulkanContext->m_surface, &presentSupport);
 
         if (presentSupport) {
             indices.presentFamily = i;
@@ -337,20 +338,19 @@ VKAPI_ATTR VkBool32 VKAPI_CALL Initializer::debugCallback(VkDebugUtilsMessageSev
 }
 
 // setupDebugMessenger()
-VkResult Initializer::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, 
-    const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+VkResult Initializer::CreateDebugUtilsMessengerEXT(const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vulkanContext->m_instance, "vkCreateDebugUtilsMessengerEXT");
     if (func != nullptr) {
-        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+        return func(vulkanContext->m_instance, pCreateInfo, pAllocator, pDebugMessenger);
     }
     else {
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 }
 
-void Initializer::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+void Initializer::DestroyDebugUtilsMessengerEXT(const VkAllocationCallbacks* pAllocator) {
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vulkanContext->m_instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr) {
-        func(instance, debugMessenger, pAllocator);
+        func(vulkanContext->m_instance, vulkanContext->m_debugMessenger, pAllocator);
     }
 }

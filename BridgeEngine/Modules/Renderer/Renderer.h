@@ -1,15 +1,19 @@
 #pragma once
-#include "API/Vulkan/VulkanBridge.h"
+class Window;
+class VulkanBridge;
 
 class Renderer {
 public:
 
-    Window window;
-    void run() {
-        vulkanBridge.window = window;
-        vulkanBridge.Construct();
-        vulkanBridge.renderLoop();
+    Renderer(Window* window) {
+        windowRef = window;
     }
-private:
-    VulkanBridge vulkanBridge;
+    // Window Ref
+    Window* windowRef;
+    // API Context
+    VulkanBridge* vulkanContext;
+
+    void CreateAPIContext();
+    void SetWindowRef(Window* window);
+    void run();
 };

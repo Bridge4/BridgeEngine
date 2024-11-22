@@ -13,7 +13,7 @@ class SwapChainBuilder
 public: 
     SwapChainBuilder(VulkanBridge* context, Initializer* initializer, Window* targetWindow, ImageView* imgView) 
     {
-        vulkanBridgeContext = context;
+        vulkanContext = context;
         vulkanInitializer = initializer;
         windowRef = targetWindow;
         imageView = imgView;
@@ -22,7 +22,7 @@ public:
     void Build();
 
 
-    VulkanBridge* vulkanBridgeContext = 0;
+    VulkanBridge* vulkanContext = 0;
     Initializer* vulkanInitializer = 0;
     Window* windowRef = 0;
     ImageView* imageView = 0;

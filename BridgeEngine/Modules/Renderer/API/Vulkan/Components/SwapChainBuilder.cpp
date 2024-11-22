@@ -2,6 +2,7 @@
 #include "SwapChainBuilder.h"
 #include "ImageView.h"
 #include "Initializer.h"
+#include "Window.h"
 #include <stdexcept>
 #include <cstdlib>
 #include <vector>
@@ -14,11 +15,11 @@ void SwapChainBuilder::Build() {
     std::vector<VkImageView> m_swapChainImageViews;
     VkFormat m_swapChainImageFormat;
     VkExtent2D  m_swapChainExtent;
-    VkPhysicalDevice physDevice = vulkanInitializer->physDevice();
-    VkDevice device = vulkanInitializer->logDevice();
-    VkSurfaceKHR surface = vulkanInitializer->surface();
+    VkPhysicalDevice physDevice = vulkanContext->m_physicalDevice;
+    VkDevice device = vulkanContext->m_logicalDevice;
+    VkSurfaceKHR surface = vulkanContext->m_surface;
 
-    SwapChainSupportDetails swapChainSupport = vulkanInitializer->querySwapChainSupport(physDevice);
+    SwapChainSupportDetails swapChainSupport = vulkanInitializer->querySwapChainSupport(vulkanContext->m_physicalDevice);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -42,7 +43,7 @@ void SwapChainBuilder::Build() {
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndices indices = vulkanInitializer->findQueueFamilies(physDevice);
+    QueueFamilyIndices indices = vulkanInitializer->findQueueFamilies(vulkanContext->m_physicalDevice);
     uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
     if (indices.graphicsFamily != indices.presentFamily) {
@@ -77,14 +78,14 @@ void SwapChainBuilder::Build() {
     m_swapChainImageViews.resize(m_swapChainImages.size());
     for (size_t i = 0; i < m_swapChainImages.size(); i++) {
         // Moved definition for createImageView() to a class and turned into a static function
-        m_swapChainImageViews[i] = imageView->create(vulkanBridgeContext->m_logicalDevice, m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+        m_swapChainImageViews[i] = imageView->create(vulkanContext->m_logicalDevice, m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
 
-    vulkanBridgeContext->m_swapChain = m_swapChain;
-    vulkanBridgeContext->m_swapChainImageFormat = m_swapChainImageFormat;
-    vulkanBridgeContext->m_swapChainExtent = m_swapChainExtent;
-    vulkanBridgeContext->m_swapChainImageViews = m_swapChainImageViews;
+    vulkanContext->m_swapChain = m_swapChain;
+    vulkanContext->m_swapChainImageFormat = m_swapChainImageFormat;
+    vulkanContext->m_swapChainExtent = m_swapChainExtent;
+    vulkanContext->m_swapChainImageViews = m_swapChainImageViews;
 }
 
 // HELPERS

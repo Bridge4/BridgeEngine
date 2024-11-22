@@ -1,6 +1,9 @@
 #pragma once
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include <iostream>
+
+class VulkanBridge;
+struct GLFWwindow;
+enum VkResult;
 
 class Window
 {
@@ -10,28 +13,38 @@ public:
     /*void handleInput() {
         glfwSetKeyCallback(glfwKeyCalback);
     };*/
+
+    /*Window(VulkanBridge* vulkanBridge) {
+        vulkanContext = vulkanBridge;
+    }*/
+    Window() {};
+
+    void SetApiContext(VulkanBridge* vulkanBridge) {
+        vulkanContext = vulkanBridge;
+    }
+
     void Create();
 
     bool framebufferResized = false;
 
-    void destroy();
+    void Destroy();
 
     void handleMinimization();
 
     void getFramebufferSize(int* width, int* height);
 
-    int shouldClose() { return glfwWindowShouldClose(r_window); }
+    int shouldClose();
 
-    void poll() { glfwPollEvents(); }
+    void poll();
 
     GLFWwindow* getWindow() { return r_window; }
 
-    VkResult createSurface(VkInstance instance, VkSurfaceKHR* surface, VkAllocationCallbacks* allocationCallbacks=nullptr);
+    VkResult createSurface();
 
     void createWindow(uint32_t width = 800, uint32_t height = 600);
 
     //void GLFWCALL glfwKeyCalback(GLFWwindow* r_window, int key, int scancode, int action, int mods);
-    
+    VulkanBridge* vulkanContext;
 private:
     GLFWwindow* r_window;
 

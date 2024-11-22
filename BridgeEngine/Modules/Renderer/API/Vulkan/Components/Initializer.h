@@ -2,10 +2,11 @@
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif // !VK_USE_PLATFORM_WIN32_KHR
-#include "Window.h"
+
 #include "../VulkanDataStructures.h"
 
-
+class Window;
+class VulkanBridge;
 class Initializer {
 
 public:
@@ -14,53 +15,39 @@ public:
 #else
     const bool enableValidationLayers = true;
 #endif
+    Initializer(VulkanBridge* vulkanBridge, Window* window) {
+        vulkanContext = vulkanBridge;
+        windowRef = window;
+    }
 
-    //~Initializer();
+    void init();
+    void createVulkanInstance();
+    void createDebugMessenger();
+    void createSurface();
+    void pickPhysicalDevice();
+    void createLogicalDevice(VkPhysicalDevice physicalDevice);
+    //void assign(VkSurfaceKHR* rSurface, VkPhysicalDevice* pDevice, VkDevice* device, VkQueue* gQueue, VkQueue* pQueue);
 
-    void init(Window* window);
-
-    void assign(VkSurfaceKHR* rSurface, VkPhysicalDevice* pDevice, VkDevice* device, VkQueue* gQueue, VkQueue* pQueue);
-
-    VkSurfaceKHR surface() { return r_surface; }
-
-    VkPhysicalDevice physDevice() { return r_physicalDevice; }
-
-    VkDevice logDevice() { return r_device; }
-
-    VkQueue graphicsQueue() { return r_graphicsQueue; }
-
-    VkQueue presentQueue() { return r_presentQueue; }
 
     void destroy();
 
-    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice physicalDevice);
 
     // Used by isDeviceSuitable() and createLogicalDevice()
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice physicalDevice);
 
+    Window* windowRef = 0;
+    VulkanBridge* vulkanContext = 0;
 private:
     // CONSTANTS
     const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
     const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-
-    
-    VkInstance m_instance;
-    VkDebugUtilsMessengerEXT m_debugMessenger;
-
-    // r_ denotes private member accessed in public function
     VkSurfaceKHR r_surface;
-    VkDevice r_device;
-    VkPhysicalDevice r_physicalDevice = VK_NULL_HANDLE;
-    VkQueue r_graphicsQueue;
-    VkQueue r_presentQueue;
 
     // CORE FUNCTIONS
     
-    void createInstance();
-    void createDebugMessenger();
-    void createSurface(Window window);
-    void pickPhysicalDevice();
-    void createLogicalDevice();
+    
+    
 
     // HELPER FUNCTIONS
     // Used by createInstance()
@@ -79,12 +66,11 @@ private:
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* pUserData);
     // Used by setupDebugMessenger()
-    VkResult CreateDebugUtilsMessengerEXT(VkInstance instance,
-        const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-        const VkAllocationCallbacks* pAllocator,
-        VkDebugUtilsMessengerEXT* pDebugMessenger);
+    VkResult CreateDebugUtilsMessengerEXT(  const VkDebugUtilsMessengerCreateInfoEXT*   pCreateInfo,
+                                            const VkAllocationCallbacks*                pAllocator,
+                                                  VkDebugUtilsMessengerEXT*             pDebugMessenger);
 
     // Used to destroy debugger
-    void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
+    void DestroyDebugUtilsMessengerEXT(const VkAllocationCallbacks* pAllocator);
 
 };

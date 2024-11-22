@@ -1,4 +1,6 @@
 #pragma once
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 #include "VulkanBridge.h"
 // Textures through stb library
 #define STB_IMAGE_IMPLEMENTATION
@@ -18,18 +20,36 @@
 #include <map>
 #include <optional>
 #include <set>
-    
+
+#include "Components/Initializer.h"
+#include "Components/ImageView.h"
+#include "Components/SwapChainBuilder.h"
+#include "Components/Window.h"
 
 void VulkanBridge::Construct() {
-    vulkanInitializer = new Initializer();
+    vulkanInitializer = new Initializer(this, windowRef);
     
     imageViewBuilder = new ImageView();
-    swapChainBuilder = new SwapChainBuilder(this, vulkanInitializer, &window, imageViewBuilder);
+    swapChainBuilder = new SwapChainBuilder(this, vulkanInitializer, windowRef, imageViewBuilder);
     
     // Initialization
-    vulkanInitializer->init(&window);
+    //vulkanInitializer->init();
+    /*createDebugMessenger();
+    if (windowRef->createSurface(vulkanContext->m_instance, &r_surface) != VK_SUCCESS)
+        throw std::runtime_error("Failed to create window surface");
+    pickPhysicalDevice();
+    createLogicalDevice();*/
+    /*vulkanInitializer->createVulkanInstance();
+    vulkanInitializer->createDebugMessenger();*/
+    createInstance();
+    windowRef->vulkanContext = this;
+    if (windowRef->createSurface() != VK_SUCCESS)
+        throw std::runtime_error("Failed to create window surface");
+    vulkanInitializer->pickPhysicalDevice();
+    vulkanInitializer->createLogicalDevice(this->m_physicalDevice);
+
     //vulkanInitializer.assign(&m_surface, &m_physicalDevice, &m_logicalDevice, &m_graphicsQueue, &m_presentQueue);
-    vulkanInitializer->assign(&m_surface, &m_physicalDevice, &m_logicalDevice, &m_graphicsQueue, &m_presentQueue);
+    //vulkanInitializer->assign(&m_surface, &m_physicalDevice, &m_logicalDevice, &m_graphicsQueue, &m_presentQueue);
     // Swap Chain
     //swapChainBuilder.Construct(&vulkanBridge);
 
@@ -62,9 +82,10 @@ void VulkanBridge::Construct() {
     createSyncObjects();   
 }
 
+// TODO: Move this to the Renderer.
 void VulkanBridge::renderLoop() {
-    while (!window.shouldClose()) {
-        window.poll();
+    while (!windowRef->shouldClose()) {
+        windowRef->poll();
         drawFrame();
     }
     vkDeviceWaitIdle(m_logicalDevice);
@@ -812,8 +833,8 @@ void VulkanBridge::drawFrame() {
     // SWAP CHAIN RECREATION
     result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.framebufferResized) {
-        window.framebufferResized = false;
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || windowRef->framebufferResized) {
+        windowRef->framebufferResized = false;
         rebuildSwapChain();
     }
     else if (result != VK_SUCCESS) {
@@ -931,7 +952,7 @@ void VulkanBridge::createInstance()
 
 void VulkanBridge::rebuildSwapChain() {
     // Handling minimization
-    window.handleMinimization();
+    windowRef->handleMinimization();
 
     vkDeviceWaitIdle(m_logicalDevice);
 
@@ -999,7 +1020,7 @@ void VulkanBridge::Destroy() {
     // DEVICE DESTRUCTION
     vulkanInitializer->destroy();
     // GLFW DESTRUCTION
-    window.destroy();
+    windowRef->Destroy();
 }
 
 void VulkanBridge::updateUniformBuffer(uint32_t currentImage) {
