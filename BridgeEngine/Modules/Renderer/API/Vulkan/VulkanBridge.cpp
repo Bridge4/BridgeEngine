@@ -21,15 +21,20 @@
     
 
 void VulkanBridge::Construct() {
+    vulkanInitializer = new Initializer();
+    swapChainBuilder = new SwapChain(this);
+    imageViewBuilder = new ImageView();
+    
+    
     // Initialization
-    init.init(&window);
-    //init.assign(&m_surface, &m_physicalDevice, &m_logicalDevice, &m_graphicsQueue, &m_presentQueue);
-    init.assign(&m_surface, &m_physicalDevice, &m_logicalDevice, &m_graphicsQueue, &m_presentQueue);
+    vulkanInitializer->init(&window);
+    //vulkanInitializer.assign(&m_surface, &m_physicalDevice, &m_logicalDevice, &m_graphicsQueue, &m_presentQueue);
+    vulkanInitializer->assign(&m_surface, &m_physicalDevice, &m_logicalDevice, &m_graphicsQueue, &m_presentQueue);
     // Swap Chain
-    //swapChain.Construct(&vulkanBridge);
-    swapChain.create(init, window);
-    swapChain.createImageViews(m_logicalDevice, imageView);
-    swapChain.assign(&m_swapChain, &m_swapChainImageFormat, &m_swapChainExtent, &m_swapChainImageViews);
+    //swapChainBuilder.Construct(&vulkanBridge);
+    swapChainBuilder->create(vulkanInitializer, window);
+    swapChainBuilder->createImageViews(m_logicalDevice, imageViewBuilder);
+    swapChainBuilder->assign(&m_swapChain, &m_swapChainImageFormat, &m_swapChainExtent, &m_swapChainImageViews);
 
     createRenderPass();
     createDescriptorSetLayout();
@@ -53,8 +58,7 @@ void VulkanBridge::Construct() {
     createDescriptorSets();
 
     createCommandBuffers();
-    createSyncObjects();
-    
+    createSyncObjects();   
 }
 
 void VulkanBridge::renderLoop() {
@@ -378,7 +382,7 @@ void VulkanBridge::createGraphicsPipeline() {
 }
 
 void VulkanBridge::createCommandPool() {
-    QueueFamilyIndices queueFamilyIndices = init.findQueueFamilies(m_physicalDevice);
+    QueueFamilyIndices queueFamilyIndices = vulkanInitializer->findQueueFamilies(m_physicalDevice);
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -422,7 +426,7 @@ void VulkanBridge::createDepthResources() {
     createImage(m_swapChainExtent.width, m_swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         m_depthImage, m_depthImageMemory);
-    m_depthImageView = imageView.create(m_logicalDevice, m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+    m_depthImageView = imageViewBuilder->create(m_logicalDevice, m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
     transitionImageLayout(m_depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
@@ -467,7 +471,7 @@ void VulkanBridge::createTextureImage() {
 
 // TEXTURE IMAGE VIEW
 void VulkanBridge::createTextureImageView() {
-    m_textureImageView = imageView.create(m_logicalDevice, m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+    m_textureImageView = imageViewBuilder->create(m_logicalDevice, m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 // TEXTURE SAMPLER
@@ -932,9 +936,9 @@ void VulkanBridge::recreateSwapChain() {
 
     destroySwapChain();
 
-    swapChain.create(init, window);
-    swapChain.createImageViews(m_logicalDevice, imageView);
-    swapChain.assign(&m_swapChain, &m_swapChainImageFormat, &m_swapChainExtent, &m_swapChainImageViews);
+    swapChainBuilder->create(vulkanInitializer, window);
+    swapChainBuilder->createImageViews(m_logicalDevice, imageViewBuilder);
+    swapChainBuilder->assign(&m_swapChain, &m_swapChainImageFormat, &m_swapChainExtent, &m_swapChainImageViews);
 
     createDepthResources();
     createFramebuffers();
@@ -993,7 +997,7 @@ void VulkanBridge::Destroy() {
     vkDestroyCommandPool(m_logicalDevice, m_commandPool, nullptr);
 
     // DEVICE DESTRUCTION
-    init.destroy();
+    vulkanInitializer->destroy();
     // GLFW DESTRUCTION
     window.destroy();
 }

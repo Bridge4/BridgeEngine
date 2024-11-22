@@ -1,16 +1,18 @@
 #pragma once
 #include "SwapChain.h"
+#include "ImageView.h"
+#include "Initializer.h"
 #include <stdexcept>
 #include <cstdlib>
 #include <vector>
 #include <algorithm>
 
-void SwapChain::create(Initializer init, Window window) {
-    VkPhysicalDevice physDevice = init.physDevice();
-    VkDevice device = init.logDevice();
-    VkSurfaceKHR surface = init.surface();
+void SwapChain::create(Initializer* vulkanInitializer, Window window) {
+    VkPhysicalDevice physDevice = vulkanInitializer->physDevice();
+    VkDevice device = vulkanInitializer->logDevice();
+    VkSurfaceKHR surface = vulkanInitializer->surface();
 
-    SwapChainSupportDetails swapChainSupport = init.querySwapChainSupport(physDevice);
+    SwapChainSupportDetails swapChainSupport = vulkanInitializer->querySwapChainSupport(physDevice);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -34,7 +36,7 @@ void SwapChain::create(Initializer init, Window window) {
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndices indices = init.findQueueFamilies(physDevice);
+    QueueFamilyIndices indices = vulkanInitializer->findQueueFamilies(physDevice);
     uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
     if (indices.graphicsFamily != indices.presentFamily) {
@@ -68,11 +70,11 @@ void SwapChain::create(Initializer init, Window window) {
 }
 
 // IMAGE VIEWS
-void SwapChain::createImageViews(VkDevice device, ImageView imgV) {
+void SwapChain::createImageViews(VkDevice device, ImageView* imgV) {
     m_swapChainImageViews.resize(m_swapChainImages.size());
     for (size_t i = 0; i < m_swapChainImages.size(); i++) {
         // Moved definition for createImageView() to a class and turned into a static function
-        m_swapChainImageViews[i] = imgV.create(device, m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+        m_swapChainImageViews[i] = imgV->create(device, m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
     }
 }
 

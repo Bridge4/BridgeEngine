@@ -84,15 +84,15 @@ class VulkanBridge {
     *
     *   Attempting first with Swap Chains.
     *
-    *   init.init(&window);
+    *   vulkanInitializer.vulkanInitializer(&window);
     *
     *
     */
 
     // Swap Chain
-    /*swapChain.create(init, window);
-    swapChain.createImageViews(m_logical_device, imageView);
-    swapChain.assign(&m_swapChain, &m_swapChainImageFormat, &m_swapChainExtent, &m_swapChainImageViews);
+    /*swapChainBuilder.create(vulkanInitializer, window);
+    swapChainBuilder.createImageViews(m_logical_device, imageViewBuilder);
+    swapChainBuilder.assign(&m_swapChain, &m_swapChainImageFormat, &m_swapChainExtent, &m_swapChainImageViews);
     */
 
     /*
@@ -106,10 +106,10 @@ public:
 #endif
     // These getters return pointers to the VulkanBridge's private members
     // INSTANCES
-    Initializer init;
+    Initializer* vulkanInitializer;
     //Window window;
-    SwapChain swapChain;
-    ImageView imageView;
+    SwapChain* swapChainBuilder;
+    ImageView* imageViewBuilder;
 
     VkSurfaceKHR m_surface;
     VkPhysicalDevice m_physicalDevice;

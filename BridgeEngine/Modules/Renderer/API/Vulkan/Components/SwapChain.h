@@ -1,14 +1,23 @@
 #pragma once
-#include "ImageView.h"
-#include "Initializer.h"
+#include <vulkan/vulkan.h>
+#include <vector>
 
-// Including Initializer for the SwapChainSupportDetails struct
+class VulkanBridge;
+class Initializer;
+class ImageView;
+class Window;
+
+
 class SwapChain
 {
 public: 
-    void create(Initializer init, Window window);
+    SwapChain(VulkanBridge* context) {
+        vulkanBridgeContext = context;
+    }
 
-    void createImageViews(VkDevice device, ImageView imgV);
+    void create(Initializer* init, Window window);
+
+    void createImageViews(VkDevice device, ImageView* imgV);
 
     void assign(VkSwapchainKHR* swapChain, VkFormat* scFormat, VkExtent2D* scExtent, std::vector<VkImageView>* scImageViews);
 
@@ -20,6 +29,7 @@ public:
 
     std::vector<VkImageView> getImageViews() { return m_swapChainImageViews; }
 
+    VulkanBridge* vulkanBridgeContext;
 private:
     VkSwapchainKHR m_swapChain;
     std::vector<VkImage> m_swapChainImages;
