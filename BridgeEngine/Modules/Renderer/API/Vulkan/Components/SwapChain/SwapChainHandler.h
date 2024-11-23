@@ -38,10 +38,7 @@ private:
     std::vector<VkImageView> m_swapChainImageViews = {};
     std::vector<VkImage> m_swapChainImages = {};
 
-    /*VkSwapchainKHR m_swapChain;
-    VkFormat m_swapChainImageFormat;
-    VkExtent2D m_swapChainExtent;
-    std::vector<VkImageView> m_swapChainImageViews;*/
+    
     // HELPERS
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 
