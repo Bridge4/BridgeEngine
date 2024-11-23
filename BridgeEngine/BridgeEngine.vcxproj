@@ -152,7 +152,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Modules\Renderer\API\Vulkan\Resources\Buffers\BufferBuilder.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Buffers\BufferHandler.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\VulkanContext.cpp" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\VulkanDataStructures.h" />
@@ -163,7 +163,7 @@
     <ClCompile Include="Modules\Renderer\Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Modules\Renderer\API\Vulkan\Resources\Buffers\BufferBuilder.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Buffers\BufferHandler.h" />
     <ClInclude Include="Modules\Renderer\DataStructures.h" />
     <ClInclude Include="Modules\Renderer\API\Vulkan\Resources\ImageViews\ImageViewBuilder.h" />
     <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Devices\DeviceHandler.h" />

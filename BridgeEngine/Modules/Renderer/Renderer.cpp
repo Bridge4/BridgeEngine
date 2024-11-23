@@ -7,11 +7,11 @@ void Renderer::CreateAPIContext()
     this->vulkanContext = new VulkanContext();
     
     windowRef->vulkanContext = vulkanContext;
-    vulkanContext->windowRef = windowRef;
+    vulkanContext->windowHandler = windowRef;
     vulkanContext->Construct();
 }
 
-void Renderer::SetWindowRef(Window* window) 
+void Renderer::SetWindowRef(WindowHandler* window) 
 {
     this->windowRef = window;
 }

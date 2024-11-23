@@ -5,7 +5,7 @@
 
 #include "../../VulkanDataStructures.h"
 
-class Window;
+class WindowHandler;
 class VulkanContext;
 
 /*
@@ -20,7 +20,7 @@ public:
 #else
     const bool enableValidationLayers = true;
 #endif
-    DeviceHandler(VulkanContext* apiVulkan, Window* window) {
+    DeviceHandler(VulkanContext* apiVulkan, WindowHandler* window) {
         vulkanContext = apiVulkan;
         windowRef = window;
     }
@@ -42,7 +42,7 @@ private:
     const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
     const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
-    Window* windowRef = 0;
+    WindowHandler* windowRef = 0;
     VulkanContext* vulkanContext = 0;
 
     void InitializePhysicalDevice();

@@ -17,7 +17,7 @@ void SwapChainHandler::Initialize() {
 
     VkSurfaceKHR surface = vulkanContext->m_surface;
 
-    SwapChainSupportDetails swapChainSupport = devices->querySwapChainSupport(vulkanContext->devices->PhysicalDevice);
+    SwapChainSupportDetails swapChainSupport = devices->querySwapChainSupport(vulkanContext->deviceHandler->PhysicalDevice);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -41,7 +41,7 @@ void SwapChainHandler::Initialize() {
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndices indices = devices->findQueueFamilies(vulkanContext->devices->PhysicalDevice);
+    QueueFamilyIndices indices = devices->findQueueFamilies(vulkanContext->deviceHandler->PhysicalDevice);
     uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
     if (indices.graphicsFamily != indices.presentFamily) {
@@ -62,13 +62,13 @@ void SwapChainHandler::Initialize() {
 
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(vulkanContext->devices->LogicalDevice, &createInfo, nullptr, &m_swapChain) != VK_SUCCESS) {
+    if (vkCreateSwapchainKHR(vulkanContext->deviceHandler->LogicalDevice, &createInfo, nullptr, &m_swapChain) != VK_SUCCESS) {
         throw std::runtime_error("failed to create swap chain!");
     }
 
-    vkGetSwapchainImagesKHR(vulkanContext->devices->LogicalDevice, m_swapChain, &imageCount, nullptr);
+    vkGetSwapchainImagesKHR(vulkanContext->deviceHandler->LogicalDevice, m_swapChain, &imageCount, nullptr);
     m_swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(vulkanContext->devices->LogicalDevice, m_swapChain, &imageCount, m_swapChainImages.data());
+    vkGetSwapchainImagesKHR(vulkanContext->deviceHandler->LogicalDevice, m_swapChain, &imageCount, m_swapChainImages.data());
 
     m_swapChainImageFormat = surfaceFormat.format;
     m_swapChainExtent = extent;
@@ -76,7 +76,7 @@ void SwapChainHandler::Initialize() {
     m_swapChainImageViews.resize(m_swapChainImages.size());
     for (size_t i = 0; i < m_swapChainImages.size(); i++) {
         // Moved definition for createImageView() to a class and turned into a static function
-        m_swapChainImageViews[i] = imageViewBuilder->Build(vulkanContext->devices->LogicalDevice, m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+        m_swapChainImageViews[i] = imageViewBuilder->Build(vulkanContext->deviceHandler->LogicalDevice, m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
 
@@ -85,6 +85,7 @@ void SwapChainHandler::Initialize() {
     SwapChainExtent = m_swapChainExtent;
     SwapChainImageViews = m_swapChainImageViews;
 }
+
 
 // HELPERS
 VkSurfaceFormatKHR SwapChainHandler::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {

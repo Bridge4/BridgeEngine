@@ -42,8 +42,8 @@
 class DeviceHandler;
 class SwapChainHandler;
 class ImageViewBuilder;
-class BufferBuilder;
-class Window;
+class BufferHandler;
+class WindowHandler;
 
 class VulkanContext {
 public:
@@ -56,12 +56,12 @@ public:
 
     void RenderLoop();
 
-    DeviceHandler* devices;
-    //Window window;
+    DeviceHandler* deviceHandler;
     SwapChainHandler* swapChainHandler;
+    WindowHandler* windowHandler;
+    BufferHandler* bufferHandler;
+
     ImageViewBuilder* imageViewBuilder;
-    Window* windowRef;
-    BufferBuilder* bufferHandler;
 
     VkSurfaceKHR m_surface;
     VkQueue m_graphicsQueue;
@@ -98,9 +98,9 @@ public:
     VkSampler m_textureSampler;
     VkDeviceMemory m_textureImageMemory;
 
-    std::vector<VkBuffer> m_uniformBuffers;
+    /*std::vector<VkBuffer> m_uniformBuffers;
     std::vector<VkDeviceMemory> m_uniformBuffersMemory;
-    std::vector<void*> m_uniformBuffersMapped;
+    std::vector<void*> m_uniformBuffersMapped;*/
 
     VkImage m_depthImage;
     VkDeviceMemory m_depthImageMemory;
@@ -189,15 +189,6 @@ private:
 
     void LoadModel();
 
-    // VERTEX BUFFER
-    void CreateVertexBuffer();
-    
-    // INDEX BUFFER
-    void CreateIndexBuffer();
-
-    // UNIFORM BUFFERS
-    void CreateUniformBuffers();
-
     // DESCRIPTOR POOL
     void CreateDescriptorPool();
 
@@ -230,7 +221,7 @@ private:
     // DRAW FRAME
     void DrawFrame();
 
-    void updateUniformBuffer(uint32_t currentImage);
+    //void updateUniformBuffer(uint32_t currentImage);
 
     // SHADER MODULES
     VkShaderModule createShaderModule(const std::vector<char>& code);

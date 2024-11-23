@@ -5,13 +5,13 @@
 class VulkanContext;
 class DeviceHandler;
 class ImageViewBuilder;
-class Window;
+class WindowHandler;
 
 
 class SwapChainHandler
 {
 public: 
-    SwapChainHandler(VulkanContext* context, DeviceHandler* dHandler, Window* targetWindow, ImageViewBuilder* imgViewBldr) 
+    SwapChainHandler(VulkanContext* context, DeviceHandler* dHandler, WindowHandler* targetWindow, ImageViewBuilder* imgViewBldr) 
     {
         vulkanContext = context;
         devices = dHandler;
@@ -29,7 +29,7 @@ public:
 private:
     VulkanContext* vulkanContext = 0;
     DeviceHandler* devices = 0;
-    Window* windowRef = 0;
+    WindowHandler* windowRef = 0;
     ImageViewBuilder* imageViewBuilder = 0;
 
     VkSwapchainKHR m_swapChain = nullptr;

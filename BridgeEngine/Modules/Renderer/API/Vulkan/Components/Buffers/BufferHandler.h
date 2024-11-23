@@ -4,38 +4,52 @@
 #include <vector>
 
 class VulkanContext;
+class DeviceHandler;
+class SwapChainHandler;
 
 struct Vertex;
 struct UniformBufferObject;
 
 enum BufferBuildType;
 
-class BufferBuilder
+class BufferHandler
 {
 public:
-	BufferBuilder(VulkanContext* vulkanContext) {
+	BufferHandler(VulkanContext* vulkanContext, DeviceHandler* deviceHandler, SwapChainHandler* swapChainHandler) {
 		this->vulkanContext = vulkanContext;
+		this->deviceHandler = deviceHandler;
+		this->swapChainHandler = swapChainHandler;
 	}
+
+	void DestroyBuffers();
 
 	void BuildVertexBuffer(BufferBuildType buildType, std::vector<Vertex> vertices);
 
 	void BuildIndexBuffer(BufferBuildType buildType, std::vector<uint32_t> indices);
 
-	void BuildUniformBuffer(BufferBuildType buildType, std::vector<UniformBufferObject> ubos);
+	void BuildUniformBuffers(BufferBuildType buildType);
+
+	void UpdateUniformBuffer(uint32_t currentImage);
 
 	void BuildCommandBuffers();
 
 	VkBuffer VertexBuffer = 0;
+	VkDeviceMemory VertexBufferMemory = 0;
 
-	VkBuffer IndexBuffer = nullptr;
+	VkBuffer IndexBuffer = 0;
+	VkDeviceMemory IndexBufferMemory = 0;
 
 	std::vector<VkCommandBuffer> CommandBuffers = {};
 
-	std::vector<UniformBufferObject> UniformBufferObjects = {};
-
+	std::vector<VkBuffer> UniformBuffers = {};
+	std::vector<VkDeviceMemory> UniformBuffersMemory = {};
+	std::vector<void*> UniformBuffersMapped = {};
 private:
 
 	VulkanContext* vulkanContext = nullptr;
+
+	DeviceHandler* deviceHandler = nullptr;
+	SwapChainHandler* swapChainHandler = nullptr;
 
 	VkCommandPool m_commandPool = nullptr;
 

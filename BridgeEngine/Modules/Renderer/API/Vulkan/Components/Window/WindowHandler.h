@@ -5,12 +5,12 @@ class VulkanContext;
 struct GLFWwindow;
 enum VkResult;
 
-class Window
+class WindowHandler
 {
 
 public:
 
-    Window() {};
+    WindowHandler() {};
 
     void SetApiContext(VulkanContext* apiVulkan) {
         vulkanContext = apiVulkan;

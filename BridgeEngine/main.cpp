@@ -5,7 +5,7 @@
 
 int main() {
     try {
-        Window* window = new Window();
+        WindowHandler* window = new WindowHandler();
         window->Create(1920, 1080);
 
         Renderer* renderer = new Renderer(window);

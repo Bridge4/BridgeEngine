@@ -4,12 +4,12 @@
 #include "../../VulkanContext.h"
 #include <string>
 
-VkResult Window::CreateSurface()
+VkResult WindowHandler::CreateSurface()
 {
     return glfwCreateWindowSurface(vulkanContext->m_instance, r_window, nullptr, &vulkanContext->m_surface);
 }
 
-void Window::Create(uint32_t w, uint32_t h) {
+void WindowHandler::Create(uint32_t w, uint32_t h) {
     m_width = w, m_height = h;
     // GLFW creates an OpenGL context so we need to undo that
     glfwInit();
@@ -25,7 +25,7 @@ void Window::Create(uint32_t w, uint32_t h) {
     glfwSetFramebufferSizeCallback(r_window, framebufferResizeCallback);
 }
 
-void Window::handleMinimization()
+void WindowHandler::handleMinimization()
 {
     int w = 0, h = 0;
     glfwGetFramebufferSize(r_window, &w, &h);
@@ -37,27 +37,27 @@ void Window::handleMinimization()
     
 }
 
-void Window::getFramebufferSize(int* width, int* height)
+void WindowHandler::getFramebufferSize(int* width, int* height)
 {
     glfwGetFramebufferSize(r_window, width, height);
 }
 
-void Window::Destroy() {
+void WindowHandler::Destroy() {
     glfwDestroyWindow(r_window);
     glfwTerminate();
 }
 
-int Window::shouldClose() {
+int WindowHandler::shouldClose() {
     return glfwWindowShouldClose(r_window);
 }
 
-void Window::poll() {
+void WindowHandler::poll() {
     glfwPollEvents();
 }
 // Checks if the framebuffer has been resized using GLFW function
-void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height) {
+void WindowHandler::framebufferResizeCallback(GLFWwindow* window, int width, int height) {
     // glfwWindowUserPointer returns a reference to our app, so we cast it to HelloTriangleApplication then set that app object's 
     // framebufferResized variable to true
-    auto wnd = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+    auto wnd = reinterpret_cast<WindowHandler*>(glfwGetWindowUserPointer(window));
     wnd->framebufferResized = true;
 }
