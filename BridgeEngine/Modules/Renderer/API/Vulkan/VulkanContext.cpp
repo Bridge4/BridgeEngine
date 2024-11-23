@@ -26,8 +26,9 @@
 #include "Components/Window/WindowHandler.h"
 
 #include "Resources/ImageViews/ImageViewBuilder.h"
-
+#include "Resources/Buffers/BufferBuilder.h"
 void VulkanContext::Construct() {
+    bufferHandler = new BufferBuilder(this);
     devices = new DeviceHandler(this, windowRef);
     imageViewBuilder = new ImageViewBuilder();
     swapChainHandler = new SwapChainHandler(this, devices, windowRef, imageViewBuilder);
@@ -58,7 +59,9 @@ void VulkanContext::Construct() {
 
     LoadModel();
 
-    CreateVertexBuffer();
+    //CreateVertexBuffer();
+    
+    bufferHandler->BuildVertexBuffer(STAGED, m_vertices);
     CreateIndexBuffer();
     CreateUniformBuffers();
 
@@ -66,7 +69,8 @@ void VulkanContext::Construct() {
     CreateDescriptorPool();
     CreateDescriptorSets();
 
-    CreateCommandBuffers();
+    //CreateCommandBuffers();
+    bufferHandler->BuildCommandBuffers();
     CreateSyncObjects();   
 }
 
@@ -588,10 +592,10 @@ void VulkanContext::CreateVertexBuffer() {
     createBuffer(bufferSize,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        m_vertexBuffer, m_vertexBufferMemory);
+        bufferHandler->VertexBuffer, m_vertexBufferMemory);
 
     // Copy data from staging buffer to vertex buffer
-    copyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
+    copyBuffer(stagingBuffer, bufferHandler->VertexBuffer, bufferSize);
 
     // cleanup
     vkDestroyBuffer(devices->LogicalDevice, stagingBuffer, nullptr);
@@ -806,7 +810,7 @@ void VulkanContext::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
     scissor.extent = swapChainHandler->SwapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    VkBuffer vertexBuffers[] = { m_vertexBuffer };
+    VkBuffer vertexBuffers[] = { bufferHandler->VertexBuffer };
     VkDeviceSize offsets[] = { 0 };
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
@@ -884,8 +888,8 @@ void VulkanContext::DrawFrame() {
     vkResetFences(devices->LogicalDevice, 1, &m_inFlightFences[m_currentFrame]);
 
     // Record a command buffer which draws the scene onto that image
-    vkResetCommandBuffer(m_commandBuffers[m_currentFrame], 0);
-    recordCommandBuffer(m_commandBuffers[m_currentFrame], imageIndex);
+    vkResetCommandBuffer(bufferHandler->CommandBuffers[m_currentFrame], 0);
+    recordCommandBuffer(bufferHandler->CommandBuffers[m_currentFrame], imageIndex);
 
     // Submit the recorded command buffer
     VkSubmitInfo submitInfo{};
@@ -898,7 +902,7 @@ void VulkanContext::DrawFrame() {
     submitInfo.pWaitDstStageMask = waitStages;
 
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &m_commandBuffers[m_currentFrame];
+    submitInfo.pCommandBuffers = &bufferHandler->CommandBuffers[m_currentFrame];
 
     VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
     submitInfo.signalSemaphoreCount = 1;
@@ -1094,7 +1098,7 @@ void VulkanContext::Destroy() {
     // Buffer cleanup
     vkDestroyBuffer(devices->LogicalDevice, m_indexBuffer, nullptr);
     vkFreeMemory(devices->LogicalDevice, m_indexBufferMemory, nullptr);
-    vkDestroyBuffer(devices->LogicalDevice, m_vertexBuffer, nullptr);
+    vkDestroyBuffer(devices->LogicalDevice, bufferHandler->VertexBuffer, nullptr);
     vkFreeMemory(devices->LogicalDevice, m_vertexBufferMemory, nullptr);
 
     vkDestroyPipeline(devices->LogicalDevice, m_graphicsPipeline, nullptr);

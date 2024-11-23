@@ -77,7 +77,7 @@ void BufferBuilder::BuildCommandBuffers() {
 
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = m_commandPool;
+    allocInfo.commandPool = vulkanContext->m_commandPool;
     /*
         VK_COMMAND_BUFFER_LEVEL_PRIMARY: Can be submitted to a queue for execution, but cannot be called from other command buffers.
         VK_COMMAND_BUFFER_LEVEL_SECONDARY: Cannot be submitted directly, but can be called from primary command buffers.
@@ -124,19 +124,19 @@ void BufferBuilder::buildBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkM
 }
 
 void BufferBuilder::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
     VkBufferCopy copyRegion{};
     copyRegion.size = size;
     vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-    endSingleTimeCommands(commandBuffer);
+    EndSingleTimeCommands(commandBuffer);
 }
 
 // beginSingleTimeCommands and endSingleTimeCommands are helpers for copyBuffer
-VkCommandBuffer BufferBuilder::beginSingleTimeCommands() {
+VkCommandBuffer BufferBuilder::BeginSingleTimeCommands() {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = m_commandPool;
+    allocInfo.commandPool = vulkanContext->m_commandPool;
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
@@ -152,7 +152,7 @@ VkCommandBuffer BufferBuilder::beginSingleTimeCommands() {
 }
 
 
-void BufferBuilder::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+void BufferBuilder::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{};
@@ -163,7 +163,7 @@ void BufferBuilder::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
     vkQueueSubmit(vulkanContext->m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(vulkanContext->m_graphicsQueue);
 
-    vkFreeCommandBuffers(vulkanContext->devices->LogicalDevice, m_commandPool, 1, &commandBuffer);
+    vkFreeCommandBuffers(vulkanContext->devices->LogicalDevice, vulkanContext->m_commandPool, 1, &commandBuffer);
 }
 
 

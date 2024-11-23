@@ -25,7 +25,7 @@ public:
 
 	void BuildCommandBuffers();
 
-	VkBuffer VertexBuffer = nullptr;
+	VkBuffer VertexBuffer = 0;
 
 	VkBuffer IndexBuffer = nullptr;
 
@@ -44,9 +44,9 @@ private:
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 	// COPY BUFFER
 	
-	VkCommandBuffer beginSingleTimeCommands();
+	VkCommandBuffer BeginSingleTimeCommands();
 
-	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+	void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
