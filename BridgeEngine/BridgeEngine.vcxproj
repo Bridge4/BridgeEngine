@@ -153,25 +153,23 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\DebugMessenger.cpp" />
-    <ClCompile Include="Modules\Renderer\API\Vulkan\VulkanBridge.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\VulkanContext.cpp" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\VulkanDataStructures.h" />
-    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\ImageView.cpp" />
-    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Initializer.cpp" />
-    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\SwapChainBuilder.cpp" />
-    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Window.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Resources\ImageViews\ImageViewBuilder.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Devices\DeviceHandler.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\SwapChain\SwapChainHandler.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Window\WindowHandler.cpp" />
     <ClCompile Include="Modules\Renderer\Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\DebugMessenger.h" />
     <ClInclude Include="Modules\Renderer\DataStructures.h" />
     <ClInclude Include="Modules\Renderer\API\Vulkan\Components\GraphicsPipeline.h" />
-    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\ImageView.h" />
-    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Initializer.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Resources\ImageViews\ImageViewBuilder.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Devices\DeviceHandler.h" />
     <ClInclude Include="Modules\Renderer\Renderer.h" />
-    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\SwapChainBuilder.h" />
-    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Window.h" />
-    <ClInclude Include="Modules\Renderer\API\Vulkan\VulkanBridge.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\SwapChain\SwapChainHandler.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Window\WindowHandler.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\VulkanContext.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

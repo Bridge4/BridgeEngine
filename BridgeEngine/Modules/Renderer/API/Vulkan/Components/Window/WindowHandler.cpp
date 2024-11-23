@@ -1,15 +1,15 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include "Window.h"
-#include "../VulkanBridge.h"
+#include "WindowHandler.h"
+#include "../../VulkanContext.h"
 #include <string>
 
-VkResult Window::createSurface()
+VkResult Window::CreateSurface()
 {
     return glfwCreateWindowSurface(vulkanContext->m_instance, r_window, nullptr, &vulkanContext->m_surface);
 }
 
-void Window::createWindow(uint32_t w, uint32_t h) {
+void Window::Create(uint32_t w, uint32_t h) {
     m_width = w, m_height = h;
     // GLFW creates an OpenGL context so we need to undo that
     glfwInit();

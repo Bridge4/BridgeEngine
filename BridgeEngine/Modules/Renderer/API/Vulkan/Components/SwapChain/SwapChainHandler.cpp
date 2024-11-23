@@ -1,25 +1,23 @@
 #pragma once
-#include "SwapChainBuilder.h"
-#include "ImageView.h"
-#include "Initializer.h"
-#include "Window.h"
+#include "SwapChainHandler.h"
+#include "../../Resources/ImageViews/ImageViewBuilder.h"
+#include "../Devices/DeviceHandler.h"
+#include "../Window/WindowHandler.h"
 #include <stdexcept>
 #include <cstdlib>
 #include <vector>
 #include <algorithm>
-#include "../VulkanBridge.h"
+#include "../../VulkanContext.h"
 
-void SwapChainBuilder::Build() {
-    VkSwapchainKHR m_swapChain;
-    std::vector<VkImage> m_swapChainImages;
+void SwapChainHandler::Initialize() {
+    /*VkSwapchainKHR m_swapChain;
     std::vector<VkImageView> m_swapChainImageViews;
     VkFormat m_swapChainImageFormat;
-    VkExtent2D  m_swapChainExtent;
-    VkPhysicalDevice physDevice = vulkanContext->m_physicalDevice;
-    VkDevice device = vulkanContext->m_logicalDevice;
+    VkExtent2D  m_swapChainExtent;*/
+
     VkSurfaceKHR surface = vulkanContext->m_surface;
 
-    SwapChainSupportDetails swapChainSupport = vulkanInitializer->querySwapChainSupport(vulkanContext->m_physicalDevice);
+    SwapChainSupportDetails swapChainSupport = devices->querySwapChainSupport(vulkanContext->devices->PhysicalDevice);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -43,7 +41,7 @@ void SwapChainBuilder::Build() {
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndices indices = vulkanInitializer->findQueueFamilies(vulkanContext->m_physicalDevice);
+    QueueFamilyIndices indices = devices->findQueueFamilies(vulkanContext->devices->PhysicalDevice);
     uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
     if (indices.graphicsFamily != indices.presentFamily) {
@@ -64,13 +62,13 @@ void SwapChainBuilder::Build() {
 
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_swapChain) != VK_SUCCESS) {
+    if (vkCreateSwapchainKHR(vulkanContext->devices->LogicalDevice, &createInfo, nullptr, &m_swapChain) != VK_SUCCESS) {
         throw std::runtime_error("failed to create swap chain!");
     }
 
-    vkGetSwapchainImagesKHR(device, m_swapChain, &imageCount, nullptr);
+    vkGetSwapchainImagesKHR(vulkanContext->devices->LogicalDevice, m_swapChain, &imageCount, nullptr);
     m_swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(device, m_swapChain, &imageCount, m_swapChainImages.data());
+    vkGetSwapchainImagesKHR(vulkanContext->devices->LogicalDevice, m_swapChain, &imageCount, m_swapChainImages.data());
 
     m_swapChainImageFormat = surfaceFormat.format;
     m_swapChainExtent = extent;
@@ -78,18 +76,18 @@ void SwapChainBuilder::Build() {
     m_swapChainImageViews.resize(m_swapChainImages.size());
     for (size_t i = 0; i < m_swapChainImages.size(); i++) {
         // Moved definition for createImageView() to a class and turned into a static function
-        m_swapChainImageViews[i] = imageView->create(vulkanContext->m_logicalDevice, m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+        m_swapChainImageViews[i] = imageViewBuilder->Build(vulkanContext->devices->LogicalDevice, m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
 
-    vulkanContext->m_swapChain = m_swapChain;
-    vulkanContext->m_swapChainImageFormat = m_swapChainImageFormat;
-    vulkanContext->m_swapChainExtent = m_swapChainExtent;
-    vulkanContext->m_swapChainImageViews = m_swapChainImageViews;
+    SwapChain = m_swapChain;
+    SwapChainImageFormat = m_swapChainImageFormat;
+    SwapChainExtent = m_swapChainExtent;
+    SwapChainImageViews = m_swapChainImageViews;
 }
 
 // HELPERS
-VkSurfaceFormatKHR SwapChainBuilder::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
+VkSurfaceFormatKHR SwapChainHandler::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
     for (const auto& availableFormat : availableFormats) {
         if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             return availableFormat;
@@ -99,7 +97,7 @@ VkSurfaceFormatKHR SwapChainBuilder::chooseSwapSurfaceFormat(const std::vector<V
     return availableFormats[0];
 }
 
-VkPresentModeKHR SwapChainBuilder::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
+VkPresentModeKHR SwapChainHandler::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
     for (const auto& availablePresentMode : availablePresentModes) {
         if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
             return availablePresentMode;
@@ -109,7 +107,7 @@ VkPresentModeKHR SwapChainBuilder::chooseSwapPresentMode(const std::vector<VkPre
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D SwapChainBuilder::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
+VkExtent2D SwapChainHandler::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
     //Fun fact: wrapping a function call with parentheses can prevent macro expansions
     if (capabilities.currentExtent.width != (std::numeric_limits<uint32_t>::max)()) {
         return capabilities.currentExtent;

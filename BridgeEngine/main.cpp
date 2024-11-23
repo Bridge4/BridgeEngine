@@ -1,14 +1,12 @@
 #pragma once
 #include "Modules/Renderer/Renderer.h"
-#include "Modules/Renderer/API/Vulkan/Components/Window.h"
+#include "Modules/Renderer/API/Vulkan/Components/Window/WindowHandler.h"
 #include <iostream>
 
 int main() {
-    
-
     try {
         Window* window = new Window();
-        window->createWindow(1920, 1080);
+        window->Create(1920, 1080);
 
         Renderer* renderer = new Renderer(window);
         renderer->CreateAPIContext();

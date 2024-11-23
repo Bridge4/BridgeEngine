@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 
-class VulkanBridge;
+class VulkanContext;
 struct GLFWwindow;
 enum VkResult;
 
@@ -10,17 +10,10 @@ class Window
 
 public:
 
-    /*void handleInput() {
-        glfwSetKeyCallback(glfwKeyCalback);
-    };*/
-
-    /*Window(VulkanBridge* vulkanBridge) {
-        vulkanContext = vulkanBridge;
-    }*/
     Window() {};
 
-    void SetApiContext(VulkanBridge* vulkanBridge) {
-        vulkanContext = vulkanBridge;
+    void SetApiContext(VulkanContext* apiVulkan) {
+        vulkanContext = apiVulkan;
     }
 
     void Create();
@@ -39,12 +32,12 @@ public:
 
     GLFWwindow* getWindow() { return r_window; }
 
-    VkResult createSurface();
+    VkResult CreateSurface();
 
-    void createWindow(uint32_t width = 800, uint32_t height = 600);
+    void Create(uint32_t width = 800, uint32_t height = 600);
 
     //void GLFWCALL glfwKeyCalback(GLFWwindow* r_window, int key, int scancode, int action, int mods);
-    VulkanBridge* vulkanContext;
+    VulkanContext* vulkanContext;
 private:
     GLFWwindow* r_window;
 
@@ -52,7 +45,6 @@ private:
     
     // HELPERS
 
-        // Used by createWindow();
+    // Used by createWindow();
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
-
 };

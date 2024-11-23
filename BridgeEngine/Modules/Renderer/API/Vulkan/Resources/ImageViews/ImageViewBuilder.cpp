@@ -1,6 +1,6 @@
-#include "ImageView.h"
+#include "../ImageViews/ImageViewBuilder.h"
 #include <stdexcept>
-VkImageView ImageView::create(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+VkImageView ImageViewBuilder::Build(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
 {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

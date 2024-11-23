@@ -1,6 +1,6 @@
 #pragma once
 class Window;
-class VulkanBridge;
+class VulkanContext;
 
 
 class Renderer {
@@ -12,7 +12,7 @@ public:
     // Window Ref
     Window* windowRef = 0;
     // API Context
-    VulkanBridge* vulkanContext = 0;
+    VulkanContext* vulkanContext = 0;
 
     void CreateAPIContext();
     void SetWindowRef(Window* window);

@@ -3,11 +3,16 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif // !VK_USE_PLATFORM_WIN32_KHR
 
-#include "../VulkanDataStructures.h"
+#include "../../VulkanDataStructures.h"
 
 class Window;
-class VulkanBridge;
-class Initializer {
+class VulkanContext;
+
+/*
+*   Provides Physical and Logical Devices for use in Vulkan Context
+*   This class also sets up validation layers and the debug messenger.Will extract that out of the class in the future but for now prioritizing other tasks
+*/ 
+class DeviceHandler {
 
 public:
 #ifdef NDEBUG
@@ -15,16 +20,12 @@ public:
 #else
     const bool enableValidationLayers = true;
 #endif
-    Initializer(VulkanBridge* vulkanBridge, Window* window) {
-        vulkanContext = vulkanBridge;
+    DeviceHandler(VulkanContext* apiVulkan, Window* window) {
+        vulkanContext = apiVulkan;
         windowRef = window;
     }
 
-    void CreateDebugMessenger();
-    void GetPhysicalDevice();
-    void CreateLogicalDevice();
-    //void assign(VkSurfaceKHR* rSurface, VkPhysicalDevice* pDevice, VkDevice* device, VkQueue* gQueue, VkQueue* pQueue);
-
+    void Initialize();
 
     void Destroy();
 
@@ -33,13 +34,20 @@ public:
     // Used by isDeviceSuitable() and createLogicalDevice()
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice physicalDevice);
 
-    Window* windowRef = 0;
-    VulkanBridge* vulkanContext = 0;
+    
+    VkPhysicalDevice PhysicalDevice = nullptr;
+    VkDevice LogicalDevice = nullptr;
 private:
     // CONSTANTS
     const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
     const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
+    Window* windowRef = 0;
+    VulkanContext* vulkanContext = 0;
+
+    void InitializePhysicalDevice();
+    void InitializeLogicalDevice();
+    void InitializeDebugMessenger();
     // CORE FUNCTIONS
 
     // HELPER FUNCTIONS
@@ -65,5 +73,4 @@ private:
 
     // Used to destroy debugger
     void DestroyDebugUtilsMessengerEXT(const VkAllocationCallbacks* pAllocator);
-
 };

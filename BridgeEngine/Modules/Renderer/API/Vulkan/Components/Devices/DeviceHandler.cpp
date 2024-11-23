@@ -1,14 +1,21 @@
-#include "Initializer.h"
-#include "Window.h"
+#include "DeviceHandler.h"
+#include "../Window/WindowHandler.h"
 #include <iostream>
 #include <array>
 #include <set>
 #include <cstdint> // Necessary for uint32_t
 // CORE FUNCTIONS
-#include "Window.h"
-#include "../VulkanBridge.h"
+//#include "WindowHandler.h"
+#include "../../VulkanContext.h"
 
-void Initializer::CreateDebugMessenger() {
+
+void DeviceHandler::Initialize() {
+    InitializePhysicalDevice();
+    InitializeLogicalDevice();
+    InitializeDebugMessenger();
+}
+
+void DeviceHandler::InitializeDebugMessenger() {
     if (!enableValidationLayers) return;
 
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
@@ -23,7 +30,7 @@ void Initializer::CreateDebugMessenger() {
     }
 }
 
-void Initializer::GetPhysicalDevice() {
+void DeviceHandler::InitializePhysicalDevice() {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(vulkanContext->m_instance, &deviceCount, nullptr);
     // check if there are no compatible devices (GPUs)
@@ -38,19 +45,19 @@ void Initializer::GetPhysicalDevice() {
 
     for (const auto& device : devices) {
         if (isDeviceSuitable(device)) {
-            vulkanContext->m_physicalDevice = device;
+            PhysicalDevice = device;
             break;
         }
     }
 
-    if (vulkanContext->m_physicalDevice == VK_NULL_HANDLE) {
+    if (PhysicalDevice == VK_NULL_HANDLE) {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
 }
 
-void Initializer::CreateLogicalDevice() {
+void DeviceHandler::InitializeLogicalDevice() {
     // Specifying queues to be created
-    QueueFamilyIndices indices = findQueueFamilies(vulkanContext->m_physicalDevice);
+    QueueFamilyIndices indices = findQueueFamilies(PhysicalDevice);
     VkDeviceQueueCreateInfo queueCreateInfo{};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
@@ -79,27 +86,27 @@ void Initializer::CreateLogicalDevice() {
     createInfo.pEnabledFeatures = &deviceFeatures;
 
     // COMPATIBILITY WITH OLDER VULKAN
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(vulkanContext->deviceExtensions.size());
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
     if (enableValidationLayers) {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(vulkanContext->validationLayers.size());
+        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
     }
     else {
         createInfo.enabledLayerCount = 0;
     }
 
-    if (vkCreateDevice(vulkanContext->m_physicalDevice, &createInfo, nullptr, &vulkanContext->m_logicalDevice) != VK_SUCCESS) {
+    if (vkCreateDevice(PhysicalDevice, &createInfo, nullptr, &LogicalDevice) != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device!");
     }
 
-    vkGetDeviceQueue(vulkanContext->m_logicalDevice, indices.graphicsFamily.value(), 0, &vulkanContext->m_graphicsQueue);
-    vkGetDeviceQueue(vulkanContext->m_logicalDevice, indices.presentFamily.value(), 0, &vulkanContext->m_presentQueue);
+    vkGetDeviceQueue(LogicalDevice, indices.graphicsFamily.value(), 0, &vulkanContext->m_graphicsQueue);
+    vkGetDeviceQueue(LogicalDevice, indices.presentFamily.value(), 0, &vulkanContext->m_presentQueue);
 
 }
 
-void Initializer::Destroy() {
-    vkDestroyDevice(vulkanContext->m_logicalDevice, nullptr);
+void DeviceHandler::Destroy() {
+    vkDestroyDevice(LogicalDevice, nullptr);
     if (enableValidationLayers) {
         DestroyDebugUtilsMessengerEXT(nullptr);
     }
@@ -109,7 +116,7 @@ void Initializer::Destroy() {
 // HELPERS
 
 // createInstance()
-bool Initializer::checkValidationLayerSupport() {
+bool DeviceHandler::checkValidationLayerSupport() {
 
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -135,9 +142,8 @@ bool Initializer::checkValidationLayerSupport() {
     return true;
 }
 
-
 // pickPhysicalDevice()
-bool Initializer::isDeviceSuitable(VkPhysicalDevice device) {
+bool DeviceHandler::isDeviceSuitable(VkPhysicalDevice device) {
     // Fetching deviceProperties and deviceFeatures in case we want to check for specifics
     /*
     VkPhysicalDeviceProperties deviceProperties;
@@ -165,7 +171,7 @@ bool Initializer::isDeviceSuitable(VkPhysicalDevice device) {
 }
 
 // isDeviceSuitable()
-bool Initializer::checkDeviceExtensionSupport(VkPhysicalDevice device) {
+bool DeviceHandler::checkDeviceExtensionSupport(VkPhysicalDevice device) {
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
@@ -182,7 +188,7 @@ bool Initializer::checkDeviceExtensionSupport(VkPhysicalDevice device) {
     return requiredExtensions.empty();
 }
 
-SwapChainSupportDetails Initializer::querySwapChainSupport(VkPhysicalDevice physicalDevice) {
+SwapChainSupportDetails DeviceHandler::querySwapChainSupport(VkPhysicalDevice physicalDevice) {
 
     // Fetching the capabilities of the device and surface
 
@@ -212,7 +218,7 @@ SwapChainSupportDetails Initializer::querySwapChainSupport(VkPhysicalDevice phys
 }
 
 // isDeviceSuitable() + createLogicalDevice()
-QueueFamilyIndices Initializer::findQueueFamilies(VkPhysicalDevice physicalDevice) {
+QueueFamilyIndices DeviceHandler::findQueueFamilies(VkPhysicalDevice physicalDevice) {
     QueueFamilyIndices indices;
     uint32_t queueFamilyCount = 0;
 
@@ -240,15 +246,14 @@ QueueFamilyIndices Initializer::findQueueFamilies(VkPhysicalDevice physicalDevic
     return indices;
 }
 
-
-VKAPI_ATTR VkBool32 VKAPI_CALL Initializer::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
+VKAPI_ATTR VkBool32 VKAPI_CALL DeviceHandler::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
     std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
     return VK_FALSE;
 }
 
 // setupDebugMessenger()
-VkResult Initializer::CreateDebugUtilsMessengerEXT(const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+VkResult DeviceHandler::CreateDebugUtilsMessengerEXT(const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vulkanContext->m_instance, "vkCreateDebugUtilsMessengerEXT");
     if (func != nullptr) {
         return func(vulkanContext->m_instance, pCreateInfo, pAllocator, pDebugMessenger);
@@ -258,7 +263,7 @@ VkResult Initializer::CreateDebugUtilsMessengerEXT(const VkDebugUtilsMessengerCr
     }
 }
 
-void Initializer::DestroyDebugUtilsMessengerEXT(const VkAllocationCallbacks* pAllocator) {
+void DeviceHandler::DestroyDebugUtilsMessengerEXT(const VkAllocationCallbacks* pAllocator) {
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vulkanContext->m_instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr) {
         func(vulkanContext->m_instance, vulkanContext->m_debugMessenger, pAllocator);
