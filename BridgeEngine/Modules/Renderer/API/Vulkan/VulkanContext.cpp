@@ -62,6 +62,7 @@ void VulkanContext::Construct() {
     CreateIndexBuffer();
     CreateUniformBuffers();
 
+
     CreateDescriptorPool();
     CreateDescriptorSets();
 
@@ -567,19 +568,15 @@ void VulkanContext::LoadModel() {
 }
 
 // VERTEX BUFFER
+// Call BuildBuffer(STAGED)
 void VulkanContext::CreateVertexBuffer() {
-
-    // TODO: Go over staging buffers and why the hell we need them
 
     VkDeviceSize bufferSize = sizeof(m_vertices[0]) * m_vertices.size();
 
     // Create staging buffer
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    createBuffer(bufferSize,
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        stagingBuffer, stagingBufferMemory);
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
     // Map it
     void* data;
@@ -602,8 +599,28 @@ void VulkanContext::CreateVertexBuffer() {
 }
 
 // INDEX BUFFER
+// Call BuildBuffer(STAGED)
 void VulkanContext::CreateIndexBuffer() {
     VkDeviceSize bufferSize = sizeof(m_indices[0]) * m_indices.size();
+
+    /*
+    *   STAGED BUFFER CREATION
+    *   
+    *   Goal is to take data from sourceDataObject and put it into a destination buffer
+    * 
+    *   1 - Create a staging buffer with size = sizeof(sourceDataObject[0]) * sourceDataObject.size()
+    *   2 - Map data into a VkDeviceMemory stagingBufferMemory
+    *   3 - Copy data from sourceDataObject to a void* data object
+    *   4 - Unmap stagingBufferMemory
+    *   5 - Create destination buffer
+    *   6 - Copy staging buffer into destination buffer
+    *   7 - Destroy staging buffer
+    *   8 - Free stagingBufferMemory
+    *   
+    *   UNSTAGED BUFFER CREATION
+    *   1 - Create a destination buffer with size = sizeof(sourceDataObject) || size = sizeof(sourceDataObject[0]) * sourceDataObject.size()
+    *   2 - Map memory
+    */
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -623,14 +640,18 @@ void VulkanContext::CreateIndexBuffer() {
 }
 
 // UNIFORM BUFFERS
+// Call BuildBuffer(UNSTAGED)
 void VulkanContext::CreateUniformBuffers() {
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
+    // Create a uniform buffer per frame in flight
     m_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
     m_uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
     m_uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i], m_uniformBuffersMemory[i], UNSTAGED)
+        // Create then Map to memory
         createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_uniformBuffers[i], m_uniformBuffersMemory[i]);
         vkMapMemory(devices->LogicalDevice, m_uniformBuffersMemory[i], 0, bufferSize, 0, &m_uniformBuffersMapped[i]);
     }
@@ -1109,6 +1130,7 @@ void VulkanContext::updateUniformBuffer(uint32_t currentImage) {
 
     memcpy(m_uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 }
+
 VkShaderModule VulkanContext::createShaderModule(const std::vector<char>& code)
 {
     
@@ -1149,6 +1171,8 @@ void VulkanContext::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, Vk
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
+    // VkAllocateMemory is an expensive operation on the CPU side, so we should minimize calls to it
+    // "Aggressively allocate your buffer as large as you believe it will grow" - dude on stackoverflow
     if (vkAllocateMemory(devices->LogicalDevice, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate buffer memory!");
     }
@@ -1211,7 +1235,6 @@ void VulkanContext::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t w
         &region
     );
     endSingleTimeCommands(commandBuffer);
-
 }
 
 // beginSingleTimeCommands and endSingleTimeCommands are helpers for copyBuffer

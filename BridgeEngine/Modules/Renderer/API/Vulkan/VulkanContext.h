@@ -42,6 +42,7 @@
 class DeviceHandler;
 class SwapChainHandler;
 class ImageViewBuilder;
+class BufferBuilder;
 class Window;
 
 class VulkanContext {
@@ -60,6 +61,7 @@ public:
     SwapChainHandler* swapChainHandler;
     ImageViewBuilder* imageViewBuilder;
     Window* windowRef;
+    BufferBuilder* bufferHandler;
 
     VkSurfaceKHR m_surface;
     VkQueue m_graphicsQueue;
@@ -189,7 +191,7 @@ private:
 
     // VERTEX BUFFER
     void CreateVertexBuffer();
-
+    
     // INDEX BUFFER
     void CreateIndexBuffer();
 
@@ -214,7 +216,6 @@ private:
     // COPY BUFFER
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-    // TODO: Move this to the Texture class as well as the Image class if I end up creating that (the Image class)
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
     // COMMAND BUFFER
