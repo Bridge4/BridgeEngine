@@ -71,13 +71,6 @@ public:
     VkQueue m_graphicsQueue;
     VkQueue m_presentQueue;
 
-    /*VkSwapchainKHR m_swapChain;
-    VkFormat m_swapChainImageFormat;
-    VkExtent2D swapChainHandler->SwapChainExtent;
-    std::vector<VkImageView> m_swapChainImageViews;*/
-
-    //VkRenderPass m_renderPass;
-
     VkDescriptorSetLayout m_descriptorSetLayout;
     VkDescriptorPool m_descriptorPool;
     std::vector<VkDescriptorSet> m_descriptorSets;
@@ -91,17 +84,10 @@ public:
     std::vector<Vertex> m_vertices;
     std::vector<uint32_t> m_indices;
 
-    /*
-    VkBuffer m_vertexBuffer;
-    VkDeviceMemory m_vertexBufferMemory;
 
-    VkBuffer m_indexBuffer;
-    VkDeviceMemory m_indexBufferMemory;
-    */
-
-    VkImage m_depthImage;
+    /*VkImage m_depthImage;
     VkDeviceMemory m_depthImageMemory;
-    VkImageView m_depthImageView;
+    VkImageView m_depthImageView;*/
 
     VkImage m_textureImage;
     VkImageView m_textureImageView;
@@ -155,9 +141,6 @@ private:
     */
     void CreateGraphicsPipeline();
 
-    // SWAPCHAIN FRAME BUFFERS
-    void CreateFramebuffers();
-
     // COMMAND POOL
     /*
         Command pools manage the memory used to store command buffers
@@ -165,11 +148,7 @@ private:
     */
     void CreateCommandPool();
 
-    void CreateDepthResources();
-
-    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-
-    VkFormat findDepthFormat();
+    //VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
     // TEXTURE IMAGE
     void CreateTextureImage();

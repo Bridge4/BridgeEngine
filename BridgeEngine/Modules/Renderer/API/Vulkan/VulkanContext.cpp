@@ -42,29 +42,28 @@ void VulkanContext::Construct() {
     if (windowHandler->CreateSurface() != VK_SUCCESS)
         throw std::runtime_error("Failed to create window surface");
     
-    // Initializes physical device and logical device
+
     deviceHandler->Initialize();
-
-
     swapChainHandler->Initialize();
-    
-
-    renderPassHandler->CreateRenderPass();
+    renderPassHandler->Initialize();
+    swapChainHandler->AttachRenderPassHandler(renderPassHandler);
+    CreateCommandPool();
+    swapChainHandler->CreateFramebuffers();
+    //swapChainHandler->CreateDepthResources();
 
     CreateDescriptorSetLayout();
     CreateGraphicsPipeline();
-    CreateCommandPool();
 
-    CreateDepthResources();
-    CreateFramebuffers();
+
+    /*CreateDepthResources();
+    CreateFramebuffers();*/
+
 
     CreateTextureImage();
     CreateTextureImageView();
     CreateTextureSampler();
 
     LoadModel();
-
-    //CreateVertexBuffer();
     
     bufferHandler->BuildVertexBuffer(STAGED, m_vertices);
     bufferHandler->BuildIndexBuffer(STAGED, m_indices);
@@ -80,7 +79,6 @@ void VulkanContext::Construct() {
     CreateSyncObjects();   
 }
 
-
 void VulkanContext::RenderLoop() {
     while (!windowHandler->ShouldClose()) {
         
@@ -91,91 +89,6 @@ void VulkanContext::RenderLoop() {
     Destroy();
 }
 
-//void VulkanContext::CreateRenderPass() {
-//    VkAttachmentDescription colorAttachment{};
-//    colorAttachment.format = swapChainHandler->SwapChainImageFormat;
-//    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-//    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-//    // Store rendered contents in memory to be read later
-//    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-//
-//    // Lookup stencil buffers later
-//    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-//    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-//
-//    // The initialLayout specifies which layout the image will have before the render pass begins.
-//    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-//
-//    /*
-//        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL: Images used as color attachment
-//        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR: Images to be presented in the swap chain
-//        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : Images to be used as destination for a memory copy operation
-//
-//        "The caveat of this special value is that the contents of the image are not guaranteed to be preserved,
-//        but that doesn't matter since we're going to clear it anyway.
-//        We want the image to be ready for presentation using the swap chain after rendering,
-//        which is why we use VK_IMAGE_LAYOUT_PRESENT_SRC_KHR as finalLayout."
-//    */
-//
-//    // The finalLayout specifies the layout to automatically transition to when the render pass finishes. 
-//    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-//
-//    VkAttachmentReference colorAttachmentRef{};
-//    colorAttachmentRef.attachment = 0;
-//    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-//
-//    VkAttachmentDescription depthAttachment{};
-//    depthAttachment.format = findDepthFormat();
-//    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-//    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-//    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-//    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-//    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-//    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-//    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-//
-//    VkAttachmentReference depthAttachmentRef{};
-//    depthAttachmentRef.attachment = 1;
-//    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-//
-//    VkSubpassDescription subpass{};
-//    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-//    /*
-//        pInputAttachments: Attachments that are read from a shader
-//        pResolveAttachments: Attachments used for multisampling color attachments
-//        pDepthStencilAttachment : Attachment for depthand stencil data
-//        pPreserveAttachments : Attachments that are not used by this subpass, but for which the data must be preserved
-//    */
-//    // The index of the attachment in this array is directly referenced from the fragment shader with the layout(location = 0) out vec4 outColor directive
-//    subpass.colorAttachmentCount = 1;
-//    subpass.pColorAttachments = &colorAttachmentRef;
-//    subpass.pDepthStencilAttachment = &depthAttachmentRef;
-//
-//
-//    VkSubpassDependency dependency{};
-//    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-//    dependency.dstSubpass = 0;
-//    dependency.srcAccessMask = 0;
-//
-//    // Creating render pass object and populating the struct with necessary properties
-//    std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
-//    VkRenderPassCreateInfo renderPassInfo{};
-//    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-//    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-//    renderPassInfo.pAttachments = attachments.data();
-//    renderPassInfo.subpassCount = 1;
-//    renderPassInfo.pSubpasses = &subpass;
-//    renderPassInfo.dependencyCount = 1;
-//    renderPassInfo.pDependencies = &dependency;
-//
-//    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-//    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-//    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-//
-//    if (vkCreateRenderPass(deviceHandler->LogicalDevice, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS) {
-//        throw std::runtime_error("failed to create render pass!");
-//    }
-//}
 
 void VulkanContext::CreateDescriptorSetLayout() {
 
@@ -414,43 +327,6 @@ void VulkanContext::CreateCommandPool() {
     if (vkCreateCommandPool(deviceHandler->LogicalDevice, &poolInfo, nullptr, &m_commandPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create command pool!");
     }
-}
-
-// TODO: Move this to SwapChainBuilder
-void VulkanContext::CreateFramebuffers() {
-    m_swapChainFramebuffers.resize(swapChainHandler->SwapChainImageViews.size());
-
-    // Loop through swap chain image views
-    for (size_t i = 0; i < swapChainHandler->SwapChainImageViews.size(); i++) {
-        std::array<VkImageView, 2> attachments = {
-            swapChainHandler->SwapChainImageViews[i],
-            m_depthImageView
-        };
-
-        VkFramebufferCreateInfo framebufferInfo{};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = renderPassHandler->renderPass;
-        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-        framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width = swapChainHandler->SwapChainExtent.width;
-        framebufferInfo.height = swapChainHandler->SwapChainExtent.height;
-        framebufferInfo.layers = 1;
-
-        if (vkCreateFramebuffer(deviceHandler->LogicalDevice, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create framebuffer!");
-        }
-    }
-}
-
-void VulkanContext::CreateDepthResources() {
-    VkFormat depthFormat = findDepthFormat();
-    createImage(swapChainHandler->SwapChainExtent.width, swapChainHandler->SwapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        m_depthImage, m_depthImageMemory);
-    m_depthImageView = imageViewBuilder->Build(deviceHandler->LogicalDevice, m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-
-    transitionImageLayout(m_depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
 void VulkanContext::CreateTextureImage() {
@@ -694,7 +570,7 @@ void VulkanContext::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
     renderPassInfo.renderPass = renderPassHandler->renderPass;
     // DEBUG
     //printf("imageIndex DEBUG: %d\n", imageIndex);
-    renderPassInfo.framebuffer = m_swapChainFramebuffers[imageIndex];
+    renderPassInfo.framebuffer = swapChainHandler->SwapChainFramebuffers[imageIndex];
     renderPassInfo.renderArea.offset = { 0, 0 };
     renderPassInfo.renderArea.extent = swapChainHandler->SwapChainExtent;
 
@@ -795,7 +671,7 @@ void VulkanContext::DrawFrame() {
     // SWAP CHAIN RECREATION
     VkResult result = vkAcquireNextImageKHR(deviceHandler->LogicalDevice, swapChainHandler->SwapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        RebuildSwapChain();
+        swapChainHandler->Rebuild();
         return;
     }
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
@@ -849,7 +725,7 @@ void VulkanContext::DrawFrame() {
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || windowHandler->framebufferResized) {
         windowHandler->framebufferResized = false;
-        RebuildSwapChain();
+        swapChainHandler->Rebuild();
     }
     else if (result != VK_SUCCESS) {
         throw std::runtime_error("failed to present swap chain image!");
@@ -964,40 +840,9 @@ void VulkanContext::CreateVulkanContext()
 // END_REGION createInstance()
 
 
-void VulkanContext::RebuildSwapChain() {
-    // Handling minimization
-    windowHandler->handleMinimization();
-
-    vkDeviceWaitIdle(deviceHandler->LogicalDevice);
-
-    DestroySwapChain();
-
-    swapChainHandler->Initialize();
-    //swapChainBuilder->assign(&swapChainHandler->SwapChain, &swapChainHandler->SwapChainImageFormat, &swapChainHandler->SwapChainExtent, &swapChainHandler->SwapChainImageViews);
-
-    CreateDepthResources();
-    CreateFramebuffers();
-}
-
-
-void VulkanContext::DestroySwapChain() {
-    vkDestroyImageView(deviceHandler->LogicalDevice, m_depthImageView, nullptr);
-    vkDestroyImage(deviceHandler->LogicalDevice, m_depthImage, nullptr);
-    vkFreeMemory(deviceHandler->LogicalDevice, m_depthImageMemory, nullptr);
-
-    for (auto framebuffer : m_swapChainFramebuffers) {
-        vkDestroyFramebuffer(deviceHandler->LogicalDevice, framebuffer, nullptr);
-    }
-
-    for (auto imageView : swapChainHandler->SwapChainImageViews) {
-        vkDestroyImageView(deviceHandler->LogicalDevice, imageView, nullptr);
-    }
-
-    vkDestroySwapchainKHR(deviceHandler->LogicalDevice, swapChainHandler->SwapChain, nullptr);
-}
-
 void VulkanContext::Destroy() {
-    DestroySwapChain();
+    swapChainHandler->Destroy();
+    //DestroySwapChain();
 
     vkDestroySampler(deviceHandler->LogicalDevice, m_textureSampler, nullptr);
     vkDestroyImageView(deviceHandler->LogicalDevice, m_textureImageView, nullptr);
@@ -1084,29 +929,6 @@ void VulkanContext::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, Vk
 
     // Binding
     vkBindBufferMemory(deviceHandler->LogicalDevice, buffer, bufferMemory, 0);
-}
-
-// used by findDepthFormat()
-VkFormat VulkanContext::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
-    for (VkFormat format : candidates) {
-        VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(deviceHandler->PhysicalDevice, format, &props);
-        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
-            return format;
-        }
-        else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
-            return format;
-        }
-    }
-    throw std::runtime_error("failed to find supported format!");
-}
-
-VkFormat VulkanContext::findDepthFormat() {
-    return findSupportedFormat(
-        { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
-        VK_IMAGE_TILING_OPTIMAL,
-        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
-    );
 }
 
 bool hasStencilComponent(VkFormat format) {

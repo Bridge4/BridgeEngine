@@ -5,7 +5,7 @@
 #include <iostream>
 
 
-void RenderPassHandler::CreateRenderPass() {
+void RenderPassHandler::Initialize() {
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = swapChainHandler->SwapChainImageFormat;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;

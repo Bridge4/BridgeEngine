@@ -44,6 +44,10 @@ public:
 	std::vector<VkBuffer> UniformBuffers = {};
 	std::vector<VkDeviceMemory> UniformBuffersMemory = {};
 	std::vector<void*> UniformBuffersMapped = {};
+
+	VkCommandBuffer BeginSingleTimeCommands();
+
+	void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 private:
 
 	VulkanContext* vulkanContext = nullptr;
@@ -58,9 +62,7 @@ private:
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 	// COPY BUFFER
 	
-	VkCommandBuffer BeginSingleTimeCommands();
-
-	void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+	
 
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 

@@ -17,7 +17,7 @@ public:
 		this->deviceHandler = deviceHandler;
 	}
 
-	void CreateRenderPass();
+	void Initialize();
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	
 	VkRenderPass renderPass = 0;
