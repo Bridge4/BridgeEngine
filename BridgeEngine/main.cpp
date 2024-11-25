@@ -6,7 +6,7 @@
 int main() {
     try {
         WindowHandler* window = new WindowHandler();
-        window->Create(1920, 1080);
+        window->Create(600, 600);
 
         Renderer* renderer = new Renderer(window);
         renderer->CreateAPIContext();

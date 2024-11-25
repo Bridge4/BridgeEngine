@@ -154,6 +154,7 @@
   <ItemGroup>
     <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Buffers\BufferHandler.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\RenderPass\RenderPassHandler.cpp" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\VulkanContext.cpp" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\VulkanDataStructures.h" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\Resources\ImageViews\ImageViewBuilder.cpp" />
@@ -164,6 +165,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Buffers\BufferHandler.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\RenderPass\RenderPassHandler.h" />
     <ClInclude Include="Modules\Renderer\DataStructures.h" />
     <ClInclude Include="Modules\Renderer\API\Vulkan\Resources\ImageViews\ImageViewBuilder.h" />
     <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Devices\DeviceHandler.h" />

@@ -6,7 +6,7 @@ class VulkanContext;
 class DeviceHandler;
 class ImageViewBuilder;
 class WindowHandler;
-
+class RenderPassHandler;
 
 class SwapChainHandler
 {
@@ -15,28 +15,34 @@ public:
     {
         vulkanContext = context;
         devices = dHandler;
-        windowRef = targetWindow;
+        windowHandler = targetWindow;
         imageViewBuilder = imgViewBldr;
     };
     
     void Initialize();
 
+    //void CreateFramebuffers();
+
     VkSwapchainKHR SwapChain = nullptr;
     VkFormat SwapChainImageFormat = VK_FORMAT_UNDEFINED;
     VkExtent2D SwapChainExtent = {};
     std::vector<VkImageView> SwapChainImageViews = {};
-    
+    std::vector<VkFramebuffer> SwapChainFramebuffers = {};
 private:
     VulkanContext* vulkanContext = 0;
     DeviceHandler* devices = 0;
-    WindowHandler* windowRef = 0;
+    WindowHandler* windowHandler = 0;
+    RenderPassHandler* renderPassHandler = 0;
     ImageViewBuilder* imageViewBuilder = 0;
+    
 
     VkSwapchainKHR m_swapChain = nullptr;
     VkFormat m_swapChainImageFormat = VK_FORMAT_UNDEFINED;
     VkExtent2D m_swapChainExtent = {};
     std::vector<VkImageView> m_swapChainImageViews = {};
     std::vector<VkImage> m_swapChainImages = {};
+    //VkImageView m_depthImageView = 0;
+
 
     
     // HELPERS

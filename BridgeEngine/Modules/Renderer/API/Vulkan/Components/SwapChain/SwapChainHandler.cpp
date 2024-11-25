@@ -3,6 +3,7 @@
 #include "../../Resources/ImageViews/ImageViewBuilder.h"
 #include "../Devices/DeviceHandler.h"
 #include "../Window/WindowHandler.h"
+#include "../RenderPass/RenderPassHandler.h"
 #include <stdexcept>
 #include <cstdlib>
 #include <vector>
@@ -84,7 +85,34 @@ void SwapChainHandler::Initialize() {
     SwapChainImageFormat = m_swapChainImageFormat;
     SwapChainExtent = m_swapChainExtent;
     SwapChainImageViews = m_swapChainImageViews;
+    //CreateFramebuffers();
 }
+
+//void SwapChainHandler::CreateFramebuffers() {
+//    SwapChainFramebuffers.resize(SwapChainImageViews.size());
+//
+//    // Loop through swap chain image views
+//    for (size_t i = 0; i < SwapChainImageViews.size(); i++) {
+//        std::array<VkImageView, 2> attachments = {
+//            SwapChainImageViews[i],
+//            m_depthImageView
+//        };
+//
+//        VkFramebufferCreateInfo framebufferInfo{};
+//        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+//        framebufferInfo.renderPass = renderPassHandler->renderPass;
+//        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+//        framebufferInfo.pAttachments = attachments.data();
+//        framebufferInfo.pAttachments = attachments.data();
+//        framebufferInfo.width = SwapChainExtent.width;
+//        framebufferInfo.height = SwapChainExtent.height;
+//        framebufferInfo.layers = 1;
+//
+//        if (vkCreateFramebuffer(vulkanContext->deviceHandler->LogicalDevice, &framebufferInfo, nullptr, &SwapChainFramebuffers[i]) != VK_SUCCESS) {
+//            throw std::runtime_error("failed to create framebuffer!");
+//        }
+//    }
+//}
 
 
 // HELPERS
@@ -115,7 +143,7 @@ VkExtent2D SwapChainHandler::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& ca
     }
     else {
         int width, height;
-        windowRef->getFramebufferSize(&width, &height);
+        windowHandler->getFramebufferSize(&width, &height);
 
         VkExtent2D actualExtent = {
             static_cast<uint32_t>(width),

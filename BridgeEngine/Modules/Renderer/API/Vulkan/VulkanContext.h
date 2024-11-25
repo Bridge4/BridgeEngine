@@ -44,6 +44,8 @@ class SwapChainHandler;
 class ImageViewBuilder;
 class BufferHandler;
 class WindowHandler;
+class RenderPassHandler;
+//class Camera;
 
 class VulkanContext {
 public:
@@ -60,6 +62,8 @@ public:
     SwapChainHandler* swapChainHandler;
     WindowHandler* windowHandler;
     BufferHandler* bufferHandler;
+    RenderPassHandler* renderPassHandler;
+    //Camera* camera;
 
     ImageViewBuilder* imageViewBuilder;
 
@@ -72,7 +76,7 @@ public:
     VkExtent2D swapChainHandler->SwapChainExtent;
     std::vector<VkImageView> m_swapChainImageViews;*/
 
-    VkRenderPass m_renderPass;
+    //VkRenderPass m_renderPass;
 
     VkDescriptorSetLayout m_descriptorSetLayout;
     VkDescriptorPool m_descriptorPool;
@@ -87,24 +91,26 @@ public:
     std::vector<Vertex> m_vertices;
     std::vector<uint32_t> m_indices;
 
+    /*
     VkBuffer m_vertexBuffer;
     VkDeviceMemory m_vertexBufferMemory;
 
     VkBuffer m_indexBuffer;
     VkDeviceMemory m_indexBufferMemory;
+    */
+
+    VkImage m_depthImage;
+    VkDeviceMemory m_depthImageMemory;
+    VkImageView m_depthImageView;
 
     VkImage m_textureImage;
     VkImageView m_textureImageView;
     VkSampler m_textureSampler;
     VkDeviceMemory m_textureImageMemory;
 
-    /*std::vector<VkBuffer> m_uniformBuffers;
-    std::vector<VkDeviceMemory> m_uniformBuffersMemory;
-    std::vector<void*> m_uniformBuffersMapped;*/
 
-    VkImage m_depthImage;
-    VkDeviceMemory m_depthImageMemory;
-    VkImageView m_depthImageView;
+
+    
 
     // Frames in flight require their own command buffers, semaphores and fences
     std::vector<VkCommandBuffer> m_commandBuffers;
@@ -116,8 +122,8 @@ public:
     //Window window;
     uint32_t WIDTH = 800;
     uint32_t HEIGHT = 600;
-    std::string MODEL_PATH = "Models/VikingRoom/VikingRoom.obj";
-    std::string TEXTURE_PATH = "Models/VikingRoom/Textures/VikingRoom.png";
+    std::string MODEL_PATH = "Models/Ship/ship.obj";
+    std::string TEXTURE_PATH = "Models/Ship/ship.png";
     const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
     const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     VkInstance m_instance;
@@ -138,7 +144,7 @@ private:
     void RebuildSwapChain();
 
     // RENDER PASSES
-    void CreateRenderPass();
+    //void CreateRenderPass();
 
     void CreateDescriptorSetLayout();
 

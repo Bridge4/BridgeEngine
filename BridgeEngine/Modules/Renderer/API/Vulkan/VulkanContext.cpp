@@ -25,6 +25,8 @@
 #include "Components/SwapChain/SwapChainHandler.h"
 #include "Components/Window/WindowHandler.h"
 #include "Components/Buffers/BufferHandler.h"
+#include "Components/RenderPass/RenderPassHandler.h"
+//#include "../../../../Camera.h"
 
 #include "Resources/ImageViews/ImageViewBuilder.h"
 void VulkanContext::Construct() {
@@ -32,6 +34,8 @@ void VulkanContext::Construct() {
     imageViewBuilder = new ImageViewBuilder();
     swapChainHandler = new SwapChainHandler(this, deviceHandler, windowHandler, imageViewBuilder);
     bufferHandler = new BufferHandler(this, deviceHandler, swapChainHandler);
+    renderPassHandler = new RenderPassHandler(this, swapChainHandler, deviceHandler);
+    //camera = new Camera(this, windowHandler);
 
     CreateVulkanContext();
     windowHandler->vulkanContext = this;
@@ -45,7 +49,8 @@ void VulkanContext::Construct() {
     swapChainHandler->Initialize();
     
 
-    CreateRenderPass();
+    renderPassHandler->CreateRenderPass();
+
     CreateDescriptorSetLayout();
     CreateGraphicsPipeline();
     CreateCommandPool();
@@ -77,99 +82,100 @@ void VulkanContext::Construct() {
 
 
 void VulkanContext::RenderLoop() {
-    while (!windowHandler->shouldClose()) {
-        windowHandler->poll();
+    while (!windowHandler->ShouldClose()) {
+        
+        windowHandler->Poll();
         DrawFrame();
     }
     vkDeviceWaitIdle(deviceHandler->LogicalDevice);
     Destroy();
 }
 
-void VulkanContext::CreateRenderPass() {
-    VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = swapChainHandler->SwapChainImageFormat;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    // Store rendered contents in memory to be read later
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-
-    // Lookup stencil buffers later
-    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-    // The initialLayout specifies which layout the image will have before the render pass begins.
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-    /*
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL: Images used as color attachment
-        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR: Images to be presented in the swap chain
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : Images to be used as destination for a memory copy operation
-
-        "The caveat of this special value is that the contents of the image are not guaranteed to be preserved,
-        but that doesn't matter since we're going to clear it anyway.
-        We want the image to be ready for presentation using the swap chain after rendering,
-        which is why we use VK_IMAGE_LAYOUT_PRESENT_SRC_KHR as finalLayout."
-    */
-
-    // The finalLayout specifies the layout to automatically transition to when the render pass finishes. 
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-    VkAttachmentReference colorAttachmentRef{};
-    colorAttachmentRef.attachment = 0;
-    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentDescription depthAttachment{};
-    depthAttachment.format = findDepthFormat();
-    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentReference depthAttachmentRef{};
-    depthAttachmentRef.attachment = 1;
-    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkSubpassDescription subpass{};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    /*
-        pInputAttachments: Attachments that are read from a shader
-        pResolveAttachments: Attachments used for multisampling color attachments
-        pDepthStencilAttachment : Attachment for depthand stencil data
-        pPreserveAttachments : Attachments that are not used by this subpass, but for which the data must be preserved
-    */
-    // The index of the attachment in this array is directly referenced from the fragment shader with the layout(location = 0) out vec4 outColor directive
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colorAttachmentRef;
-    subpass.pDepthStencilAttachment = &depthAttachmentRef;
-
-
-    VkSubpassDependency dependency{};
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.dstSubpass = 0;
-    dependency.srcAccessMask = 0;
-
-    // Creating render pass object and populating the struct with necessary properties
-    std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
-    VkRenderPassCreateInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-    renderPassInfo.pAttachments = attachments.data();
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpass;
-    renderPassInfo.dependencyCount = 1;
-    renderPassInfo.pDependencies = &dependency;
-
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-    if (vkCreateRenderPass(deviceHandler->LogicalDevice, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create render pass!");
-    }
-}
+//void VulkanContext::CreateRenderPass() {
+//    VkAttachmentDescription colorAttachment{};
+//    colorAttachment.format = swapChainHandler->SwapChainImageFormat;
+//    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+//    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+//    // Store rendered contents in memory to be read later
+//    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+//
+//    // Lookup stencil buffers later
+//    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+//    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+//
+//    // The initialLayout specifies which layout the image will have before the render pass begins.
+//    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+//
+//    /*
+//        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL: Images used as color attachment
+//        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR: Images to be presented in the swap chain
+//        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : Images to be used as destination for a memory copy operation
+//
+//        "The caveat of this special value is that the contents of the image are not guaranteed to be preserved,
+//        but that doesn't matter since we're going to clear it anyway.
+//        We want the image to be ready for presentation using the swap chain after rendering,
+//        which is why we use VK_IMAGE_LAYOUT_PRESENT_SRC_KHR as finalLayout."
+//    */
+//
+//    // The finalLayout specifies the layout to automatically transition to when the render pass finishes. 
+//    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+//
+//    VkAttachmentReference colorAttachmentRef{};
+//    colorAttachmentRef.attachment = 0;
+//    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+//
+//    VkAttachmentDescription depthAttachment{};
+//    depthAttachment.format = findDepthFormat();
+//    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+//    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+//    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+//    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+//    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+//    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+//    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+//
+//    VkAttachmentReference depthAttachmentRef{};
+//    depthAttachmentRef.attachment = 1;
+//    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+//
+//    VkSubpassDescription subpass{};
+//    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+//    /*
+//        pInputAttachments: Attachments that are read from a shader
+//        pResolveAttachments: Attachments used for multisampling color attachments
+//        pDepthStencilAttachment : Attachment for depthand stencil data
+//        pPreserveAttachments : Attachments that are not used by this subpass, but for which the data must be preserved
+//    */
+//    // The index of the attachment in this array is directly referenced from the fragment shader with the layout(location = 0) out vec4 outColor directive
+//    subpass.colorAttachmentCount = 1;
+//    subpass.pColorAttachments = &colorAttachmentRef;
+//    subpass.pDepthStencilAttachment = &depthAttachmentRef;
+//
+//
+//    VkSubpassDependency dependency{};
+//    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+//    dependency.dstSubpass = 0;
+//    dependency.srcAccessMask = 0;
+//
+//    // Creating render pass object and populating the struct with necessary properties
+//    std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
+//    VkRenderPassCreateInfo renderPassInfo{};
+//    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+//    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+//    renderPassInfo.pAttachments = attachments.data();
+//    renderPassInfo.subpassCount = 1;
+//    renderPassInfo.pSubpasses = &subpass;
+//    renderPassInfo.dependencyCount = 1;
+//    renderPassInfo.pDependencies = &dependency;
+//
+//    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+//    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+//    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+//
+//    if (vkCreateRenderPass(deviceHandler->LogicalDevice, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS) {
+//        throw std::runtime_error("failed to create render pass!");
+//    }
+//}
 
 void VulkanContext::CreateDescriptorSetLayout() {
 
@@ -381,7 +387,7 @@ void VulkanContext::CreateGraphicsPipeline() {
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = m_pipelineLayout;
-    pipelineInfo.renderPass = m_renderPass;
+    pipelineInfo.renderPass = renderPassHandler->renderPass;
     // Subpass INDEX
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
@@ -423,7 +429,7 @@ void VulkanContext::CreateFramebuffers() {
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = m_renderPass;
+        framebufferInfo.renderPass = renderPassHandler->renderPass;
         framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferInfo.pAttachments = attachments.data();
         framebufferInfo.pAttachments = attachments.data();
@@ -685,7 +691,7 @@ void VulkanContext::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = m_renderPass;
+    renderPassInfo.renderPass = renderPassHandler->renderPass;
     // DEBUG
     //printf("imageIndex DEBUG: %d\n", imageIndex);
     renderPassInfo.framebuffer = m_swapChainFramebuffers[imageIndex];
@@ -1015,7 +1021,7 @@ void VulkanContext::Destroy() {
     vkDestroyPipeline(deviceHandler->LogicalDevice, m_graphicsPipeline, nullptr);
     vkDestroyPipelineLayout(deviceHandler->LogicalDevice, m_pipelineLayout, nullptr);
 
-    vkDestroyRenderPass(deviceHandler->LogicalDevice, m_renderPass, nullptr);
+    vkDestroyRenderPass(deviceHandler->LogicalDevice, renderPassHandler->renderPass, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(deviceHandler->LogicalDevice, m_renderFinishedSemaphores[i], nullptr);

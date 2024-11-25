@@ -26,20 +26,19 @@ public:
 
     void getFramebufferSize(int* width, int* height);
 
-    int shouldClose();
+    int ShouldClose();
 
-    void poll();
-
-    GLFWwindow* getWindow() { return r_window; }
+    void Poll();
 
     VkResult CreateSurface();
 
     void Create(uint32_t width = 800, uint32_t height = 600);
 
-    //void GLFWCALL glfwKeyCalback(GLFWwindow* r_window, int key, int scancode, int action, int mods);
+    //void key_callback(GLFWwindow* r_window, int key, int scancode, int action, int mods);
     VulkanContext* vulkanContext;
-private:
     GLFWwindow* r_window;
+
+private:
 
     uint32_t m_width, m_height;
     
