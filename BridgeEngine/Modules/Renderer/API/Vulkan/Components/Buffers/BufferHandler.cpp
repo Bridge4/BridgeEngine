@@ -60,7 +60,7 @@ void BufferHandler::BuildVertexBuffer(BufferBuildType buildType, std::vector<Ver
     // Create staging buffer
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    buildBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+    BuildBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
     
     // Map it
     void* data;
@@ -69,7 +69,7 @@ void BufferHandler::BuildVertexBuffer(BufferBuildType buildType, std::vector<Ver
     vkUnmapMemory(deviceHandler->LogicalDevice, stagingBufferMemory);
 
     // Create vertex buffer
-    buildBuffer(bufferSize,
+    BuildBuffer(bufferSize,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         VertexBuffer, VertexBufferMemory);
@@ -106,14 +106,14 @@ void BufferHandler::BuildIndexBuffer(BufferBuildType buildType, std::vector<uint
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    buildBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+    BuildBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
     void* data;
     vkMapMemory(deviceHandler->LogicalDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
     memcpy(data, indices.data(), (size_t)bufferSize);
     vkUnmapMemory(deviceHandler->LogicalDevice, stagingBufferMemory);
 
-    buildBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, IndexBuffer, IndexBufferMemory);
+    BuildBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, IndexBuffer, IndexBufferMemory);
 
     copyBuffer(stagingBuffer, IndexBuffer, bufferSize);
 
@@ -134,7 +134,7 @@ void BufferHandler::BuildUniformBuffers(BufferBuildType buildType)
     for (size_t i = 0; i < vulkanContext->MAX_FRAMES_IN_FLIGHT; i++) {
         // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i], m_uniformBuffersMemory[i], UNSTAGED)
         // Create then Map to memory
-        buildBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, UniformBuffers[i], UniformBuffersMemory[i]);
+        BuildBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, UniformBuffers[i], UniformBuffersMemory[i]);
         vkMapMemory(deviceHandler->LogicalDevice, UniformBuffersMemory[i], 0, bufferSize, 0, &UniformBuffersMapped[i]);
     }
 }
@@ -173,7 +173,7 @@ void BufferHandler::BuildCommandBuffers() {
     }
 }
 
-void BufferHandler::buildBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) 
+void BufferHandler::BuildBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) 
 {
     // bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_uniformBuffers[i], m_uniformBuffersMemory[i]
     // Creation

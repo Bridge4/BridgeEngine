@@ -4,7 +4,7 @@
 
 class VulkanContext;
 class DeviceHandler;
-class ImageViewBuilder;
+class ImageHandler;
 class WindowHandler;
 class RenderPassHandler;
 //class BufferHandler;
@@ -12,7 +12,7 @@ class RenderPassHandler;
 class SwapChainHandler
 {
 public: 
-    SwapChainHandler(VulkanContext* context, DeviceHandler* deviceHandler, WindowHandler* targetWindow, ImageViewBuilder* imgViewBldr) 
+    SwapChainHandler(VulkanContext* context, DeviceHandler* deviceHandler, WindowHandler* targetWindow, ImageHandler* imgViewBldr) 
     {
         this->vulkanContext = context;
         this->deviceHandler = deviceHandler;
@@ -59,7 +59,7 @@ private:
     DeviceHandler* deviceHandler = 0;
     WindowHandler* windowHandler = 0;
     RenderPassHandler* renderPassHandler = 0;
-    ImageViewBuilder* imageViewBuilder = 0;
+    ImageHandler* imageViewBuilder = 0;
     //BufferHandler* bufferHandler = 0;
     
 

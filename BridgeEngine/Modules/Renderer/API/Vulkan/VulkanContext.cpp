@@ -28,10 +28,11 @@
 #include "Components/RenderPass/RenderPassHandler.h"
 //#include "../../../../Camera.h"
 
-#include "Resources/ImageViews/ImageViewBuilder.h"
+#include "Components/Images/ImageHandler.h"
+
 void VulkanContext::Construct() {
     deviceHandler = new DeviceHandler(this, windowHandler);
-    imageViewBuilder = new ImageViewBuilder();
+    imageViewBuilder = new ImageHandler(this);
     swapChainHandler = new SwapChainHandler(this, deviceHandler, windowHandler, imageViewBuilder);
     bufferHandler = new BufferHandler(this, deviceHandler, swapChainHandler);
     renderPassHandler = new RenderPassHandler(this, swapChainHandler, deviceHandler);
@@ -41,8 +42,6 @@ void VulkanContext::Construct() {
     windowHandler->vulkanContext = this;
     if (windowHandler->CreateSurface() != VK_SUCCESS)
         throw std::runtime_error("Failed to create window surface");
-    
-
     deviceHandler->Initialize();
     swapChainHandler->Initialize();
     renderPassHandler->Initialize();
@@ -344,7 +343,7 @@ void VulkanContext::CreateTextureImage() {
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
 
-    createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    bufferHandler->BuildBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         stagingBuffer, stagingBufferMemory);
 
@@ -369,7 +368,7 @@ void VulkanContext::CreateTextureImage() {
 
 // TEXTURE IMAGE VIEW
 void VulkanContext::CreateTextureImageView() {
-    m_textureImageView = imageViewBuilder->Build(deviceHandler->LogicalDevice, m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+    m_textureImageView = imageViewBuilder->CreateImageView(deviceHandler->LogicalDevice, m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 // TEXTURE SAMPLER
@@ -528,23 +527,6 @@ void VulkanContext::CreateDescriptorSets() {
     }
 }
 
-void VulkanContext::CreateCommandBuffers() {
-    m_commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = m_commandPool;
-    /*
-        VK_COMMAND_BUFFER_LEVEL_PRIMARY: Can be submitted to a queue for execution, but cannot be called from other command buffers.
-        VK_COMMAND_BUFFER_LEVEL_SECONDARY: Cannot be submitted directly, but can be called from primary command buffers.
-    */
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = (uint32_t)m_commandBuffers.size();
-
-    if (vkAllocateCommandBuffers(deviceHandler->LogicalDevice, &allocInfo, m_commandBuffers.data()) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate command buffers!");
-    }
-}
 
 void VulkanContext::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
@@ -662,6 +644,8 @@ void VulkanContext::DrawFrame() {
     // Wait for the previous frame to finish
 
     //updateUniformBuffer(m_currentFrame);
+
+    // Handle camera input
     bufferHandler->UpdateUniformBuffer(m_currentFrame);
     vkWaitForFences(deviceHandler->LogicalDevice, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
@@ -703,7 +687,7 @@ void VulkanContext::DrawFrame() {
     submitInfo.pSignalSemaphores = signalSemaphores;
 
     if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[m_currentFrame]) != VK_SUCCESS) {
-        throw std::runtime_error("failed to submit draw command buffer!");
+        throw std::runtime_error("Failed to submit draw command buffer");
     }
 
     // Present swap chain image
@@ -728,7 +712,7 @@ void VulkanContext::DrawFrame() {
         swapChainHandler->Rebuild();
     }
     else if (result != VK_SUCCESS) {
-        throw std::runtime_error("failed to present swap chain image!");
+        throw std::runtime_error("Failed to present swap chain image");
     }
 
     // Progress to next frame
@@ -736,8 +720,8 @@ void VulkanContext::DrawFrame() {
 }
 
 
-// BEGIN_REGION createInstance()
-// BEGIN_REGION createInstance_helpers
+// BEGIN_REGION CreateVulkanContext()
+// BEGIN_REGION CreateVulkanContext_helpers
 static bool checkValidationLayerSupport(const std::vector<const char*>* validationLayers) {
 
     uint32_t layerCount;
@@ -783,7 +767,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
 
     return VK_FALSE;
 }
-// END_REGION createInstance_helpers
+// END_REGION CreateVulkanContext_helpers
 
 void VulkanContext::CreateVulkanContext()
 {
@@ -837,7 +821,7 @@ void VulkanContext::CreateVulkanContext()
         throw std::runtime_error("failed to create instance!");
     }
 }
-// END_REGION createInstance()
+// END_REGION CreateVulkanContext()
 
 
 void VulkanContext::Destroy() {
@@ -897,39 +881,6 @@ VkShaderModule VulkanContext::createShaderModule(const std::vector<char>& code)
     
 }
 // Helpers
-
-void VulkanContext::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-    VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
-
-    // Creation
-    VkBufferCreateInfo bufferInfo{};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = size;
-    bufferInfo.usage = usage;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    if (vkCreateBuffer(deviceHandler->LogicalDevice, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create vertex buffer!");
-    }
-
-    // Allocation
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(deviceHandler->LogicalDevice, buffer, &memRequirements);
-
-    VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
-
-    // VkAllocateMemory is an expensive operation on the CPU side, so we should minimize calls to it
-    // "Aggressively allocate your buffer as large as you believe it will grow" - dude on stackoverflow
-    if (vkAllocateMemory(deviceHandler->LogicalDevice, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate buffer memory!");
-    }
-
-    // Binding
-    vkBindBufferMemory(deviceHandler->LogicalDevice, buffer, bufferMemory, 0);
-}
 
 bool hasStencilComponent(VkFormat format) {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;

@@ -33,6 +33,8 @@ public:
 
 	void BuildCommandBuffers();
 
+	void BuildBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+
 	VkBuffer VertexBuffer = 0;
 	VkDeviceMemory VertexBufferMemory = 0;
 
@@ -57,7 +59,6 @@ private:
 
 	VkCommandPool m_commandPool = nullptr;
 
-	void buildBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 	// COPY BUFFER

@@ -41,11 +41,10 @@
 // Forward Declarations
 class DeviceHandler;
 class SwapChainHandler;
-class ImageViewBuilder;
+class ImageHandler;
 class BufferHandler;
 class WindowHandler;
 class RenderPassHandler;
-//class Camera;
 
 class VulkanContext {
 public:
@@ -63,9 +62,8 @@ public:
     WindowHandler* windowHandler;
     BufferHandler* bufferHandler;
     RenderPassHandler* renderPassHandler;
-    //Camera* camera;
 
-    ImageViewBuilder* imageViewBuilder;
+    ImageHandler* imageViewBuilder;
 
     VkSurfaceKHR m_surface;
     VkQueue m_graphicsQueue;
@@ -108,8 +106,8 @@ public:
     //Window window;
     uint32_t WIDTH = 800;
     uint32_t HEIGHT = 600;
-    std::string MODEL_PATH = "Models/Ship/ship.obj";
-    std::string TEXTURE_PATH = "Models/Ship/ship.png";
+    std::string MODEL_PATH = "Models/VikingRoom/VikingRoom.obj";
+    std::string TEXTURE_PATH = "Models/VikingRoom/VikingRoom.png";
     const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
     const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     VkInstance m_instance;
