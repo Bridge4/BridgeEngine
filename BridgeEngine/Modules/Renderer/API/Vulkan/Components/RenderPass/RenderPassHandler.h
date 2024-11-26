@@ -2,9 +2,10 @@
 #define RENDERPASSHANDLER_H
 #include <vulkan/vulkan.h>
 #include <vector>
-class VulkanContext;
-class SwapChainHandler;
-class DeviceHandler;
+#include "../ComponentDeclarations.h"
+//class VulkanContext;
+//class SwapChainHandler;
+//class DeviceHandler;
 
 //enum VkFormat;
 

@@ -1,12 +1,14 @@
-#pragma once
+#ifndef SWAPCHAINHANDLER_H
+#define SWAPCHAINHANDLER_H
+
 #include <vulkan/vulkan.h>
 #include <vector>
-
-class VulkanContext;
-class DeviceHandler;
-class ImageHandler;
-class WindowHandler;
-class RenderPassHandler;
+#include "../ComponentDeclarations.h"
+//class VulkanContext;
+//class DeviceHandler;
+//class ImageHandler;
+//class WindowHandler;
+//class RenderPassHandler;
 //class BufferHandler;
 
 class SwapChainHandler
@@ -85,3 +87,4 @@ private:
 
 };
 
+#endif // !SWAPCHAINHANDLER_H

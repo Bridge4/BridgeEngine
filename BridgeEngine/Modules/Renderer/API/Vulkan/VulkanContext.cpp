@@ -21,6 +21,7 @@
 #include <optional>
 #include <set>
 
+#include "Components/Camera/CameraHandler.h"
 #include "Components/Devices/DeviceHandler.h"
 #include "Components/SwapChain/SwapChainHandler.h"
 #include "Components/Window/WindowHandler.h"
@@ -30,12 +31,15 @@
 
 #include "Components/Images/ImageHandler.h"
 
+
 void VulkanContext::Construct() {
     deviceHandler = new DeviceHandler(this, windowHandler);
     imageViewBuilder = new ImageHandler(this);
     swapChainHandler = new SwapChainHandler(this, deviceHandler, windowHandler, imageViewBuilder);
     bufferHandler = new BufferHandler(this, deviceHandler, swapChainHandler);
     renderPassHandler = new RenderPassHandler(this, swapChainHandler, deviceHandler);
+    //VulkanContext* vulkanContext, WindowHandler* windowHandler, SwapChainHandler* swapChainHandler, BufferHandler* bufferHandler
+    cameraHandler = new CameraHandler(this, windowHandler, swapChainHandler, bufferHandler);
     //camera = new Camera(this, windowHandler);
 
     CreateVulkanContext();
@@ -645,8 +649,9 @@ void VulkanContext::DrawFrame() {
 
     //updateUniformBuffer(m_currentFrame);
 
-    // Handle camera input
-    bufferHandler->UpdateUniformBuffer(m_currentFrame);
+    // Move this to Camera class
+    //bufferHandler->UpdateUniformBuffer(m_currentFrame);
+    cameraHandler->Move(m_currentFrame);
     vkWaitForFences(deviceHandler->LogicalDevice, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
     // Acquire an image from the swap chain

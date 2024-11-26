@@ -45,6 +45,7 @@ class ImageHandler;
 class BufferHandler;
 class WindowHandler;
 class RenderPassHandler;
+class CameraHandler;
 
 class VulkanContext {
 public:
@@ -62,6 +63,7 @@ public:
     WindowHandler* windowHandler;
     BufferHandler* bufferHandler;
     RenderPassHandler* renderPassHandler;
+    CameraHandler* cameraHandler;
 
     ImageHandler* imageViewBuilder;
 

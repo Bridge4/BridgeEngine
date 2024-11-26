@@ -4,9 +4,9 @@
 #endif // !VK_USE_PLATFORM_WIN32_KHR
 
 #include "../../VulkanDataStructures.h"
-
-class WindowHandler;
-class VulkanContext;
+#include "../ComponentDeclarations.h"
+//class WindowHandler;
+//class VulkanContext;
 
 /*
 *   Provides Physical and Logical Devices for use in Vulkan Context

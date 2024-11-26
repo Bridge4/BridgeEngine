@@ -2,10 +2,10 @@
 #define BUFFERBUILDER_H
 #include <vulkan/vulkan.h>
 #include <vector>
-
-class VulkanContext;
-class DeviceHandler;
-class SwapChainHandler;
+#include "../ComponentDeclarations.h"
+//class VulkanContext;
+//class DeviceHandler;
+//class SwapChainHandler;
 
 struct Vertex;
 struct UniformBufferObject;

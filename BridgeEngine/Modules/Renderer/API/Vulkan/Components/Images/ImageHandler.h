@@ -1,7 +1,7 @@
 #pragma once 
 #include "vulkan/vulkan.h"
-
-class VulkanContext;
+#include "../ComponentDeclarations.h"
+//class VulkanContext;
 class ImageHandler
 {
 public: 

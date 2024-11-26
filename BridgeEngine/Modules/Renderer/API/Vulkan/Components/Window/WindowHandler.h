@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
-
-class VulkanContext;
+#include "../ComponentDeclarations.h"
+//class VulkanContext;
 struct GLFWwindow;
 enum VkResult;
 
