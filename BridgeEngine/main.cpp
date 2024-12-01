@@ -1,16 +1,19 @@
 #pragma once
-
 #include "Modules/Renderer/Renderer.h"
+#include "Modules/Renderer/API/Vulkan/Components/Window/WindowHandler.h"
 #include <iostream>
 
 int main() {
-    Renderer renderer;
-    Window windowRef;
-
     try {
-        renderer.window = windowRef;
-        renderer.window.createWindow(1980, 1080);
-        renderer.run();
+        WindowHandler* window = new WindowHandler();
+        window->Create(600, 600);
+
+        Renderer* renderer = new Renderer(window);
+        renderer->CreateAPIContext();
+        
+        window->SetApiContext(renderer->vulkanContext);
+        
+        renderer->RenderLoop();
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;

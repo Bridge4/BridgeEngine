@@ -121,6 +121,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AnalyzeExternalRuleset>/ analyze:external -</AnalyzeExternalRuleset>
       <FunctionLevelLinking>true</FunctionLevelLinking>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -152,23 +153,30 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Camera\CameraHandler.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Buffers\BufferHandler.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Modules\Renderer\API\Vulkan\VulkanBridge.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\RenderPass\RenderPassHandler.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\VulkanContext.cpp" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\VulkanDataStructures.h" />
-    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\ImageView.cpp" />
-    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Initializer.cpp" />
-    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\SwapChain.cpp" />
-    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Window.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Images\ImageHandler.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Devices\DeviceHandler.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\SwapChain\SwapChainHandler.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Window\WindowHandler.cpp" />
+    <ClCompile Include="Modules\Renderer\Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Camera\CameraHandler.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Buffers\BufferHandler.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\ComponentDeclarations.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\RenderPass\RenderPassHandler.h" />
     <ClInclude Include="Modules\Renderer\DataStructures.h" />
-    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\GraphicsPipeline.h" />
-    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\ImageView.h" />
-    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Initializer.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Images\ImageHandler.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Devices\DeviceHandler.h" />
     <ClInclude Include="Modules\Renderer\Renderer.h" />
-    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\SwapChain.h" />
-    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Window.h" />
-    <ClInclude Include="Modules\Renderer\API\Vulkan\VulkanBridge.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\SwapChain\SwapChainHandler.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Window\WindowHandler.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\VulkanContext.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

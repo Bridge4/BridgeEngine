@@ -17,3 +17,8 @@ struct SwapChainSupportDetails {
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> presentModes;
 };
+
+enum BufferBuildType {
+    STAGED,
+    UNSTAGED
+};
