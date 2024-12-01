@@ -560,9 +560,9 @@ void VulkanContext::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
     renderPassInfo.renderArea.offset = { 0, 0 };
     renderPassInfo.renderArea.extent = swapChainHandler->SwapChainExtent;
 
-    // VK_ATTACHMENT_LOAD_OP_CLEAR clear values for color and depth stencil
+    // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
     std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+    clearValues[0].color = { {1.0f, 0.2331f, 0.1555f, 1.0f} };
     clearValues[1].depthStencil = { 1.0f, 0 };
     renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     renderPassInfo.pClearValues = clearValues.data();
@@ -651,7 +651,7 @@ void VulkanContext::DrawFrame() {
 
     // Move this to Camera class
     //bufferHandler->UpdateUniformBuffer(m_currentFrame);
-    cameraHandler->Move(m_currentFrame);
+    cameraHandler->UpdateUniformBuffer(m_currentFrame);
     vkWaitForFences(deviceHandler->LogicalDevice, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
     // Acquire an image from the swap chain
