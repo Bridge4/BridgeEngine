@@ -29,6 +29,7 @@ void CameraHandler::Initialize() {
    upVector = glm::vec3(0.0f, 1.0f, 0.0f);
    cameraViewMatrix = getViewMatrix();
    lookActive = false;
+   lookToggled = false;
 }
 
 void CameraHandler::UpdateUniformBuffer(uint32_t currentImage)
@@ -63,33 +64,43 @@ void CameraHandler::UpdateUniformBuffer(uint32_t currentImage)
     }
 
     if (glfwGetMouseButton(windowHandler->r_window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
-        lookActive = !lookActive;
-        glfwSetCursorPos(windowHandler->r_window, (swapChainHandler->SwapChainExtent.width / 2), (swapChainHandler->SwapChainExtent.height / 2));
+        if (!lookActive){
+            glfwSetCursorPos(windowHandler->r_window, (swapChainHandler->SwapChainExtent.width / 2), (swapChainHandler->SwapChainExtent.height / 2));
+            lookToggled = true;
+
+        }
+        lookActive = true;
+        
     }
-    
-    std::cout << "eyePosition: " << eyePosition.x << ", " << eyePosition.y << ", " << eyePosition.z << "\n";
+    if (glfwGetMouseButton(windowHandler->r_window, GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE) {
+        lookActive = false;
+        //glfwSetCursorPos(windowHandler->r_window, (swapChainHandler->SwapChainExtent.width / 2), (swapChainHandler->SwapChainExtent.height / 2));
+    }
+    //std::cout << "eyePosition: " << eyePosition.x << ", " << eyePosition.y << ", " << eyePosition.z << "\n";
 
     if (lookActive) {
         double xPos, yPos;
         glfwSetInputMode(windowHandler->r_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
         glfwGetCursorPos(windowHandler->r_window, &xPos, &yPos);
         //std::cout << "X: " << xPos << " " << "Y: " << yPos << std::endl;
-        if (prevMouseX != xPos || prevMouseY != yPos) {
-            // No mouse movement
-            float rotX = 1.0f * (float) ( (yPos - (swapChainHandler->SwapChainExtent.height / 2)) / swapChainHandler->SwapChainExtent.height );
-            float rotY = 1.0f * (float) ( (xPos - (swapChainHandler->SwapChainExtent.width / 2)) / swapChainHandler->SwapChainExtent.width );
+        float deltaX, deltaY;
+        deltaX = xPos - prevMouseX;
+        deltaY = yPos - prevMouseY;
+        if (!lookToggled) {
+            if (deltaX != 0 || deltaY != 0) {
+                glm::vec3 newViewDirection = glm::rotate(viewDirection, glm::radians(-deltaY), glm::normalize(glm::cross(viewDirection, upVector)));
+                if (abs(glm::angle(newViewDirection, upVector) - glm::radians(90.0f)) <= glm::radians(85.0f))
+                {
+                    viewDirection = newViewDirection;
+                }
 
-            std::cout << "rotX: " << rotX << "\n";
-            std::cout << "roxY: " << rotY << "\n";
-
-
-            glm::vec3 newViewDirection = glm::rotate(viewDirection, glm::radians(-rotX), glm::normalize(glm::cross(viewDirection, upVector)));
-            /*if (abs(glm::angle(newOrientation, upVector) - glm::radians(90.0f)) <= glm::radians(85.0f))
-            {
-                viewDirection = newOrientation;
-            }*/
-            viewDirection = glm::rotate(viewDirection, glm::radians(rotY), upVector);
+                viewDirection = glm::rotate(viewDirection, glm::radians(-deltaX), upVector);
+            }
         }
+        else {
+            lookToggled = false;
+        }
+        
         prevMouseX = xPos;
         prevMouseY = yPos;
     }

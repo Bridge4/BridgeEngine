@@ -18,7 +18,7 @@
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #endif // !GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 
-// NOT QUITE SURE WHAT THIS DOES 
+
 #ifndef GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #endif // !GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -84,19 +84,11 @@ public:
     std::vector<Vertex> m_vertices;
     std::vector<uint32_t> m_indices;
 
-
-    /*VkImage m_depthImage;
-    VkDeviceMemory m_depthImageMemory;
-    VkImageView m_depthImageView;*/
-
     VkImage m_textureImage;
     VkImageView m_textureImageView;
     VkSampler m_textureSampler;
     VkDeviceMemory m_textureImageMemory;
 
-
-
-    
 
     // Frames in flight require their own command buffers, semaphores and fences
     std::vector<VkCommandBuffer> m_commandBuffers;
@@ -180,10 +172,6 @@ private:
     // DESCRIPTOR SETS
     void CreateDescriptorSets();
 
-    // Buffer creation helper
-    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-        VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-
     // beginSingleTimeCommands and endSingleTimeCommands are helpers for copyBuffer
     VkCommandBuffer beginSingleTimeCommands();
 
@@ -194,8 +182,6 @@ private:
 
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
-    // COMMAND BUFFER
-    void CreateCommandBuffers();
 
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
@@ -231,8 +217,6 @@ private:
 
         return buffer;
     }
-
-    void DestroySwapChain();
 
     // CLEANUP
     void Destroy();

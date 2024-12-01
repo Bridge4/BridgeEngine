@@ -39,7 +39,7 @@ private:
 	glm::mat4 cameraViewMatrix = glm::mat4(1.0f);
 
 	bool lookActive = false;
-
+	bool toggled = false;
 	double prevMouseX, prevMouseY = 0.0;
 };
 
