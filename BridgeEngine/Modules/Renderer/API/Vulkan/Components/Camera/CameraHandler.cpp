@@ -32,8 +32,8 @@ void CameraHandler::Initialize() {
    lookToggled = false;
 }
 
-void CameraHandler::UpdateUniformBuffer(uint32_t currentImage)
-{
+
+void CameraHandler::HandleInput() {
     if (glfwGetKey(windowHandler->r_window, GLFW_KEY_W)) {
         //cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f, 0.001f, 0.001f));
         //cameraViewMatrix = glm::lookAt(eyePosition, viewDirection+eyePosition, upVector);
@@ -62,22 +62,25 @@ void CameraHandler::UpdateUniformBuffer(uint32_t currentImage)
         //cameraViewMatrix = glm::rotate(cameraViewMatrix, glm::radians(-0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
         eyePosition -= 0.001f * -glm::normalize(glm::cross(viewDirection, glm::vec3(1.0f, 0.0f, 0.0f)));
     }
+    if (glfwGetKey(windowHandler->r_window, GLFW_KEY_ESCAPE)) {
+        exit(0);
+    }
 
-    if (glfwGetMouseButton(windowHandler->r_window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
-        if (!lookActive){
+    if (glfwGetMouseButton(windowHandler->r_window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
+        if (!lookActive) {
             glfwSetCursorPos(windowHandler->r_window, (swapChainHandler->SwapChainExtent.width / 2), (swapChainHandler->SwapChainExtent.height / 2));
             lookToggled = true;
 
         }
         lookActive = true;
-        
-    }
-    if (glfwGetMouseButton(windowHandler->r_window, GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE) {
-        lookActive = false;
-        //glfwSetCursorPos(windowHandler->r_window, (swapChainHandler->SwapChainExtent.width / 2), (swapChainHandler->SwapChainExtent.height / 2));
-    }
-    //std::cout << "eyePosition: " << eyePosition.x << ", " << eyePosition.y << ", " << eyePosition.z << "\n";
 
+    }
+    if (glfwGetMouseButton(windowHandler->r_window, GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE) {
+        lookActive = false;
+    }
+}
+void CameraHandler::UpdateUniformBuffer(uint32_t currentImage)
+{   
     if (lookActive) {
         double xPos, yPos;
         glfwSetInputMode(windowHandler->r_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);

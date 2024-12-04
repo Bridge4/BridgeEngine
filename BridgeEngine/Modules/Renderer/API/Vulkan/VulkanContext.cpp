@@ -651,6 +651,7 @@ void VulkanContext::DrawFrame() {
 
     // Move this to Camera class
     //bufferHandler->UpdateUniformBuffer(m_currentFrame);
+    cameraHandler->HandleInput();
     cameraHandler->UpdateUniformBuffer(m_currentFrame);
     vkWaitForFences(deviceHandler->LogicalDevice, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
