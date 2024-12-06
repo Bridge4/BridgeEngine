@@ -1,4 +1,3 @@
-#pragma once
 #include "Modules/Renderer/Renderer.h"
 #include "Modules/Renderer/API/Vulkan/Components/Window/WindowHandler.h"
 #include <iostream>

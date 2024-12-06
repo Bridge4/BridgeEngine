@@ -46,6 +46,7 @@ class BufferHandler;
 class WindowHandler;
 class RenderPassHandler;
 class CameraHandler;
+class VulkanInstance;
 
 class VulkanContext {
 public:
@@ -58,6 +59,7 @@ public:
 
     void RenderLoop();
 
+    VulkanInstance* m_vulkan_instance;
     DeviceHandler* deviceHandler;
     SwapChainHandler* swapChainHandler;
     WindowHandler* windowHandler;

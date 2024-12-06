@@ -30,9 +30,10 @@
 //#include "../../../../Camera.h"
 
 #include "Components/Images/ImageHandler.h"
-
+#include "Components/Instance/Instance.h"
 
 void VulkanContext::Construct() {
+    m_vulkan_instance = new VulkanInstance(this);
     deviceHandler = new DeviceHandler(this, windowHandler);
     imageViewBuilder = new ImageHandler(this);
     swapChainHandler = new SwapChainHandler(this, deviceHandler, windowHandler, imageViewBuilder);
@@ -121,7 +122,7 @@ void VulkanContext::CreateDescriptorSetLayout() {
 }
 
 void VulkanContext::CreateGraphicsPipeline() {
-    std::vector<char> vertShaderCode = readFile("Modules/Renderer/Shaders/vert.spv");
+    std::vector<char> vertShaderCode = readFile("F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/BridgeEngine/Modules/Renderer/Shaders/vert.spv");
     std::vector<char> fragShaderCode = readFile("Modules/Renderer/Shaders/frag.spv");
 
     VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
@@ -645,12 +646,6 @@ void VulkanContext::DrawFrame() {
         - Submit the recorded command buffer
         - Present the swap chain image
     */
-    // Wait for the previous frame to finish
-
-    //updateUniformBuffer(m_currentFrame);
-
-    // Move this to Camera class
-    //bufferHandler->UpdateUniformBuffer(m_currentFrame);
     cameraHandler->HandleInput();
     cameraHandler->UpdateUniformBuffer(m_currentFrame);
     vkWaitForFences(deviceHandler->LogicalDevice, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
@@ -768,7 +763,10 @@ static std::vector<const char*> getRequiredExtensions(const bool* enableValidati
     return extensions;
 }
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
+                                                    VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, 
+                                                    void* pUserData) {
     std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
     return VK_FALSE;
