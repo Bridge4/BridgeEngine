@@ -20,9 +20,7 @@ public:
 #else
     const bool enableValidationLayers = true;
 #endif
-    DeviceHandler(VulkanContext* vulkanContext, WindowHandler* windowHandler, VulkanInstanceManager* vulkanInstanceManager) {
-        this->vulkanContext = vulkanContext;
-        this->windowHandler = windowHandler;
+    DeviceHandler(VulkanInstanceManager* vulkanInstanceManager) {
         this->m_vulkanInstanceManager = vulkanInstanceManager;
     }
 
@@ -43,8 +41,6 @@ private:
     const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
     const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
-    WindowHandler* windowHandler = 0;
-    VulkanContext* vulkanContext = 0;
     VulkanInstanceManager* m_vulkanInstanceManager = 0;
     void InitializePhysicalDevice();
     void InitializeLogicalDevice();

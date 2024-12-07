@@ -35,13 +35,10 @@
 void VulkanContext::Construct() {
     m_vulkanInstanceManager = new VulkanInstanceManager(this);
 
-
-
-
-    deviceHandler = new DeviceHandler(this, windowHandler, m_vulkanInstanceManager);
+    deviceHandler = new DeviceHandler(m_vulkanInstanceManager);
     imageViewBuilder = new ImageHandler(this);
     swapChainHandler = new SwapChainHandler(this, deviceHandler, windowHandler, imageViewBuilder, m_vulkanInstanceManager);
-    bufferHandler = new BufferHandler(this, deviceHandler, swapChainHandler, m_vulkanInstanceManager);
+    bufferHandler = new BufferHandler(m_vulkanInstanceManager);
     renderPassHandler = new RenderPassHandler(this, swapChainHandler, deviceHandler, m_vulkanInstanceManager);
     //VulkanContext* vulkanContext, WindowHandler* windowHandler, SwapChainHandler* swapChainHandler, BufferHandler* bufferHandler
     cameraHandler = new CameraHandler(this, windowHandler, swapChainHandler, bufferHandler, m_vulkanInstanceManager);
@@ -100,7 +97,6 @@ void VulkanContext::RenderLoop() {
     vkDeviceWaitIdle(*m_vulkanInstanceManager->GetRefLogicalDevice());
     Destroy();
 }
-
 
 void VulkanContext::CreateDescriptorSetLayout() {
 
@@ -605,7 +601,7 @@ void VulkanContext::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
     vkCmdBindIndexBuffer(commandBuffer, bufferHandler->IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vulkanInstanceManager->m_pipelineLayout, 0, 1,
-        &m_vulkanInstanceManager->m_descriptorSets[m_currentFrame], 0, nullptr);
+        &m_vulkanInstanceManager->m_descriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
 
     /*
         vkCmdDraw(VkCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance)
@@ -655,14 +651,14 @@ void VulkanContext::DrawFrame() {
         - Present the swap chain image
     */
     cameraHandler->HandleInput();
-    cameraHandler->UpdateUniformBuffer(m_currentFrame);
-    vkWaitForFences(*m_vulkanInstanceManager->GetRefLogicalDevice(), 1, &m_vulkanInstanceManager->m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
+    cameraHandler->UpdateUniformBuffer(m_vulkanInstanceManager->m_currentFrame);
+    vkWaitForFences(*m_vulkanInstanceManager->GetRefLogicalDevice(), 1, &m_vulkanInstanceManager->m_inFlightFences[m_vulkanInstanceManager->m_currentFrame], VK_TRUE, UINT64_MAX);
 
     // Acquire an image from the swap chain
     uint32_t imageIndex;
 
     // SWAP CHAIN RECREATION
-    VkResult result = vkAcquireNextImageKHR(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_swapChain, UINT64_MAX, m_vulkanInstanceManager->m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_swapChain, UINT64_MAX, m_vulkanInstanceManager->m_imageAvailableSemaphores[m_vulkanInstanceManager->m_currentFrame], VK_NULL_HANDLE, &imageIndex);
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         swapChainHandler->Rebuild();
         return;
@@ -672,30 +668,30 @@ void VulkanContext::DrawFrame() {
     }
 
     // Only reset fences if we are submitting work
-    vkResetFences(*m_vulkanInstanceManager->GetRefLogicalDevice(), 1, &m_vulkanInstanceManager->m_inFlightFences[m_currentFrame]);
+    vkResetFences(*m_vulkanInstanceManager->GetRefLogicalDevice(), 1, &m_vulkanInstanceManager->m_inFlightFences[m_vulkanInstanceManager->m_currentFrame]);
 
     // Record a command buffer which draws the scene onto that image
-    vkResetCommandBuffer(m_vulkanInstanceManager->m_commandBuffers[m_currentFrame], 0);
-    recordCommandBuffer(m_vulkanInstanceManager->m_commandBuffers[m_currentFrame], imageIndex);
+    vkResetCommandBuffer(m_vulkanInstanceManager->m_commandBuffers[m_vulkanInstanceManager->m_currentFrame], 0);
+    recordCommandBuffer(m_vulkanInstanceManager->m_commandBuffers[m_vulkanInstanceManager->m_currentFrame], imageIndex);
 
     // Submit the recorded command buffer
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore waitSemaphores[] = { m_vulkanInstanceManager->m_imageAvailableSemaphores[m_currentFrame] };
+    VkSemaphore waitSemaphores[] = { m_vulkanInstanceManager->m_imageAvailableSemaphores[m_vulkanInstanceManager->m_currentFrame] };
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
 
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &m_vulkanInstanceManager->m_commandBuffers[m_currentFrame];
+    submitInfo.pCommandBuffers = &m_vulkanInstanceManager->m_commandBuffers[m_vulkanInstanceManager->m_currentFrame];
 
-    VkSemaphore signalSemaphores[] = { m_vulkanInstanceManager->m_renderFinishedSemaphores[m_currentFrame] };
+    VkSemaphore signalSemaphores[] = { m_vulkanInstanceManager->m_renderFinishedSemaphores[m_vulkanInstanceManager->m_currentFrame] };
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (vkQueueSubmit(m_vulkanInstanceManager->m_graphicsQueue, 1, &submitInfo, m_vulkanInstanceManager->m_inFlightFences[m_currentFrame]) != VK_SUCCESS) {
+    if (vkQueueSubmit(m_vulkanInstanceManager->m_graphicsQueue, 1, &submitInfo, m_vulkanInstanceManager->m_inFlightFences[m_vulkanInstanceManager->m_currentFrame]) != VK_SUCCESS) {
         throw std::runtime_error("Failed to submit draw command buffer");
     }
 
@@ -725,7 +721,7 @@ void VulkanContext::DrawFrame() {
     }
 
     // Progress to next frame
-    m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    m_vulkanInstanceManager->m_currentFrame = (m_vulkanInstanceManager->m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 
@@ -840,36 +836,36 @@ void VulkanContext::Destroy() {
     swapChainHandler->Destroy();
     //DestroySwapChain();
 
-    vkDestroySampler(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_textureSampler, nullptr);
-    vkDestroyImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_textureImageView, nullptr);
-    vkDestroyImage(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_textureImage, nullptr);
-    vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_textureImageMemory, nullptr);
+    vkDestroySampler(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_textureSampler, nullptr);
+    vkDestroyImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_textureImageView, nullptr);
+    vkDestroyImage(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_textureImage, nullptr);
+    vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_textureImageMemory, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), bufferHandler->UniformBuffers[i], nullptr);
         vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), bufferHandler->UniformBuffersMemory[i], nullptr);
     }
 
-    vkDestroyDescriptorPool(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_descriptorPool, nullptr);
+    vkDestroyDescriptorPool(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_descriptorPool, nullptr);
 
-    vkDestroyDescriptorSetLayout(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_descriptorSetLayout, nullptr);
+    vkDestroyDescriptorSetLayout(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_descriptorSetLayout, nullptr);
 
     // Buffer cleanup
     // Call BufferHandler::DestroyBuffers
     bufferHandler->DestroyBuffers();
     
 
-    vkDestroyPipeline(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_graphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_pipelineLayout, nullptr);
+    vkDestroyPipeline(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_graphicsPipeline, nullptr);
+    vkDestroyPipelineLayout(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_pipelineLayout, nullptr);
 
     vkDestroyRenderPass(*m_vulkanInstanceManager->GetRefLogicalDevice(), renderPassHandler->renderPass, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroySemaphore(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_renderFinishedSemaphores[i], nullptr);
-        vkDestroySemaphore(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_imageAvailableSemaphores[i], nullptr);
-        vkDestroyFence(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_inFlightFences[i], nullptr);
+        vkDestroySemaphore(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_renderFinishedSemaphores[i], nullptr);
+        vkDestroySemaphore(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_imageAvailableSemaphores[i], nullptr);
+        vkDestroyFence(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_inFlightFences[i], nullptr);
     }
-    vkDestroyCommandPool(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_commandPool, nullptr);
+    vkDestroyCommandPool(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_commandPool, nullptr);
 
     // DEVICE DESTRUCTION
     deviceHandler->Destroy();

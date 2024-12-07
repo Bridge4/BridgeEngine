@@ -8,8 +8,6 @@ class VulkanInstanceManager {
 public:
     // The VulkanInstanceManager will hold the resources created by the various handlers 	
     // The goal is to move instance creation to this class, 
-    // Move member variables to this class, and establish a new naming standard: m_member_name <-- I'm going with the underscores because I use too much camelcase at wor	// Move member variables to this class, and establish a new naming standard: m_member_name <-- I'm going with the underscores because I use too much camelcase at workk
-
 
     VulkanInstanceManager(VulkanContext* vulkanContext) {
         this->m_vulkanContext = vulkanContext;

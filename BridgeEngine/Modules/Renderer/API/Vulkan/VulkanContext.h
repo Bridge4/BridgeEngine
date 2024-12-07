@@ -69,35 +69,10 @@ public:
 
     ImageHandler* imageViewBuilder;
 
-    VkSurfaceKHR m_surface;
-    VkQueue m_graphicsQueue;
-    VkQueue m_presentQueue;
-
-    VkDescriptorSetLayout m_descriptorSetLayout;
-    VkDescriptorPool m_descriptorPool;
-    std::vector<VkDescriptorSet> m_descriptorSets;
-
-    VkPipelineLayout m_pipelineLayout;
-
-    VkPipeline m_graphicsPipeline;
-    std::vector<VkFramebuffer> m_swapChainFramebuffers;
-    VkCommandPool m_commandPool;
 
     std::vector<Vertex> m_vertices;
     std::vector<uint32_t> m_indices;
 
-    VkImage m_textureImage;
-    VkImageView m_textureImageView;
-    VkSampler m_textureSampler;
-    VkDeviceMemory m_textureImageMemory;
-
-
-    // Frames in flight require their own command buffers, semaphores and fences
-    std::vector<VkCommandBuffer> m_commandBuffers;
-    std::vector<VkSemaphore> m_imageAvailableSemaphores;
-    std::vector<VkSemaphore> m_renderFinishedSemaphores;
-    std::vector<VkFence> m_inFlightFences;
-    uint32_t m_currentFrame = 0;
 
     //Window window;
     uint32_t WIDTH = 800;

@@ -15,10 +15,7 @@ enum BufferBuildType;
 class BufferHandler
 {
 public:
-	BufferHandler(VulkanContext* vulkanContext, DeviceHandler* deviceHandler, SwapChainHandler* swapChainHandler, VulkanInstanceManager* vulkanInstanceManager) {
-		this->vulkanContext = vulkanContext;
-		this->deviceHandler = deviceHandler;
-		this->swapChainHandler = swapChainHandler;
+	BufferHandler(VulkanInstanceManager* vulkanInstanceManager) {
 		this->m_vulkanInstanceManager = vulkanInstanceManager;
 	}
 
@@ -29,8 +26,6 @@ public:
 	void BuildIndexBuffer(BufferBuildType buildType, std::vector<uint32_t> indices);
 
 	void BuildUniformBuffers(BufferBuildType buildType);
-
-	void UpdateUniformBuffer(uint32_t currentImage);
 
 	void BuildCommandBuffers();
 
@@ -52,14 +47,7 @@ public:
 
 	void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 private:
-
-	VulkanContext* vulkanContext = nullptr;
-
 	VulkanInstanceManager* m_vulkanInstanceManager = nullptr;
-	DeviceHandler* deviceHandler = nullptr;
-	SwapChainHandler* swapChainHandler = nullptr;
-
-	VkCommandPool m_commandPool = nullptr;
 
 
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
