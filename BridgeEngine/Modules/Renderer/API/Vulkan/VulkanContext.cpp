@@ -30,15 +30,19 @@
 //#include "../../../../Camera.h"
 
 #include "Components/Images/ImageHandler.h"
-#include "Components/Instance/Instance.h"
+#include "Components/VulkanInstanceManager/VulkanInstanceManager.h"
 
 void VulkanContext::Construct() {
-    m_vulkan_instance = new VulkanInstance(this);
-    deviceHandler = new DeviceHandler(this, windowHandler);
+    vulkanInstanceManager = new VulkanInstanceManager(this);
+
+
+
+
+    deviceHandler = new DeviceHandler(this, windowHandler, vulkanInstanceManager);
     imageViewBuilder = new ImageHandler(this);
-    swapChainHandler = new SwapChainHandler(this, deviceHandler, windowHandler, imageViewBuilder);
+    swapChainHandler = new SwapChainHandler(this, deviceHandler, windowHandler, imageViewBuilder, vulkanInstanceManager);
     bufferHandler = new BufferHandler(this, deviceHandler, swapChainHandler);
-    renderPassHandler = new RenderPassHandler(this, swapChainHandler, deviceHandler);
+    renderPassHandler = new RenderPassHandler(this, swapChainHandler, deviceHandler, vulkanInstanceManager);
     //VulkanContext* vulkanContext, WindowHandler* windowHandler, SwapChainHandler* swapChainHandler, BufferHandler* bufferHandler
     cameraHandler = new CameraHandler(this, windowHandler, swapChainHandler, bufferHandler);
     //camera = new Camera(this, windowHandler);
@@ -47,9 +51,13 @@ void VulkanContext::Construct() {
     windowHandler->vulkanContext = this;
     if (windowHandler->CreateSurface() != VK_SUCCESS)
         throw std::runtime_error("Failed to create window surface");
+    // DONE
     deviceHandler->Initialize();
+    // DONE 
     swapChainHandler->Initialize();
+    // TODO
     renderPassHandler->Initialize();
+
     swapChainHandler->AttachRenderPassHandler(renderPassHandler);
     CreateCommandPool();
     swapChainHandler->CreateFramebuffers();

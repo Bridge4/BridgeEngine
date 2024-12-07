@@ -4,7 +4,7 @@
 #include "../Devices/DeviceHandler.h"
 #include "../Window/WindowHandler.h"
 #include "../RenderPass/RenderPassHandler.h"
-
+#include "../VulkanInstanceManager/VulkanInstanceManager.h"
 #include <stdexcept>
 #include <cstdlib>
 #include <vector>
@@ -19,7 +19,7 @@ void SwapChainHandler::Initialize() {
 
     VkSurfaceKHR surface = vulkanContext->m_surface;
 
-    SwapChainSupportDetails swapChainSupport = deviceHandler->querySwapChainSupport(deviceHandler->PhysicalDevice);
+    SwapChainSupportDetails swapChainSupport = deviceHandler->querySwapChainSupport(m_vulkanInstanceManager->GetPhysicalDevice());
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -43,7 +43,7 @@ void SwapChainHandler::Initialize() {
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndices indices = deviceHandler->findQueueFamilies(deviceHandler->PhysicalDevice);
+    QueueFamilyIndices indices = deviceHandler->findQueueFamilies(m_vulkanInstanceManager->GetPhysicalDevice());
     uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
     if (indices.graphicsFamily != indices.presentFamily) {
@@ -64,13 +64,13 @@ void SwapChainHandler::Initialize() {
 
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(deviceHandler->LogicalDevice, &createInfo, nullptr, &SwapChain) != VK_SUCCESS) {
+    if (vkCreateSwapchainKHR(*m_vulkanInstanceManager->GetRefLogicalDevice(), &createInfo, nullptr, &SwapChain) != VK_SUCCESS) {
         throw std::runtime_error("failed to create swap chain!");
     }
 
-    vkGetSwapchainImagesKHR(deviceHandler->LogicalDevice, SwapChain, &imageCount, nullptr);
+    vkGetSwapchainImagesKHR(*m_vulkanInstanceManager->GetRefLogicalDevice(), SwapChain, &imageCount, nullptr);
     SwapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(deviceHandler->LogicalDevice, SwapChain, &imageCount, SwapChainImages.data());
+    vkGetSwapchainImagesKHR(*m_vulkanInstanceManager->GetRefLogicalDevice(), SwapChain, &imageCount, SwapChainImages.data());
 
     SwapChainImageFormat = surfaceFormat.format;
     SwapChainExtent = extent;
@@ -78,7 +78,7 @@ void SwapChainHandler::Initialize() {
     SwapChainImageViews.resize(SwapChainImages.size());
     for (size_t i = 0; i < SwapChainImages.size(); i++) {
         // Moved definition for createImageView() to a class and turned into a static function
-        SwapChainImageViews[i] = imageViewBuilder->CreateImageView(deviceHandler->LogicalDevice, SwapChainImages[i], SwapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+        SwapChainImageViews[i] = imageViewBuilder->CreateImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), SwapChainImages[i], SwapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
 
@@ -209,7 +209,7 @@ void SwapChainHandler::CreateImage(uint32_t width, uint32_t height, VkFormat for
 VkFormat SwapChainHandler::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(deviceHandler->PhysicalDevice, format, &props);
+        vkGetPhysicalDeviceFormatProperties(m_vulkanInstanceManager->GetPhysicalDevice(), format, &props);
         if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
             return format;
         }
@@ -222,7 +222,7 @@ VkFormat SwapChainHandler::FindSupportedFormat(const std::vector<VkFormat>& cand
 
 uint32_t SwapChainHandler::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(deviceHandler->PhysicalDevice, &memProperties);
+    vkGetPhysicalDeviceMemoryProperties(m_vulkanInstanceManager->GetPhysicalDevice(), &memProperties);
 
     // Go over this section
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {

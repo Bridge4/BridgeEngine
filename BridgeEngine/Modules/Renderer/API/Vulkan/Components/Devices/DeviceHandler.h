@@ -20,9 +20,10 @@ public:
 #else
     const bool enableValidationLayers = true;
 #endif
-    DeviceHandler(VulkanContext* vulkanContext, WindowHandler* windowHandler) {
+    DeviceHandler(VulkanContext* vulkanContext, WindowHandler* windowHandler, VulkanInstanceManager* vulkanInstanceManager) {
         this->vulkanContext = vulkanContext;
         this->windowHandler = windowHandler;
+        this->m_vulkanInstanceManager = vulkanInstanceManager;
     }
 
     void Initialize();
@@ -44,7 +45,7 @@ private:
 
     WindowHandler* windowHandler = 0;
     VulkanContext* vulkanContext = 0;
-
+    VulkanInstanceManager* m_vulkanInstanceManager = 0;
     void InitializePhysicalDevice();
     void InitializeLogicalDevice();
     void InitializeDebugMessenger();

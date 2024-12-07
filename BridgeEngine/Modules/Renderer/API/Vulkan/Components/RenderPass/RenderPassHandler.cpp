@@ -1,6 +1,7 @@
 #include "RenderPassHandler.h"
 #include "../SwapChain/SwapChainHandler.h"
 #include "../Devices/DeviceHandler.h"
+#include "../VulkanInstanceManager/VulkanInstanceManager.h"
 #include "../../VulkanContext.h"
 #include <iostream>
 
@@ -91,7 +92,7 @@ void RenderPassHandler::Initialize() {
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-    if (vkCreateRenderPass(deviceHandler->LogicalDevice, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(*m_vulkanInstanceManager->GetRefLogicalDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
     }
 }
@@ -100,7 +101,7 @@ VkFormat RenderPassHandler::findSupportedFormat(const std::vector<VkFormat>& can
 {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(deviceHandler->PhysicalDevice, format, &props);
+        vkGetPhysicalDeviceFormatProperties(m_vulkanInstanceManager->GetPhysicalDevice(), format, &props);
         if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
             return format;
         }

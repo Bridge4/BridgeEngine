@@ -8,4 +8,5 @@ class CameraHandler;
 class DeviceHandler;
 class ImageHandler;
 class RenderPassHandler;
+class VulkanInstanceManager;
 #endif

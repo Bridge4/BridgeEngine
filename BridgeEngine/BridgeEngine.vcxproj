@@ -156,7 +156,7 @@
     <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Camera\CameraHandler.cpp" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Buffers\BufferHandler.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\Instance\Instance.cpp" />
+    <ClCompile Include="Modules\Renderer\API\Vulkan\Components\VulkanInstanceManager\VulkanInstanceManager.cpp" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\Components\RenderPass\RenderPassHandler.cpp" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\VulkanContext.cpp" />
     <ClCompile Include="Modules\Renderer\API\Vulkan\VulkanDataStructures.h" />
@@ -170,7 +170,7 @@
     <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Camera\CameraHandler.h" />
     <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Buffers\BufferHandler.h" />
     <ClInclude Include="Modules\Renderer\API\Vulkan\Components\ComponentDeclarations.h" />
-    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Instance\Instance.h" />
+    <ClInclude Include="Modules\Renderer\API\Vulkan\Components\VulkanInstanceManager\VulkanInstanceManager.h" />
     <ClInclude Include="Modules\Renderer\API\Vulkan\Components\RenderPass\RenderPassHandler.h" />
     <ClInclude Include="Modules\Renderer\DataStructures.h" />
     <ClInclude Include="Modules\Renderer\API\Vulkan\Components\Images\ImageHandler.h" />

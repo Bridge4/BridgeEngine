@@ -1,4 +1,4 @@
-#include "Instance.h"
+#include "VulkanInstanceManager.h"
 #include "../../VulkanContext.h"
 #include "GLFW/glfw3.h"
 #include <vector>
@@ -30,7 +30,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
     return VK_FALSE;
 }
 
-void VulkanInstance::CreateInstance()
+void VulkanInstanceManager::CreateInstance()
 {
 	// Helpers needed: getRequiredExtensions
 	// getRequiredExtensions is actuall calling a bunch of glfw functions
@@ -56,15 +56,15 @@ void VulkanInstance::CreateInstance()
 
     
     // getRequiredExtensions is always getting debug extensions for now.
-    std::vector<const char*> extensions = getRequiredExtensions(&m_vulkan_context->enableValidationLayers);
+    std::vector<const char*> extensions = getRequiredExtensions(&m_vulkanContext->enableValidationLayers);
     createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     createInfo.ppEnabledExtensionNames = extensions.data();
 
 
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-    if (m_vulkan_context->enableValidationLayers) {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(m_vulkan_context->validationLayers.size());
-        createInfo.ppEnabledLayerNames = m_vulkan_context->validationLayers.data();
+    if (m_vulkanContext->enableValidationLayers) {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(m_vulkanContext->validationLayers.size());
+        createInfo.ppEnabledLayerNames = m_vulkanContext->validationLayers.data();
         //populateDebugMessengerCreateInfo(debugCreateInfo);
         debugCreateInfo = {};
         debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -78,7 +78,7 @@ void VulkanInstance::CreateInstance()
         createInfo.pNext = nullptr;
     }
 
-    if (vkCreateInstance(&createInfo, nullptr, &m_vulkan_instance) != VK_SUCCESS) {
+    if (vkCreateInstance(&createInfo, nullptr, &m_vulkanInstance) != VK_SUCCESS) {
         throw std::runtime_error("failed to create instance!");
     }
 

@@ -14,13 +14,15 @@
 class SwapChainHandler
 {
 public: 
-    SwapChainHandler(VulkanContext* context, DeviceHandler* deviceHandler, WindowHandler* targetWindow, ImageHandler* imgViewBldr) 
+    SwapChainHandler(VulkanContext* context, DeviceHandler* deviceHandler, WindowHandler* targetWindow, ImageHandler* imgViewBldr, VulkanInstanceManager* vulkanInstanceManager) 
     {
         this->vulkanContext = context;
         this->deviceHandler = deviceHandler;
         this->windowHandler = targetWindow;
         this->imageViewBuilder = imgViewBldr;
+        this->m_vulkanInstanceManager = vulkanInstanceManager;
     };
+
     
     void Initialize();
 
@@ -58,6 +60,7 @@ public:
     VkImageView m_depthImageView = 0;
 private:
     VulkanContext* vulkanContext = 0;
+    VulkanInstanceManager* m_vulkanInstanceManager = 0;
     DeviceHandler* deviceHandler = 0;
     WindowHandler* windowHandler = 0;
     RenderPassHandler* renderPassHandler = 0;

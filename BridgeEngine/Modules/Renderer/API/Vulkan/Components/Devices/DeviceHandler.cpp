@@ -1,5 +1,6 @@
 #include "DeviceHandler.h"
 #include "../Window/WindowHandler.h"
+#include "../VulkanInstanceManager/VulkanInstanceManager.h"
 #include <iostream>
 #include <array>
 #include <set>
@@ -45,19 +46,19 @@ void DeviceHandler::InitializePhysicalDevice() {
 
     for (const auto& device : devices) {
         if (isDeviceSuitable(device)) {
-            PhysicalDevice = device;
+            m_vulkanInstanceManager->SetPhysicalDevice(device);
             break;
         }
     }
 
-    if (PhysicalDevice == VK_NULL_HANDLE) {
+    if (m_vulkanInstanceManager->GetPhysicalDevice() == VK_NULL_HANDLE) {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
 }
 
 void DeviceHandler::InitializeLogicalDevice() {
     // Specifying queues to be created
-    QueueFamilyIndices indices = findQueueFamilies(PhysicalDevice);
+    QueueFamilyIndices indices = findQueueFamilies(m_vulkanInstanceManager->GetPhysicalDevice());
     VkDeviceQueueCreateInfo queueCreateInfo{};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
@@ -96,12 +97,12 @@ void DeviceHandler::InitializeLogicalDevice() {
         createInfo.enabledLayerCount = 0;
     }
 
-    if (vkCreateDevice(PhysicalDevice, &createInfo, nullptr, &LogicalDevice) != VK_SUCCESS) {
+    if (vkCreateDevice(m_vulkanInstanceManager->GetPhysicalDevice(), &createInfo, nullptr, m_vulkanInstanceManager->GetRefLogicalDevice()) != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device!");
     }
 
-    vkGetDeviceQueue(LogicalDevice, indices.graphicsFamily.value(), 0, &vulkanContext->m_graphicsQueue);
-    vkGetDeviceQueue(LogicalDevice, indices.presentFamily.value(), 0, &vulkanContext->m_presentQueue);
+    vkGetDeviceQueue(*m_vulkanInstanceManager->GetRefLogicalDevice(), indices.graphicsFamily.value(), 0, &vulkanContext->m_graphicsQueue);
+    vkGetDeviceQueue(*m_vulkanInstanceManager->GetRefLogicalDevice(), indices.presentFamily.value(), 0, &vulkanContext->m_presentQueue);
 
 }
 

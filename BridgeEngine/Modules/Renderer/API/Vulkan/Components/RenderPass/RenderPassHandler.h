@@ -12,10 +12,11 @@
 class RenderPassHandler
 {
 public:
-	RenderPassHandler(VulkanContext* vulkanContext, SwapChainHandler* swapChainHandler, DeviceHandler* deviceHandler) {
+	RenderPassHandler(VulkanContext* vulkanContext, SwapChainHandler* swapChainHandler, DeviceHandler* deviceHandler, VulkanInstanceManager* vulkanInstanceManager) {
 		this->vulkanContext = vulkanContext;
 		this->swapChainHandler = swapChainHandler;
 		this->deviceHandler = deviceHandler;
+		this->m_vulkanInstanceManager = vulkanInstanceManager;
 	}
 
 	void Initialize();
@@ -25,6 +26,7 @@ public:
 	VulkanContext* vulkanContext = 0;
 	SwapChainHandler* swapChainHandler = 0;
 	DeviceHandler* deviceHandler = 0;
+	VulkanInstanceManager* m_vulkanInstanceManager = nullptr;
 };
 #endif
 
