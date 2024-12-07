@@ -6,31 +6,57 @@
 
 class VulkanInstanceManager {
 public:
-	// The VulkanInstanceManager will hold the resources created by the various handlers 	
-	// The goal is to move instance creation to this class, 
-	// Move member variables to this class, and establish a new naming standard: m_member_name <-- I'm going with the underscores because I use too much camelcase at wor	// Move member variables to this class, and establish a new naming standard: m_member_name <-- I'm going with the underscores because I use too much camelcase at workk
-	
-	
-	VulkanInstanceManager(VulkanContext* vulkanContext) {
-		this->m_vulkanContext = vulkanContext;
-	}
+    // The VulkanInstanceManager will hold the resources created by the various handlers 	
+    // The goal is to move instance creation to this class, 
+    // Move member variables to this class, and establish a new naming standard: m_member_name <-- I'm going with the underscores because I use too much camelcase at wor	// Move member variables to this class, and establish a new naming standard: m_member_name <-- I'm going with the underscores because I use too much camelcase at workk
+
+
+    VulkanInstanceManager(VulkanContext* vulkanContext) {
+        this->m_vulkanContext = vulkanContext;
+    }
 
 
 
-	void CreateInstance();
+    void CreateInstance();
+
     // Getters
+    VkInstance GetVulkanInstance() { return m_instance; }
     VkPhysicalDevice GetPhysicalDevice() { return m_physicalDevice; }
+    //std::vector<VkImage>* GetRefSwapChainImages() { return &m_swapChainImages; }
+    std::vector<VkImageView>* GetRefSwapChainImageViews() { return &m_swapChainImageViews; }
+    VkFormat GetSwapChainImageFormat() { return m_swapChainImageFormat; }
+    VkDevice* GetRefLogicalDevice() { return &m_logicalDevice; }
+    VkSwapchainKHR* GetRefSwapChain() { return &m_swapChain; }
+    std::vector<VkImage>* GetRefSwapChainImages() { return &m_swapChainImages; }
+    VkRenderPass* GetRefRenderPass() { return &m_renderPass; }
+    VkExtent2D GetSwapChainExtent() { return m_swapChainExtent; }
+    VkSurfaceKHR GetSurface() { return m_surface; }
+    VkImageView GetDepthImageView() { return m_depthImageView; }
+
     // Setters
     void SetPhysicalDevice(VkPhysicalDevice physicalDevice) { this->m_physicalDevice = physicalDevice; }
+    void SetSwapChainImageFormat(VkFormat surfaceFormat) { this->m_swapChainImageFormat = surfaceFormat; };
+    void SetSwapChainExtent(VkExtent2D extent) { this->m_swapChainExtent = extent; }
+    void SetSwapChainImageViews(std::vector<VkImageView> swapChainImageViews) { this->m_swapChainImageViews = swapChainImageViews; }
+    void SetSwapChainImages(std::vector<VkImage> swapChainImages) { this->m_swapChainImages = swapChainImages; }
 
-    VkDevice* GetRefLogicalDevice() { return &m_logicalDevice; }
-
-
-	VkInstance m_vulkanInstance = 0;
+	//VkInstance m_vulkanInstance = 0;
 	VulkanContext* m_vulkanContext = 0;
 
     VkPhysicalDevice m_physicalDevice = nullptr;
     VkDevice m_logicalDevice = nullptr;
+
+    VkSwapchainKHR m_swapChain = nullptr;
+    std::vector<VkImage> m_swapChainImages = {};
+    VkFormat m_swapChainImageFormat = VK_FORMAT_UNDEFINED;
+    VkExtent2D m_swapChainExtent;
+
+    VkImage m_depthImage = 0;
+    VkDeviceMemory m_depthImageMemory = 0;
+    VkImageView m_depthImageView = 0;
+    std::vector<VkImageView> m_swapChainImageViews = {};
+
+    VkRenderPass m_renderPass; 
 
     VkSurfaceKHR m_surface;
     VkQueue m_graphicsQueue;
@@ -50,6 +76,12 @@ public:
     VkImageView m_textureImageView;
     VkSampler m_textureSampler;
     VkDeviceMemory m_textureImageMemory;
+
+
+
+	std::vector<VkBuffer> m_uniformBuffers = {};
+	std::vector<VkDeviceMemory> m_uniformBuffersMemory = {};
+	std::vector<void*> m_uniformBuffersMapped = {};
 
 
     // Frames in flight require their own command buffers, semaphores and fences

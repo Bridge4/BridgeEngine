@@ -2,11 +2,12 @@
 #include <GLFW/glfw3.h>
 #include "WindowHandler.h"
 #include "../../VulkanContext.h"
+#include "../VulkanInstanceManager/VulkanInstanceManager.h"
 #include <string>
 
 VkResult WindowHandler::CreateSurface()
 {
-    return glfwCreateWindowSurface(vulkanContext->m_instance, r_window, nullptr, &vulkanContext->m_surface);
+    return glfwCreateWindowSurface(vulkanContext->m_vulkanInstanceManager->m_instance, r_window, nullptr, &vulkanContext->m_vulkanInstanceManager->m_surface);
 }
 
 //void key_callback(GLFWwindow* r_window, int key, int scancode, int action, int mods)

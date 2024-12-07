@@ -15,10 +15,11 @@ enum BufferBuildType;
 class BufferHandler
 {
 public:
-	BufferHandler(VulkanContext* vulkanContext, DeviceHandler* deviceHandler, SwapChainHandler* swapChainHandler) {
+	BufferHandler(VulkanContext* vulkanContext, DeviceHandler* deviceHandler, SwapChainHandler* swapChainHandler, VulkanInstanceManager* vulkanInstanceManager) {
 		this->vulkanContext = vulkanContext;
 		this->deviceHandler = deviceHandler;
 		this->swapChainHandler = swapChainHandler;
+		this->m_vulkanInstanceManager = vulkanInstanceManager;
 	}
 
 	void DestroyBuffers();
@@ -54,6 +55,7 @@ private:
 
 	VulkanContext* vulkanContext = nullptr;
 
+	VulkanInstanceManager* m_vulkanInstanceManager = nullptr;
 	DeviceHandler* deviceHandler = nullptr;
 	SwapChainHandler* swapChainHandler = nullptr;
 

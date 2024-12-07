@@ -17,7 +17,7 @@ void SwapChainHandler::Initialize() {
     VkFormat m_swapChainImageFormat;
     VkExtent2D  m_swapChainExtent;*/
 
-    VkSurfaceKHR surface = vulkanContext->m_surface;
+    VkSurfaceKHR surface = m_vulkanInstanceManager->GetSurface();
 
     SwapChainSupportDetails swapChainSupport = deviceHandler->querySwapChainSupport(m_vulkanInstanceManager->GetPhysicalDevice());
 
@@ -64,23 +64,26 @@ void SwapChainHandler::Initialize() {
 
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(*m_vulkanInstanceManager->GetRefLogicalDevice(), &createInfo, nullptr, &SwapChain) != VK_SUCCESS) {
+    if (vkCreateSwapchainKHR(*m_vulkanInstanceManager->GetRefLogicalDevice(), &createInfo, nullptr, m_vulkanInstanceManager->GetRefSwapChain()) != VK_SUCCESS) {
         throw std::runtime_error("failed to create swap chain!");
     }
 
-    vkGetSwapchainImagesKHR(*m_vulkanInstanceManager->GetRefLogicalDevice(), SwapChain, &imageCount, nullptr);
-    SwapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(*m_vulkanInstanceManager->GetRefLogicalDevice(), SwapChain, &imageCount, SwapChainImages.data());
+    vkGetSwapchainImagesKHR(*m_vulkanInstanceManager->GetRefLogicalDevice(), *m_vulkanInstanceManager->GetRefSwapChain(), &imageCount, nullptr);
+    std::vector<VkImage> swapChainImages = *m_vulkanInstanceManager->GetRefSwapChainImages();
+    swapChainImages.resize(imageCount);
+    vkGetSwapchainImagesKHR(*m_vulkanInstanceManager->GetRefLogicalDevice(), *m_vulkanInstanceManager->GetRefSwapChain() ,&imageCount,swapChainImages.data());
+    m_vulkanInstanceManager->SetSwapChainImages(swapChainImages);
 
-    SwapChainImageFormat = surfaceFormat.format;
-    SwapChainExtent = extent;
-
-    SwapChainImageViews.resize(SwapChainImages.size());
-    for (size_t i = 0; i < SwapChainImages.size(); i++) {
+    m_vulkanInstanceManager->SetSwapChainImageFormat(surfaceFormat.format);
+    m_vulkanInstanceManager->SetSwapChainExtent(extent);
+    std::vector<VkImageView> swapChainImageViews = *m_vulkanInstanceManager->GetRefSwapChainImageViews();
+    swapChainImageViews.resize(swapChainImages.size());
+    for (size_t i = 0; i < swapChainImages.size(); i++) {
         // Moved definition for createImageView() to a class and turned into a static function
-        SwapChainImageViews[i] = imageViewBuilder->CreateImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), SwapChainImages[i], SwapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+        swapChainImageViews[i] = imageViewBuilder->CreateImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_swapChainImages[i], m_vulkanInstanceManager->m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+        
     }
-
+    m_vulkanInstanceManager->SetSwapChainImageViews(swapChainImageViews);
 
     /*SwapChain = SwapChain;
     SwapChainImageFormat = SwapChainImageFormat;
@@ -93,7 +96,7 @@ void SwapChainHandler::Rebuild() {
     // Handling minimization
     windowHandler->handleMinimization();
 
-    vkDeviceWaitIdle(deviceHandler->LogicalDevice);
+    vkDeviceWaitIdle(*m_vulkanInstanceManager->GetRefLogicalDevice());
 
     Destroy();
 
@@ -104,19 +107,19 @@ void SwapChainHandler::Rebuild() {
 }
 
 void SwapChainHandler::Destroy() {
-    vkDestroyImageView(deviceHandler->LogicalDevice, m_depthImageView, nullptr);
-    vkDestroyImage(deviceHandler->LogicalDevice, m_depthImage, nullptr);
-    vkFreeMemory(deviceHandler->LogicalDevice, m_depthImageMemory, nullptr);
+    vkDestroyImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_depthImageView, nullptr);
+    vkDestroyImage(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_depthImage, nullptr);
+    vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_depthImageMemory, nullptr);
 
-    for (auto framebuffer : SwapChainFramebuffers) {
-        vkDestroyFramebuffer(deviceHandler->LogicalDevice, framebuffer, nullptr);
+    for (auto framebuffer : m_vulkanInstanceManager->m_swapChainFramebuffers) {
+        vkDestroyFramebuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), framebuffer, nullptr);
     }
 
-    for (auto imageView : SwapChainImageViews) {
-        vkDestroyImageView(deviceHandler->LogicalDevice, imageView, nullptr);
+    for (auto imageView : m_vulkanInstanceManager->m_swapChainImageViews) {
+        vkDestroyImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), imageView, nullptr);
     }
 
-    vkDestroySwapchainKHR(deviceHandler->LogicalDevice, SwapChain, nullptr);
+    vkDestroySwapchainKHR(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_swapChain, nullptr);
 }
 
 void SwapChainHandler::CreateDepthResources() {
@@ -125,36 +128,36 @@ void SwapChainHandler::CreateDepthResources() {
         VK_IMAGE_TILING_OPTIMAL,
         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
     );
-    CreateImage(SwapChainExtent.width, SwapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL,
+    CreateImage(m_vulkanInstanceManager->GetSwapChainExtent().width, m_vulkanInstanceManager->GetSwapChainExtent().height, depthFormat, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        m_depthImage, m_depthImageMemory);
-    m_depthImageView = imageViewBuilder->CreateImageView(deviceHandler->LogicalDevice, m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+        m_vulkanInstanceManager->m_depthImage, m_vulkanInstanceManager->m_depthImageMemory);
+    m_vulkanInstanceManager->m_depthImageView = imageViewBuilder->CreateImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    TransitionImageLayout(m_depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    TransitionImageLayout(m_vulkanInstanceManager->m_depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
 void SwapChainHandler::CreateFramebuffers() {
     CreateDepthResources();
-    SwapChainFramebuffers.resize(SwapChainImageViews.size());
+    m_vulkanInstanceManager->m_swapChainFramebuffers.resize(m_vulkanInstanceManager->m_swapChainImageViews.size());
 
     // Loop through swap chain image views
-    for (size_t i = 0; i < SwapChainImageViews.size(); i++) {
+    for (size_t i = 0; i < m_vulkanInstanceManager->m_swapChainImageViews.size(); i++) {
         std::array<VkImageView, 2> attachments = {
-            SwapChainImageViews[i],
-            m_depthImageView
+            m_vulkanInstanceManager->m_swapChainImageViews[i],
+            m_vulkanInstanceManager->m_depthImageView
         };
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = renderPassHandler->renderPass;
+        framebufferInfo.renderPass = m_vulkanInstanceManager->m_renderPass;
         framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferInfo.pAttachments = attachments.data();
         framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width = SwapChainExtent.width;
-        framebufferInfo.height = SwapChainExtent.height;
+        framebufferInfo.width = m_vulkanInstanceManager->GetSwapChainExtent().width;
+        framebufferInfo.height = m_vulkanInstanceManager->GetSwapChainExtent().height;
         framebufferInfo.layers = 1;
 
-        if (vkCreateFramebuffer(deviceHandler->LogicalDevice, &framebufferInfo, nullptr, &SwapChainFramebuffers[i]) != VK_SUCCESS) {
+        if (vkCreateFramebuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), &framebufferInfo, nullptr, &m_vulkanInstanceManager->m_swapChainFramebuffers[i]) != VK_SUCCESS) {
             throw std::runtime_error("failed to create framebuffer!");
         }
     }
@@ -187,23 +190,23 @@ void SwapChainHandler::CreateImage(uint32_t width, uint32_t height, VkFormat for
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.flags = 0; // Optional
 
-    if (vkCreateImage(deviceHandler->LogicalDevice, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+    if (vkCreateImage(*m_vulkanInstanceManager->GetRefLogicalDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
         throw std::runtime_error("failed to create image!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(deviceHandler->LogicalDevice, image, &memRequirements);
+    vkGetImageMemoryRequirements(*m_vulkanInstanceManager->GetRefLogicalDevice(), image, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(deviceHandler->LogicalDevice, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate image memory!");
     }
 
-    vkBindImageMemory(deviceHandler->LogicalDevice, image, imageMemory, 0);
+    vkBindImageMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), image, imageMemory, 0);
 }
 
 VkFormat SwapChainHandler::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
@@ -320,7 +323,7 @@ void SwapChainHandler::TransitionImageLayout(VkImage image, VkFormat format, VkI
 //        framebufferInfo.height = SwapChainExtent.height;
 //        framebufferInfo.layers = 1;
 //
-//        if (vkCreateFramebuffer(deviceHandler->LogicalDevice, &framebufferInfo, nullptr, &SwapChainFramebuffers[i]) != VK_SUCCESS) {
+//        if (vkCreateFramebuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), &framebufferInfo, nullptr, &SwapChainFramebuffers[i]) != VK_SUCCESS) {
 //            throw std::runtime_error("failed to create framebuffer!");
 //        }
 //    }
@@ -330,11 +333,11 @@ VkCommandBuffer SwapChainHandler::BeginSingleTimeCommands() {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = vulkanContext->m_commandPool;
+    allocInfo.commandPool = m_vulkanInstanceManager->m_commandPool;
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(deviceHandler->LogicalDevice, &allocInfo, &commandBuffer);
+    vkAllocateCommandBuffers(*m_vulkanInstanceManager->GetRefLogicalDevice(), &allocInfo, &commandBuffer);
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -354,10 +357,10 @@ void SwapChainHandler::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    vkQueueSubmit(vulkanContext->m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(vulkanContext->m_graphicsQueue);
+    vkQueueSubmit(m_vulkanInstanceManager->m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_vulkanInstanceManager->m_graphicsQueue);
 
-    vkFreeCommandBuffers(deviceHandler->LogicalDevice, vulkanContext->m_commandPool, 1, &commandBuffer);
+    vkFreeCommandBuffers(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_commandPool, 1, &commandBuffer);
 }
 
 // HELPERS

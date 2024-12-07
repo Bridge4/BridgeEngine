@@ -62,21 +62,21 @@ VkImageView ImageHandler::CreateImageView(VkDevice device, VkImage image, VkForm
 //    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 //    imageInfo.flags = 0; // Optional
 //
-//    if (vkCreateImage(deviceHandler->LogicalDevice, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+//    if (vkCreateImage(*m_vulkanInstanceManager->GetRefLogicalDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
 //        throw std::runtime_error("failed to create image!");
 //    }
 //
 //    VkMemoryRequirements memRequirements;
-//    vkGetImageMemoryRequirements(deviceHandler->LogicalDevice, image, &memRequirements);
+//    vkGetImageMemoryRequirements(*m_vulkanInstanceManager->GetRefLogicalDevice(), image, &memRequirements);
 //
 //    VkMemoryAllocateInfo allocInfo{};
 //    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 //    allocInfo.allocationSize = memRequirements.size;
 //    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 //
-//    if (vkAllocateMemory(deviceHandler->LogicalDevice, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+//    if (vkAllocateMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
 //        throw std::runtime_error("failed to allocate image memory!");
 //    }
 //
-//    vkBindImageMemory(deviceHandler->LogicalDevice, image, imageMemory, 0);
+//    vkBindImageMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), image, imageMemory, 0);
 //}

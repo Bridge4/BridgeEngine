@@ -1,4 +1,5 @@
 #include "CameraHandler.h"
+#include "../VulkanInstanceManager/VulkanInstanceManager.h"
 #include <chrono>
 // GLM INCLUDES
 
@@ -130,9 +131,9 @@ void CameraHandler::UpdateUniformBuffer(uint32_t currentImage)
     ubo.view = getViewMatrix();
 
 
-    ubo.proj = glm::perspective(glm::radians(90.0f), swapChainHandler->SwapChainExtent.width / (float)swapChainHandler->SwapChainExtent.height, 0.001f, 100000.0f);
+    ubo.proj = glm::perspective(glm::radians(90.0f), m_vulkanInstanceManager->GetSwapChainExtent().width / (float)m_vulkanInstanceManager->GetSwapChainExtent().height, 0.001f, 100000.0f);
     // IMPORTANT: VULKAN HAS INVERTED Y AXIS TO OPENGL AND GLM WAS DESIGNED FOR OPENGL. THIS CONVERTS TO VULKAN.
     ubo.proj[1][1] *= -1;
 
-    memcpy(bufferHandler->UniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+    memcpy(m_vulkanInstanceManager->m_uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
  }

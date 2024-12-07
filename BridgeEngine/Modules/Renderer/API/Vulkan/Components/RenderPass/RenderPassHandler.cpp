@@ -8,7 +8,7 @@
 
 void RenderPassHandler::Initialize() {
     VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = swapChainHandler->SwapChainImageFormat;
+    colorAttachment.format = m_vulkanInstanceManager->GetSwapChainImageFormat();
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     // Store rendered contents in memory to be read later
@@ -92,7 +92,7 @@ void RenderPassHandler::Initialize() {
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-    if (vkCreateRenderPass(*m_vulkanInstanceManager->GetRefLogicalDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(*m_vulkanInstanceManager->GetRefLogicalDevice(), &renderPassInfo, nullptr, m_vulkanInstanceManager->GetRefRenderPass()) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
     }
 }

@@ -59,7 +59,7 @@ public:
 
     void RenderLoop();
 
-    VulkanInstanceManager* vulkanInstanceManager;
+    VulkanInstanceManager* m_vulkanInstanceManager;
     DeviceHandler* deviceHandler;
     SwapChainHandler* swapChainHandler;
     WindowHandler* windowHandler;

@@ -4,6 +4,7 @@
 #include "../Devices/DeviceHandler.h"
 #include "../../VulkanDataStructures.h"
 #include "../SwapChain/SwapChainHandler.h"
+#include "../VulkanInstanceManager/VulkanInstanceManager.h"
 #include <vulkan/vulkan.h>
 #include <chrono>
 
@@ -47,10 +48,10 @@ STAGED example:
 */
 
 void BufferHandler::DestroyBuffers() {
-    vkDestroyBuffer(deviceHandler->LogicalDevice, IndexBuffer, nullptr);
-    vkFreeMemory(deviceHandler->LogicalDevice, IndexBufferMemory, nullptr);
-    vkDestroyBuffer(deviceHandler->LogicalDevice, VertexBuffer, nullptr);
-    vkFreeMemory(deviceHandler->LogicalDevice, VertexBufferMemory, nullptr);
+    vkDestroyBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), IndexBuffer, nullptr);
+    vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), IndexBufferMemory, nullptr);
+    vkDestroyBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), VertexBuffer, nullptr);
+    vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), VertexBufferMemory, nullptr);
 }
 
 void BufferHandler::BuildVertexBuffer(BufferBuildType buildType, std::vector<Vertex> vertices) {
@@ -64,9 +65,9 @@ void BufferHandler::BuildVertexBuffer(BufferBuildType buildType, std::vector<Ver
     
     // Map it
     void* data;
-    vkMapMemory(deviceHandler->LogicalDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+    vkMapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
     memcpy(data, vertices.data(), (size_t)bufferSize);
-    vkUnmapMemory(deviceHandler->LogicalDevice, stagingBufferMemory);
+    vkUnmapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBufferMemory);
 
     // Create vertex buffer
     BuildBuffer(bufferSize,
@@ -78,8 +79,8 @@ void BufferHandler::BuildVertexBuffer(BufferBuildType buildType, std::vector<Ver
     copyBuffer(stagingBuffer, VertexBuffer, bufferSize);
 
     // cleanup
-    vkDestroyBuffer(deviceHandler->LogicalDevice, stagingBuffer, nullptr);
-    vkFreeMemory(deviceHandler->LogicalDevice, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBuffer, nullptr);
+    vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBufferMemory, nullptr);
 }
 
 void BufferHandler::BuildIndexBuffer(BufferBuildType buildType, std::vector<uint32_t> indices) {
@@ -109,16 +110,16 @@ void BufferHandler::BuildIndexBuffer(BufferBuildType buildType, std::vector<uint
     BuildBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
     void* data;
-    vkMapMemory(deviceHandler->LogicalDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+    vkMapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
     memcpy(data, indices.data(), (size_t)bufferSize);
-    vkUnmapMemory(deviceHandler->LogicalDevice, stagingBufferMemory);
+    vkUnmapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBufferMemory);
 
     BuildBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, IndexBuffer, IndexBufferMemory);
 
     copyBuffer(stagingBuffer, IndexBuffer, bufferSize);
 
-    vkDestroyBuffer(deviceHandler->LogicalDevice, stagingBuffer, nullptr);
-    vkFreeMemory(deviceHandler->LogicalDevice, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBuffer, nullptr);
+    vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBufferMemory, nullptr);
 
 }
 
@@ -127,15 +128,15 @@ void BufferHandler::BuildUniformBuffers(BufferBuildType buildType)
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
     // Create a uniform buffer per frame in flight
-    UniformBuffers.resize(vulkanContext->MAX_FRAMES_IN_FLIGHT);
-    UniformBuffersMemory.resize(vulkanContext->MAX_FRAMES_IN_FLIGHT);
-    UniformBuffersMapped.resize(vulkanContext->MAX_FRAMES_IN_FLIGHT);
+    m_vulkanInstanceManager->m_uniformBuffers.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
+    m_vulkanInstanceManager->m_uniformBuffersMemory.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
+    m_vulkanInstanceManager->m_uniformBuffersMapped.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
 
-    for (size_t i = 0; i < vulkanContext->MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT; i++) {
         // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i], m_uniformBuffersMemory[i], UNSTAGED)
         // Create then Map to memory
-        BuildBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, UniformBuffers[i], UniformBuffersMemory[i]);
-        vkMapMemory(deviceHandler->LogicalDevice, UniformBuffersMemory[i], 0, bufferSize, 0, &UniformBuffersMapped[i]);
+        BuildBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_vulkanInstanceManager->m_uniformBuffers[i], m_vulkanInstanceManager->m_uniformBuffersMemory[i]);
+        vkMapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_uniformBuffersMemory[i], 0, bufferSize, 0, &m_vulkanInstanceManager->m_uniformBuffersMapped[i]);
     }
 }
 
@@ -156,19 +157,19 @@ void BufferHandler::UpdateUniformBuffer(uint32_t currentImage)
 }
 
 void BufferHandler::BuildCommandBuffers() {
-    CommandBuffers.resize(vulkanContext->MAX_FRAMES_IN_FLIGHT);
+    m_vulkanInstanceManager->m_commandBuffers.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
 
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = vulkanContext->m_commandPool;
+    allocInfo.commandPool = m_vulkanInstanceManager->m_commandPool;
     /*
         VK_COMMAND_BUFFER_LEVEL_PRIMARY: Can be submitted to a queue for execution, but cannot be called from other command buffers.
         VK_COMMAND_BUFFER_LEVEL_SECONDARY: Cannot be submitted directly, but can be called from primary command buffers.
     */
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = (uint32_t)CommandBuffers.size();
+    allocInfo.commandBufferCount = (uint32_t)m_vulkanInstanceManager->m_commandBuffers.size();
 
-    if (vkAllocateCommandBuffers(deviceHandler->LogicalDevice, &allocInfo, CommandBuffers.data()) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(*m_vulkanInstanceManager->GetRefLogicalDevice(), &allocInfo, m_vulkanInstanceManager->m_commandBuffers.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate command buffers!");
     }
 }
@@ -183,13 +184,13 @@ void BufferHandler::BuildBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkM
     bufferInfo.usage = usage;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateBuffer(deviceHandler->LogicalDevice, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+    if (vkCreateBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to create vertex buffer!");
     }
 
     // Allocation
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(deviceHandler->LogicalDevice, buffer, &memRequirements);
+    vkGetBufferMemoryRequirements(*m_vulkanInstanceManager->GetRefLogicalDevice(), buffer, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -198,12 +199,12 @@ void BufferHandler::BuildBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkM
 
     // VkAllocateMemory is an expensive operation on the CPU side, so we should minimize calls to it
     // "Aggressively allocate your buffer as large as you believe it will grow" - dude on stackoverflow
-    if (vkAllocateMemory(deviceHandler->LogicalDevice, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
         throw std::runtime_error("Failed to allocate buffer memory.");
     }
 
     // Binding
-    vkBindBufferMemory(deviceHandler->LogicalDevice, buffer, bufferMemory, 0);
+    vkBindBufferMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), buffer, bufferMemory, 0);
 }
 
 void BufferHandler::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
@@ -219,11 +220,11 @@ VkCommandBuffer BufferHandler::BeginSingleTimeCommands() {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = vulkanContext->m_commandPool;
+    allocInfo.commandPool = m_vulkanInstanceManager->m_commandPool;
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(deviceHandler->LogicalDevice, &allocInfo, &commandBuffer);
+    vkAllocateCommandBuffers(*m_vulkanInstanceManager->GetRefLogicalDevice(), &allocInfo, &commandBuffer);
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -243,17 +244,17 @@ void BufferHandler::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    vkQueueSubmit(vulkanContext->m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(vulkanContext->m_graphicsQueue);
+    vkQueueSubmit(m_vulkanInstanceManager->m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_vulkanInstanceManager->m_graphicsQueue);
 
-    vkFreeCommandBuffers(deviceHandler->LogicalDevice, vulkanContext->m_commandPool, 1, &commandBuffer);
+    vkFreeCommandBuffers(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_commandPool, 1, &commandBuffer);
 }
 
 
 uint32_t BufferHandler::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(deviceHandler->PhysicalDevice, &memProperties);
+    vkGetPhysicalDeviceMemoryProperties(m_vulkanInstanceManager->GetPhysicalDevice(), &memProperties);
 
     // Go over this section
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
