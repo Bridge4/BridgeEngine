@@ -69,7 +69,7 @@ public:
 
     ImageHandler* imageViewBuilder;
 
-
+    // TODO: Move this to some sort of object abstraction rather than making it a part of the API context
     std::vector<Vertex> m_vertices;
     std::vector<uint32_t> m_indices;
 
@@ -95,11 +95,6 @@ private:
     
 
     void CreateVulkanContext();
-
-    void RebuildSwapChain();
-
-    // RENDER PASSES
-    //void CreateRenderPass();
 
     void CreateDescriptorSetLayout();
 
