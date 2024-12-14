@@ -1,0 +1,97 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-e8afb46049d69214c67e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.7"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "stb",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "image::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-image-Debug-87b4c8c09d7f74e14b26.json",
+					"name" : "image",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "image-resize::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-image-resize-Debug-f927c664921a23131ed7.json",
+					"name" : "image-resize",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "image-write::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-image-write-Debug-e8bb65cd535946aa4ff4.json",
+					"name" : "image-write",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "perlin::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-perlin-Debug-ac7ba49c98ffe9ad6e4d.json",
+					"name" : "perlin",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "vorbis::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-vorbis-Debug-00891b2a207207f5e45f.json",
+					"name" : "vorbis",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Dependencies/stb-master/cmake-build-debug",
+		"source" : "F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Dependencies/stb-master"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 6
+	}
+}

@@ -1,6 +1,6 @@
 #include <iostream>
-#include "Renderer/Renderer.h"
-#include "Renderer/API/Vulkan/Components/Window/WindowHandler.h"
+#include "Renderer.h"
+#include "API/Vulkan/Components/Window/WindowHandler.h"
 
 int main() {
     try {

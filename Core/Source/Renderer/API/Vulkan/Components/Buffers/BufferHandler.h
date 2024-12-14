@@ -10,7 +10,6 @@
 struct Vertex;
 struct UniformBufferObject;
 
-enum BufferBuildType;
 
 class BufferHandler
 {
@@ -21,11 +20,11 @@ public:
 
 	void DestroyBuffers();
 
-	void BuildVertexBuffer(BufferBuildType buildType, std::vector<Vertex> vertices);
+	void BuildVertexBuffer(std::vector<Vertex> vertices);
 
-	void BuildIndexBuffer(BufferBuildType buildType, std::vector<uint32_t> indices);
+	void BuildIndexBuffer(std::vector<uint32_t> indices);
 
-	void BuildUniformBuffers(BufferBuildType buildType);
+	void BuildUniformBuffers();
 
 	void BuildCommandBuffers();
 

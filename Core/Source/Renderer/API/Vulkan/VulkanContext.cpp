@@ -63,7 +63,6 @@ void VulkanContext::Construct() {
     CreateDescriptorSetLayout();
     CreateGraphicsPipeline();
 
-
     /*CreateDepthResources();
     CreateFramebuffers();*/
 
@@ -74,11 +73,11 @@ void VulkanContext::Construct() {
 
     LoadModel();
     
-    bufferHandler->BuildVertexBuffer(STAGED, m_vertices);
-    bufferHandler->BuildIndexBuffer(STAGED, m_indices);
+    bufferHandler->BuildVertexBuffer(m_vertices);
+    bufferHandler->BuildIndexBuffer(m_indices);
     //CreateIndexBuffer();
     //CreateUniformBuffers();
-    bufferHandler->BuildUniformBuffers(UNSTAGED);
+    bufferHandler->BuildUniformBuffers();
 
     CreateDescriptorPool();
     CreateDescriptorSets();
@@ -108,6 +107,7 @@ void VulkanContext::CreateDescriptorSetLayout() {
     uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
+    // Example comment
     VkDescriptorSetLayoutBinding samplerLayoutBinding{};
     samplerLayoutBinding.binding = 1;
     samplerLayoutBinding.descriptorCount = 1;
@@ -121,6 +121,7 @@ void VulkanContext::CreateDescriptorSetLayout() {
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
+    // Another Example Comment
     if (vkCreateDescriptorSetLayout(*m_vulkanInstanceManager->GetRefLogicalDevice(), &layoutInfo, nullptr, &m_vulkanInstanceManager->m_descriptorSetLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
     }

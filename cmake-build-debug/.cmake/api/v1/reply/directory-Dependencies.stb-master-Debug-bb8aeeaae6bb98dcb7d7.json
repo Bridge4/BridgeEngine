@@ -1,0 +1,205 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"Dependencies/stb-master/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 26,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 26,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 26,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 26,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 41,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 67,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 68,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 70,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 76,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Core/Binaries/Dependencies/stb-master/libstb-image.a"
+			],
+			"targetId" : "image::@d03b8b10d069492da025",
+			"targetIndex" : 3,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Core/Binaries/Dependencies/stb-master/libstb-image-write.a"
+			],
+			"targetId" : "image-write::@d03b8b10d069492da025",
+			"targetIndex" : 5,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 3,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Core/Binaries/Dependencies/stb-master/libstb-image-resize.a"
+			],
+			"targetId" : "image-resize::@d03b8b10d069492da025",
+			"targetIndex" : 4,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 4,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Core/Binaries/Dependencies/stb-master/libstb-perlin.a"
+			],
+			"targetId" : "perlin::@d03b8b10d069492da025",
+			"targetIndex" : 6,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 5,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Core/Binaries/Dependencies/stb-master/libstb-vorbis.a"
+			],
+			"targetId" : "vorbis::@d03b8b10d069492da025",
+			"targetIndex" : 9,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 6,
+			"component" : "Unspecified",
+			"destination" : "include",
+			"paths" : 
+			[
+				"Dependencies/stb-master/stb"
+			],
+			"type" : "directory"
+		},
+		{
+			"backtrace" : 7,
+			"component" : "Unspecified",
+			"destination" : "include",
+			"paths" : 
+			[
+				"Core/Binaries/Dependencies/stb-master/stb"
+			],
+			"type" : "directory"
+		},
+		{
+			"backtrace" : 8,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/stb",
+			"paths" : 
+			[
+				"Core/Binaries/Dependencies/stb-master/lib/cmake/stb/stbConfig.cmake"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 9,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/stb",
+			"exportName" : "stbTargets",
+			"exportTargets" : 
+			[
+				{
+					"id" : "image::@d03b8b10d069492da025",
+					"index" : 3
+				},
+				{
+					"id" : "image-write::@d03b8b10d069492da025",
+					"index" : 5
+				},
+				{
+					"id" : "image-resize::@d03b8b10d069492da025",
+					"index" : 4
+				},
+				{
+					"id" : "perlin::@d03b8b10d069492da025",
+					"index" : 6
+				},
+				{
+					"id" : "vorbis::@d03b8b10d069492da025",
+					"index" : 9
+				}
+			],
+			"paths" : 
+			[
+				"F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Core/Binaries/Dependencies/stb-master/CMakeFiles/Export/de97d4ebb1d95ec745ed60c8a885622b/stbTargets.cmake"
+			],
+			"type" : "export"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Core/Binaries/Dependencies/stb-master",
+		"source" : "Dependencies/stb-master"
+	}
+}
