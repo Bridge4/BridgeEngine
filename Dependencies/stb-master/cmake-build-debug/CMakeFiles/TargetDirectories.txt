@@ -1,0 +1,11 @@
+F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Dependencies/stb-master/cmake-build-debug/CMakeFiles/image.dir
+F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Dependencies/stb-master/cmake-build-debug/CMakeFiles/image-write.dir
+F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Dependencies/stb-master/cmake-build-debug/CMakeFiles/image-resize.dir
+F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Dependencies/stb-master/cmake-build-debug/CMakeFiles/perlin.dir
+F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Dependencies/stb-master/cmake-build-debug/CMakeFiles/vorbis.dir
+F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Dependencies/stb-master/cmake-build-debug/CMakeFiles/edit_cache.dir
+F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Dependencies/stb-master/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Dependencies/stb-master/cmake-build-debug/CMakeFiles/list_install_components.dir
+F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Dependencies/stb-master/cmake-build-debug/CMakeFiles/install.dir
+F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Dependencies/stb-master/cmake-build-debug/CMakeFiles/install/local.dir
+F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Dependencies/stb-master/cmake-build-debug/CMakeFiles/install/strip.dir

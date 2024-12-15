@@ -54,7 +54,7 @@ void BufferHandler::DestroyBuffers() {
     vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), VertexBufferMemory, nullptr);
 }
 
-void BufferHandler::BuildVertexBuffer(BufferBuildType buildType, std::vector<Vertex> vertices) {
+void BufferHandler::BuildVertexBuffer(std::vector<Vertex> vertices) {
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
      
 
@@ -83,7 +83,7 @@ void BufferHandler::BuildVertexBuffer(BufferBuildType buildType, std::vector<Ver
     vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBufferMemory, nullptr);
 }
 
-void BufferHandler::BuildIndexBuffer(BufferBuildType buildType, std::vector<uint32_t> indices) {
+void BufferHandler::BuildIndexBuffer(std::vector<uint32_t> indices) {
     VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
     
     /*
@@ -123,7 +123,7 @@ void BufferHandler::BuildIndexBuffer(BufferBuildType buildType, std::vector<uint
 
 }
 
-void BufferHandler::BuildUniformBuffers(BufferBuildType buildType)
+void BufferHandler::BuildUniformBuffers()
 {
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 

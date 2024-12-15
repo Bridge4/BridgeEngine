@@ -2,8 +2,8 @@
 #include <iostream>
 #include "../ComponentDeclarations.h"
 //class VulkanContext;
+#include "vulkan/vulkan.h"
 struct GLFWwindow;
-enum VkResult;
 
 class WindowHandler
 {
