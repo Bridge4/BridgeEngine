@@ -21,6 +21,7 @@ bld/
 [Ll]og/
 [Ll]ogs/
 CMakeFiles/
+build/
 
 # Files
 *.vcxproj
