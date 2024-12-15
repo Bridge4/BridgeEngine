@@ -8,4 +8,5 @@ After that do `cmake --build ./build` to build the project. Currently only Debug
 
 To run the exe, go into Binaries/App/Debug/App.exe
 
+# 15-12-2024
 ![Bridge Engine Demo](https://github.com/user-attachments/assets/a9237fb4-d383-40fe-be0d-1b4a799365bb)
