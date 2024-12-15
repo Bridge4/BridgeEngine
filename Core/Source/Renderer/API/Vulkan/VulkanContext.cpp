@@ -10,16 +10,13 @@
 #include <tiny_obj_loader.h>
 
 
-#include <chrono>
 #include <iostream>
 #include <array>
 #include <stdexcept>
 #include <cstdlib>
 #include <vector>
 #include <cstring>
-#include <map>
 #include <optional>
-#include <set>
 
 #include "Components/Camera/CameraHandler.h"
 #include "Components/Devices/DeviceHandler.h"
@@ -415,6 +412,7 @@ void VulkanContext::CreateTextureSampler() {
 }
 
 // TODO: Move this to its own class, we should be passing in loaded objects to the renderer, renderer makes draw calls on those objects
+// NOTE: 15-12-2024 - Going to move this to Renderer/Frontend
 void VulkanContext::LoadModel() {
     tinyobj::attrib_t attrib;
 

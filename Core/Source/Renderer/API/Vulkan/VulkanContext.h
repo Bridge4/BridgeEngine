@@ -75,8 +75,6 @@ public:
 
 
     //Window window;
-    uint32_t WIDTH = 800;
-    uint32_t HEIGHT = 600;
     std::string MODEL_PATH = "F:/FDev/EngineProjects/EngineProjectTemplate/ProjectTemplate/Models/VikingRoom/VikingRoom.obj";
     std::string TEXTURE_PATH = "F:/FDev/EngineProjects/EngineProjectTemplate/ProjectTemplate/Models/VikingRoom/VikingRoom.png";
     const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };

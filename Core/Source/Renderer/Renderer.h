@@ -1,4 +1,5 @@
-#pragma once
+#ifndef RENDERER_H
+#define RENDERER_H
 class WindowHandler;
 class VulkanContext;
 
@@ -18,3 +19,4 @@ public:
     void SetWindowRef(WindowHandler* window);
     void RenderLoop();
 };
+#endif

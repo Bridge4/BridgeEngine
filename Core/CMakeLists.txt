@@ -37,6 +37,10 @@ target_sources(Core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Rendere
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/SwapChain/SwapChainHandler.h"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/VulkanInstanceManager/VulkanInstanceManager.h"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Window/WindowHandler.h"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Frontend/StaticMesh/StaticMeshHandler.h"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Frontend/StaticMesh/StaticMeshHandler.cpp"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Frontend/StaticMesh/StaticMesh.h"
+
 
 )
 
