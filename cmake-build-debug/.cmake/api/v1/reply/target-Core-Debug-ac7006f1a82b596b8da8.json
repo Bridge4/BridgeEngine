@@ -1,0 +1,275 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Binaries/Core/libCore.a"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"target_link_libraries",
+			"target_include_directories",
+			"target_sources"
+		],
+		"files" : 
+		[
+			"Core/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 7,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 43,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 9,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 20,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -std=gnu++17 -fdiagnostics-color=always"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 3,
+					"path" : "F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Core"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Core/../Dependencies/stb-master/stb"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Core/../Dependencies/tinyobjloader-release"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Dependencies/GLFW/include"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "C:/VulkanSDK/1.3.250.1/Include"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					1
+				],
+				"standard" : "17"
+			},
+			"sourceIndexes" : 
+			[
+				0,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "glfw::@9468c7dc323dc0803789"
+		}
+	],
+	"id" : "Core::@a253c1449cbd9c0c4614",
+	"name" : "Core",
+	"nameOnDisk" : "libCore.a",
+	"paths" : 
+	{
+		"build" : "F:/FDev/EngineProjects/BridgeEngine/BridgeEngine/Binaries/Core",
+		"source" : "Core"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11
+			]
+		},
+		{
+			"name" : "Header Files",
+			"sourceIndexes" : 
+			[
+				1,
+				2,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18,
+				19
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 4,
+			"compileGroupIndex" : 0,
+			"path" : "Core/Source/Renderer/Renderer.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 4,
+			"path" : "Core/Source/Renderer/Renderer.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 4,
+			"path" : "Core/Source/Renderer/DataStructures.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 4,
+			"compileGroupIndex" : 0,
+			"path" : "Core/Source/Renderer/API/Vulkan/VulkanContext.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 4,
+			"compileGroupIndex" : 0,
+			"path" : "Core/Source/Renderer/API/Vulkan/Components/Buffers/BufferHandler.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 4,
+			"compileGroupIndex" : 0,
+			"path" : "Core/Source/Renderer/API/Vulkan/Components/Camera/CameraHandler.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 4,
+			"compileGroupIndex" : 0,
+			"path" : "Core/Source/Renderer/API/Vulkan/Components/Devices/DeviceHandler.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 4,
+			"compileGroupIndex" : 0,
+			"path" : "Core/Source/Renderer/API/Vulkan/Components/Images/ImageHandler.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 4,
+			"compileGroupIndex" : 0,
+			"path" : "Core/Source/Renderer/API/Vulkan/Components/RenderPass/RenderPassHandler.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 4,
+			"compileGroupIndex" : 0,
+			"path" : "Core/Source/Renderer/API/Vulkan/Components/SwapChain/SwapChainHandler.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 4,
+			"compileGroupIndex" : 0,
+			"path" : "Core/Source/Renderer/API/Vulkan/Components/VulkanInstanceManager/VulkanInstanceManager.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 4,
+			"compileGroupIndex" : 0,
+			"path" : "Core/Source/Renderer/API/Vulkan/Components/Window/WindowHandler.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 4,
+			"path" : "Core/Source/Renderer/API/Vulkan/Components/Buffers/BufferHandler.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 4,
+			"path" : "Core/Source/Renderer/API/Vulkan/Components/Camera/CameraHandler.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 4,
+			"path" : "Core/Source/Renderer/API/Vulkan/Components/Devices/DeviceHandler.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 4,
+			"path" : "Core/Source/Renderer/API/Vulkan/Components/Images/ImageHandler.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 4,
+			"path" : "Core/Source/Renderer/API/Vulkan/Components/RenderPass/RenderPassHandler.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 4,
+			"path" : "Core/Source/Renderer/API/Vulkan/Components/SwapChain/SwapChainHandler.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 4,
+			"path" : "Core/Source/Renderer/API/Vulkan/Components/VulkanInstanceManager/VulkanInstanceManager.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 4,
+			"path" : "Core/Source/Renderer/API/Vulkan/Components/Window/WindowHandler.h",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}
