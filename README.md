@@ -8,5 +8,11 @@ After that do `cmake --build ./build` to build the project. Currently only Debug
 
 To run the exe, go into Binaries/App/Debug/App.exe
 
+# Branches
+
+## Master and Staging
+Work should not be committed into these branches, only PRs merged, unless they are changes to the README.md
+
+
 # 15-12-2024
 ![Bridge Engine Demo](https://github.com/user-attachments/assets/a9237fb4-d383-40fe-be0d-1b4a799365bb)
