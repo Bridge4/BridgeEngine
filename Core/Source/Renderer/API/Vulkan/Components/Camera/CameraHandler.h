@@ -2,7 +2,7 @@
 #define CAMERAHANDLER_H
 #include <iostream>
 #include "../ComponentDeclarations.h"
-#include "glm/glm.hpp"
+#include "../glm/glm.hpp"
 
 
 class CameraHandler
