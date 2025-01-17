@@ -36,3 +36,4 @@ Makefile
 
 # Exclude
 !Vendor/Binaries
+compile_commands.json

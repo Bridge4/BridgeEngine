@@ -27,9 +27,9 @@
 #include <vulkan/vulkan.h>
 
 // GLM INCLUDES
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/hash.hpp>
+#include <../glm/glm.hpp>
+#include <../glm/gtc/matrix_transform.hpp>
+#include <../glm/gtx/hash.hpp>
 
 // C++ STANDARD INCLUDES
 #include <cstdint> // Necessary for uint32_t
