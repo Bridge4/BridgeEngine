@@ -1,5 +1,6 @@
 #ifndef VULKANINSTANCEMANAGER_H
 #define VULKANINSTANCEMANAGER_H
+#include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
 #include "vulkan/vulkan.h"
 #include "../ComponentDeclarations.h"
 #include <vector>
@@ -30,6 +31,8 @@ public:
     VkExtent2D GetSwapChainExtent() { return m_swapChainExtent; }
     VkSurfaceKHR GetSurface() { return m_surface; }
     VkImageView GetDepthImageView() { return m_depthImageView; }
+    
+    std::vector<Mesh3D> GetMeshList() { return m_meshList; }
 
     // Setters
     void SetPhysicalDevice(VkPhysicalDevice physicalDevice) { this->m_physicalDevice = physicalDevice; }
@@ -76,10 +79,6 @@ public:
     VkDeviceMemory m_textureImageMemory;
 
 
-    VkImage m_textureImage2;
-    VkImageView m_textureImageView2;
-    VkSampler m_textureSampler2;
-    VkDeviceMemory m_textureImageMemory2;
 
 	std::vector<VkBuffer> m_uniformBuffers = {};
 	std::vector<VkDeviceMemory> m_uniformBuffersMemory = {};
@@ -91,6 +90,7 @@ public:
     std::vector<VkSemaphore> m_imageAvailableSemaphores;
     std::vector<VkSemaphore> m_renderFinishedSemaphores;
     std::vector<VkFence> m_inFlightFences;
+    std::vector<Mesh3D> m_meshList;
     uint32_t m_currentFrame = 0;
 
     //Window window;

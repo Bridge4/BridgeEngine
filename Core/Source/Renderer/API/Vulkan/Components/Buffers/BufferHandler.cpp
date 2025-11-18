@@ -127,16 +127,19 @@ void BufferHandler::BuildUniformBuffers()
 {
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
-    // Create a uniform buffer per frame in flight
-    m_vulkanInstanceManager->m_uniformBuffers.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
-    m_vulkanInstanceManager->m_uniformBuffersMemory.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
-    m_vulkanInstanceManager->m_uniformBuffersMapped.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
+    for(auto& mesh: m_vulkanInstanceManager->m_meshList){
+        // Create a uniform buffer per frame in flight
+        mesh.m_uniformBuffers.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
+        mesh.m_uniformBuffersMemory.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
+        mesh.m_uniformBuffersMapped.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
 
-    for (size_t i = 0; i < m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT; i++) {
-        // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i], m_uniformBuffersMemory[i], UNSTAGED)
-        // Create then Map to memory
-        BuildBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_vulkanInstanceManager->m_uniformBuffers[i], m_vulkanInstanceManager->m_uniformBuffersMemory[i]);
-        vkMapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_uniformBuffersMemory[i], 0, bufferSize, 0, &m_vulkanInstanceManager->m_uniformBuffersMapped[i]);
+        for (size_t i = 0; i < m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT; i++) {
+            // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i], m_uniformBuffersMemory[i], UNSTAGED)
+            // Create then Map to memory
+            BuildBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, mesh.m_uniformBuffers[i], mesh.m_uniformBuffersMemory[i]);
+            vkMapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_uniformBuffersMemory[i], 0, bufferSize, 0, &mesh.m_uniformBuffersMapped[i]);
+        }
+
     }
 }
 
