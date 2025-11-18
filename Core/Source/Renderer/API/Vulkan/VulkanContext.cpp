@@ -68,11 +68,11 @@ void VulkanContext::Construct() {
     CreateFramebuffers();*/
 
 
-    CreateTextureImage(TEXTURE_PATH);
+    CreateTextureImage(TEXTURE_PATH1);
     CreateTextureImageView();
     CreateTextureSampler();
 
-    LoadModel();
+    LoadModel(MODEL_PATH1);
     
     bufferHandler->BuildVertexBuffer(m_vertices);
     bufferHandler->BuildIndexBuffer(m_indices);
@@ -417,14 +417,14 @@ void VulkanContext::CreateTextureSampler() {
 }
 
 // TODO: Move this to its own class, we should be passing in loaded objects to the renderer, renderer makes draw calls on those objects
-void VulkanContext::LoadModel() {
+void VulkanContext::LoadModel(std::string modelPath) {
     tinyobj::attrib_t attrib;
 
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str())) {
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.c_str())) {
         throw std::runtime_error(warn + err);
     }
 

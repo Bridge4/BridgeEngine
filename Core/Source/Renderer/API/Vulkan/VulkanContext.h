@@ -78,8 +78,10 @@ public:
     //Window window;
     uint32_t WIDTH = 800;
     uint32_t HEIGHT = 600;
-    std::string MODEL_PATH = "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.obj";
-    std::string TEXTURE_PATH = "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.png";
+    std::string MODEL_PATH1 = "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.obj";
+    std::string TEXTURE_PATH1 = "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.png";
+    std::string MODEL_PATH2 = "C:/Source/Engines/BridgeEngine/Models/Ship/ship.obj";
+    std::string TEXTURE_PATH2 = "C:/Source/Engines/BridgeEngine/Models/Ship/ship.png";
     const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
     const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     VkInstance m_instance;
@@ -134,7 +136,7 @@ private:
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 
-    void LoadModel();
+    void LoadModel(std::string modelPath);
 
     // DESCRIPTOR POOL
     void CreateDescriptorPool();

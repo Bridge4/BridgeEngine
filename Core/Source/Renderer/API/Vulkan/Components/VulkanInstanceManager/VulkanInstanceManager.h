@@ -76,6 +76,10 @@ public:
     VkDeviceMemory m_textureImageMemory;
 
 
+    VkImage m_textureImage2;
+    VkImageView m_textureImageView2;
+    VkSampler m_textureSampler2;
+    VkDeviceMemory m_textureImageMemory2;
 
 	std::vector<VkBuffer> m_uniformBuffers = {};
 	std::vector<VkDeviceMemory> m_uniformBuffersMemory = {};
