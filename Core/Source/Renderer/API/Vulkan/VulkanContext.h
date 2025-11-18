@@ -70,6 +70,7 @@ public:
     ImageHandler* imageViewBuilder;
 
     // TODO: Move this to some sort of object abstraction rather than making it a part of the API context
+
     std::vector<Vertex> m_vertices;
     std::vector<uint32_t> m_indices;
 
@@ -77,8 +78,8 @@ public:
     //Window window;
     uint32_t WIDTH = 800;
     uint32_t HEIGHT = 600;
-    std::string MODEL_PATH = "F:/FDev/EngineProjects/EngineProjectTemplate/ProjectTemplate/Models/VikingRoom/VikingRoom.obj";
-    std::string TEXTURE_PATH = "F:/FDev/EngineProjects/EngineProjectTemplate/ProjectTemplate/Models/VikingRoom/VikingRoom.png";
+    std::string MODEL_PATH = "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.obj";
+    std::string TEXTURE_PATH = "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.obj";
     const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
     const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     VkInstance m_instance;
@@ -112,7 +113,7 @@ private:
     //VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
     // TEXTURE IMAGE
-    void CreateTextureImage();
+    void CreateTextureImage(std::string textureImage);
 
     // TEXTURE IMAGE VIEW
     void CreateTextureImageView();

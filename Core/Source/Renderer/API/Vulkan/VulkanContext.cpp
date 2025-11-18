@@ -1,4 +1,5 @@
 #pragma once
+#include <cassert>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include "VulkanContext.h"
@@ -67,7 +68,7 @@ void VulkanContext::Construct() {
     CreateFramebuffers();*/
 
 
-    CreateTextureImage();
+    CreateTextureImage(TEXTURE_PATH);
     CreateTextureImageView();
     CreateTextureSampler();
 
@@ -128,8 +129,8 @@ void VulkanContext::CreateDescriptorSetLayout() {
 }
 
 void VulkanContext::CreateGraphicsPipeline() {
-    std::vector<char> vertShaderCode = readFile("../../Core/Shaders/vert.spv");
-    std::vector<char> fragShaderCode = readFile("../../Core/Shaders/frag.spv");
+    std::vector<char> vertShaderCode = readFile("C:/Source/Engines/BridgeEngine/Core/Shaders/vert.spv");
+    std::vector<char> fragShaderCode = readFile("C:/Source/Engines/BridgeEngine/Core/Shaders/frag.spv");
 
     VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
@@ -339,10 +340,11 @@ void VulkanContext::CreateCommandPool() {
     }
 }
 
-void VulkanContext::CreateTextureImage() {
+// Pass in the Model3D's texture path
+void VulkanContext::CreateTextureImage(std::string texturePath) {
     int texWidth, texHeight, texChannels;
 
-    stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load(texturePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
     // The multiplication by 4 here is because the pixels are loaded row by row with 4 bytes per pixel
     VkDeviceSize imageSize = texWidth * texHeight * 4;
