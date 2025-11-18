@@ -115,25 +115,28 @@ void CameraHandler::UpdateUniformBuffer(uint32_t currentImage)
 
 
     
-    UniformBufferObject ubo{}; 
-    
-    // Where the object/model is placed in the world
-    ubo.model = glm::mat4(1.0f);
-    ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    
-    if (glfwGetMouseButton(windowHandler->m_window, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
+    for(auto& mesh: m_vulkanInstanceManager->m_meshList) {
+        UniformBufferObject ubo{}; 
+        
+        // Where the object/model is placed in the world
+        ubo.model = glm::mat4(1.0f);
         ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        
+        if (glfwGetMouseButton(windowHandler->m_window, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
+            ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        }
+        //ubo.model = glm::rotate(ubo.model, -glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        //ubo.model = glm::rotate(ubo.model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        // Where our camera is placed in the world
+        ubo.view = getViewMatrix();
+
+
+        ubo.proj = glm::perspective(glm::radians(90.0f), m_vulkanInstanceManager->GetSwapChainExtent().width / (float)m_vulkanInstanceManager->GetSwapChainExtent().height, 0.001f, 100000.0f);
+        // IMPORTANT: VULKAN HAS INVERTED Y AXIS TO OPENGL AND GLM WAS DESIGNED FOR OPENGL. THIS CONVERTS TO VULKAN.
+        ubo.proj[1][1] *= -1;
+
+        memcpy(mesh.m_uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+
     }
-    //ubo.model = glm::rotate(ubo.model, -glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    //ubo.model = glm::rotate(ubo.model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    // Where our camera is placed in the world
-    ubo.view = getViewMatrix();
-
-
-    ubo.proj = glm::perspective(glm::radians(90.0f), m_vulkanInstanceManager->GetSwapChainExtent().width / (float)m_vulkanInstanceManager->GetSwapChainExtent().height, 0.001f, 100000.0f);
-    // IMPORTANT: VULKAN HAS INVERTED Y AXIS TO OPENGL AND GLM WAS DESIGNED FOR OPENGL. THIS CONVERTS TO VULKAN.
-    ubo.proj[1][1] *= -1;
-
-    memcpy(m_vulkanInstanceManager->m_uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
  }
