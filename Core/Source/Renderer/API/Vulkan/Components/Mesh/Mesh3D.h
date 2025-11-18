@@ -18,15 +18,15 @@ public:
     // Vulkan Texture Properties
     VkImage image = VK_NULL_HANDLE;
     VkDeviceMemory deviceMemory = VK_NULL_HANDLE;
-    VkImageView imageView = VK_NULL_HANDLE;
-    VkSampler sampler = VK_NULL_HANDLE;
+    VkImageView m_textureImageView = VK_NULL_HANDLE;
+    VkSampler m_textureSampler = VK_NULL_HANDLE;
 
     // Vulkan Object Resources
     std::vector<VkBuffer> m_uniformBuffers = {};
     std::vector<VkDeviceMemory> m_uniformBuffersMemory = {};
 	std::vector<void*> m_uniformBuffersMapped = {};
 
-    std::vector<VkDescriptorSet> descriptorSets = {};
+    std::vector<VkDescriptorSet> m_descriptorSets = {};
 
     // Transform
     glm::vec3 position = {0.0f, 0.0f, 0.0f};
