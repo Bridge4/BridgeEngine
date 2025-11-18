@@ -16,8 +16,8 @@ public:
     }
 
     // Vulkan Texture Properties
-    VkImage image = VK_NULL_HANDLE;
-    VkDeviceMemory deviceMemory = VK_NULL_HANDLE;
+    VkImage m_textureImage = VK_NULL_HANDLE;
+    VkDeviceMemory m_textureImageMemory = VK_NULL_HANDLE;
     VkImageView m_textureImageView = VK_NULL_HANDLE;
     VkSampler m_textureSampler = VK_NULL_HANDLE;
 

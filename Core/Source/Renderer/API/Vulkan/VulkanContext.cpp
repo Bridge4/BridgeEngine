@@ -70,11 +70,11 @@ void VulkanContext::Construct() {
     CreateFramebuffers();*/
 
 
-    CreateTextureImage(TEXTURE_PATH1);
-    CreateTextureImageView();
-    CreateTextureSampler();
 
     LoadModel(MODEL_PATH1);
+    CreateTextureImage(TEXTURE_PATH1, &m_vulkanInstanceManager->m_meshList[0]);
+    CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[0]);
+    CreateTextureSampler(&m_vulkanInstanceManager->m_meshList[0]);
     
     bufferHandler->BuildVertexBuffer(m_vertices);
     bufferHandler->BuildIndexBuffer(m_indices);
@@ -343,7 +343,7 @@ void VulkanContext::CreateCommandPool() {
 }
 
 // Pass in the Model3D's texture path
-void VulkanContext::CreateTextureImage(std::string texturePath) {
+void VulkanContext::CreateTextureImage(std::string texturePath, Mesh3D *mesh) {
     int texWidth, texHeight, texChannels;
 
     stbi_uc* pixels = stbi_load(texturePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
@@ -371,23 +371,23 @@ void VulkanContext::CreateTextureImage(std::string texturePath) {
 
     createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vulkanInstanceManager->m_textureImage, m_vulkanInstanceManager->m_textureImageMemory);
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mesh->m_textureImage, mesh->m_textureImageMemory);
 
-    transitionImageLayout(m_vulkanInstanceManager->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    copyBufferToImage(stagingBuffer, m_vulkanInstanceManager->m_textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-    transitionImageLayout(m_vulkanInstanceManager->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    transitionImageLayout(mesh->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    copyBufferToImage(stagingBuffer, mesh->m_textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+    transitionImageLayout(mesh->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vkDestroyBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBuffer, nullptr);
     vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBufferMemory, nullptr);
 }
 
 // TEXTURE IMAGE VIEW
-void VulkanContext::CreateTextureImageView() {
-    m_vulkanInstanceManager->m_textureImageView = imageViewBuilder->CreateImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+void VulkanContext::CreateTextureImageView(Mesh3D *mesh) {
+    mesh->m_textureImageView = imageViewBuilder->CreateImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 // TEXTURE SAMPLER
-void VulkanContext::CreateTextureSampler() {
+void VulkanContext::CreateTextureSampler(Mesh3D *mesh) {
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -413,7 +413,7 @@ void VulkanContext::CreateTextureSampler() {
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    if (vkCreateSampler(*m_vulkanInstanceManager->GetRefLogicalDevice(), &samplerInfo, nullptr, &m_vulkanInstanceManager->m_textureSampler) != VK_SUCCESS) {
+    if (vkCreateSampler(*m_vulkanInstanceManager->GetRefLogicalDevice(), &samplerInfo, nullptr, &mesh->m_textureSampler) != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
 }
@@ -458,6 +458,8 @@ void VulkanContext::LoadModel(std::string modelPath) {
             vertex.color = { 1.0f, 1.0f, 1.0f };
         }
     }
+    Mesh3D mesh = Mesh3D();
+    m_vulkanInstanceManager->m_meshList.push_back(mesh);
 }
 
 // DESCRIPTOR POOL
@@ -603,18 +605,21 @@ void VulkanContext::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
 
     vkCmdBindIndexBuffer(commandBuffer, bufferHandler->IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vulkanInstanceManager->m_pipelineLayout, 0, 1,
-        &m_vulkanInstanceManager->m_descriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
+    for(auto& mesh: m_vulkanInstanceManager->m_meshList) {
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vulkanInstanceManager->m_pipelineLayout, 0, 1,
+            &mesh.m_descriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
 
-    /*
-        vkCmdDraw(VkCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance)
-        vertexCount: Even though we don't have a vertex buffer, we technically still have 3 vertices to draw.
-        instanceCount: Used for instanced rendering, use 1 if you're not doing that.
-        firstVertex: Used as an offset into the vertex buffer, defines the lowest value of gl_VertexIndex.
-        firstInstance: Used as an offset for instanced rendering, defines the lowest value of gl_InstanceIndex.
-    */
-    //vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
-    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indices.size()), 1, 0, 0, 0);
+        /*
+            vkCmdDraw(VkCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance)
+            vertexCount: Even though we don't have a vertex buffer, we technically still have 3 vertices to draw.
+            instanceCount: Used for instanced rendering, use 1 if you're not doing that.
+            firstVertex: Used as an offset into the vertex buffer, defines the lowest value of gl_VertexIndex.
+            firstInstance: Used as an offset for instanced rendering, defines the lowest value of gl_InstanceIndex.
+        */
+        //vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indices.size()), 1, 0, 0, 0);
+
+    }
     vkCmdEndRenderPass(commandBuffer);
 
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {

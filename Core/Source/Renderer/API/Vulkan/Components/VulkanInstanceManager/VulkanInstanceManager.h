@@ -90,7 +90,7 @@ public:
     std::vector<VkSemaphore> m_imageAvailableSemaphores;
     std::vector<VkSemaphore> m_renderFinishedSemaphores;
     std::vector<VkFence> m_inFlightFences;
-    std::vector<Mesh3D> m_meshList;
+    std::vector<Mesh3D> m_meshList = {};
     uint32_t m_currentFrame = 0;
 
     //Window window;

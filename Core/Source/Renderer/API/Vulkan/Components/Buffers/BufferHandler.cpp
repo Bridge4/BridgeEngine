@@ -137,7 +137,7 @@ void BufferHandler::BuildUniformBuffers()
             // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i], m_uniformBuffersMemory[i], UNSTAGED)
             // Create then Map to memory
             BuildBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, mesh.m_uniformBuffers[i], mesh.m_uniformBuffersMemory[i]);
-            vkMapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_uniformBuffersMemory[i], 0, bufferSize, 0, &mesh.m_uniformBuffersMapped[i]);
+            vkMapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh.m_uniformBuffersMemory[i], 0, bufferSize, 0, &mesh.m_uniformBuffersMapped[i]);
         }
 
     }

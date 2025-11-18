@@ -47,6 +47,7 @@ class WindowHandler;
 class RenderPassHandler;
 class CameraHandler;
 class VulkanInstanceManager;
+class Mesh3D;
 
 class VulkanContext {
 public:
@@ -115,13 +116,13 @@ private:
     //VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
     // TEXTURE IMAGE
-    void CreateTextureImage(std::string textureImage);
+    void CreateTextureImage(std::string textureImage, Mesh3D *mesh);
 
     // TEXTURE IMAGE VIEW
-    void CreateTextureImageView();
+    void CreateTextureImageView(Mesh3D *mesh);
 
     // TEXTURE SAMPLER
-    void CreateTextureSampler();
+    void CreateTextureSampler(Mesh3D *mesh);
 
 
     // helper function used in createTextureImage();
