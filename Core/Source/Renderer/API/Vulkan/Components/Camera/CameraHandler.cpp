@@ -34,34 +34,34 @@ void CameraHandler::Initialize() {
 }
 
 
-void CameraHandler::HandleInput() {
+void CameraHandler::HandleInput(float deltaTime) {
     if (glfwGetKey(windowHandler->m_window, GLFW_KEY_W)) {
         //cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f, 0.001f, 0.001f));
         //cameraViewMatrix = glm::lookAt(eyePosition, viewDirection+eyePosition, upVector);
-        eyePosition += 0.001f * viewDirection;
+        eyePosition += deltaTime * cameraSpeed * viewDirection;
     }
     if (glfwGetKey(windowHandler->m_window, GLFW_KEY_S)) {
         //cameraViewMatrix = glm::translate(cameraViewMatrix, -glm::vec3(0.001f, 0.001f, 0.001f));
-        eyePosition -= 0.001f * viewDirection;
+        eyePosition -= deltaTime * cameraSpeed * viewDirection;
 
     }
     if (glfwGetKey(windowHandler->m_window, GLFW_KEY_A)) {
         //glm::rotate(glm::vec3(0.0f, 0.0f, 0.0f), glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         //cameraViewMatrix = glm::rotate(cameraViewMatrix, glm::radians(0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
-        eyePosition += 0.001f * -glm::normalize(glm::cross(viewDirection, upVector));
+        eyePosition += deltaTime * cameraSpeed * -glm::normalize(glm::cross(viewDirection, upVector));
     }
     if (glfwGetKey(windowHandler->m_window, GLFW_KEY_D)) {
         //cameraViewMatrix = glm::rotate(cameraViewMatrix, glm::radians(-0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
-        eyePosition -= 0.001f * -glm::normalize(glm::cross(viewDirection, upVector));
+        eyePosition -= deltaTime * cameraSpeed * -glm::normalize(glm::cross(viewDirection, upVector));
     }
 
     if (glfwGetKey(windowHandler->m_window, GLFW_KEY_SPACE)) {
         //cameraViewMatrix = glm::rotate(cameraViewMatrix, glm::radians(-0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
-        eyePosition += 0.001f * -glm::normalize(glm::cross(viewDirection, glm::vec3(1.0f, 0.0f, 0.0f)));
+        eyePosition += deltaTime * cameraSpeed * -glm::normalize(glm::cross(viewDirection, glm::vec3(1.0f, 0.0f, 0.0f)));
     }
     if (glfwGetKey(windowHandler->m_window, GLFW_KEY_LEFT_CONTROL)) {
         //cameraViewMatrix = glm::rotate(cameraViewMatrix, glm::radians(-0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
-        eyePosition -= 0.001f * -glm::normalize(glm::cross(viewDirection, glm::vec3(1.0f, 0.0f, 0.0f)));
+        eyePosition -= deltaTime * cameraSpeed * -glm::normalize(glm::cross(viewDirection, glm::vec3(1.0f, 0.0f, 0.0f)));
     }
     if (glfwGetKey(windowHandler->m_window, GLFW_KEY_ESCAPE)) {
         exit(0);
@@ -80,7 +80,7 @@ void CameraHandler::HandleInput() {
         lookActive = false;
     }
 }
-void CameraHandler::UpdateUniformBuffer(uint32_t currentImage)
+void CameraHandler::UpdateUniformBuffer(uint32_t currentImage, float deltaTime)
 {   
     if (lookActive) {
         double xPos, yPos;
@@ -115,25 +115,30 @@ void CameraHandler::UpdateUniformBuffer(uint32_t currentImage)
 
 
     
-    UniformBufferObject ubo{}; 
-    
-    // Where the object/model is placed in the world
-    ubo.model = glm::mat4(1.0f);
-    ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    
-    if (glfwGetMouseButton(windowHandler->m_window, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
+    for(auto& mesh: m_vulkanInstanceManager->m_meshList) {
+        UniformBufferObject ubo{}; 
+        
+        // Where the object/model is placed in the world
+        ubo.model = glm::mat4(1.0f);
         ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+
+        if (glfwGetMouseButton(windowHandler->m_window, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
+            ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        }
+        //ubo.model = glm::rotate(ubo.model, -glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        //ubo.model = glm::rotate(ubo.model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        // Where our camera is placed in the world
+        ubo.model = glm::scale(ubo.model, mesh.scale);
+        ubo.view = getViewMatrix();
+
+
+        ubo.proj = glm::perspective(glm::radians(90.0f), m_vulkanInstanceManager->GetSwapChainExtent().width / (float)m_vulkanInstanceManager->GetSwapChainExtent().height, 0.001f, 100000.0f);
+        // IMPORTANT: VULKAN HAS INVERTED Y AXIS TO OPENGL AND GLM WAS DESIGNED FOR OPENGL. THIS CONVERTS TO VULKAN.
+        ubo.proj[1][1] *= -1;
+
+        memcpy(mesh.m_uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+
     }
-    //ubo.model = glm::rotate(ubo.model, -glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    //ubo.model = glm::rotate(ubo.model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    // Where our camera is placed in the world
-    ubo.view = getViewMatrix();
-
-
-    ubo.proj = glm::perspective(glm::radians(90.0f), m_vulkanInstanceManager->GetSwapChainExtent().width / (float)m_vulkanInstanceManager->GetSwapChainExtent().height, 0.001f, 100000.0f);
-    // IMPORTANT: VULKAN HAS INVERTED Y AXIS TO OPENGL AND GLM WAS DESIGNED FOR OPENGL. THIS CONVERTS TO VULKAN.
-    ubo.proj[1][1] *= -1;
-
-    memcpy(m_vulkanInstanceManager->m_uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
  }

@@ -9,4 +9,5 @@ class DeviceHandler;
 class ImageHandler;
 class RenderPassHandler;
 class VulkanInstanceManager;
+class Mesh3D;
 #endif

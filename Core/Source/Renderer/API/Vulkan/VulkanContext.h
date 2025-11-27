@@ -47,6 +47,7 @@ class WindowHandler;
 class RenderPassHandler;
 class CameraHandler;
 class VulkanInstanceManager;
+class Mesh3D;
 
 class VulkanContext {
 public:
@@ -70,6 +71,7 @@ public:
     ImageHandler* imageViewBuilder;
 
     // TODO: Move this to some sort of object abstraction rather than making it a part of the API context
+
     std::vector<Vertex> m_vertices;
     std::vector<uint32_t> m_indices;
 
@@ -77,8 +79,10 @@ public:
     //Window window;
     uint32_t WIDTH = 800;
     uint32_t HEIGHT = 600;
-    std::string MODEL_PATH = "F:/FDev/EngineProjects/EngineProjectTemplate/ProjectTemplate/Models/VikingRoom/VikingRoom.obj";
-    std::string TEXTURE_PATH = "F:/FDev/EngineProjects/EngineProjectTemplate/ProjectTemplate/Models/VikingRoom/VikingRoom.png";
+    std::string MODEL_PATH1 = "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.obj";
+    std::string TEXTURE_PATH1 = "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.png";
+    std::string MODEL_PATH2 = "C:/Source/Engines/BridgeEngine/Models/Ship/ship.obj";
+    std::string TEXTURE_PATH2 = "C:/Source/Engines/BridgeEngine/Models/Ship/ship.png";
     const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
     const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     VkInstance m_instance;
@@ -112,13 +116,13 @@ private:
     //VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
     // TEXTURE IMAGE
-    void CreateTextureImage();
+    void CreateTextureImage(std::string textureImage, Mesh3D *mesh);
 
     // TEXTURE IMAGE VIEW
-    void CreateTextureImageView();
+    void CreateTextureImageView(Mesh3D *mesh);
 
     // TEXTURE SAMPLER
-    void CreateTextureSampler();
+    void CreateTextureSampler(Mesh3D *mesh);
 
 
     // helper function used in createTextureImage();
@@ -133,7 +137,7 @@ private:
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 
-    void LoadModel();
+    void LoadModel(std::string modelPath);
 
     // DESCRIPTOR POOL
     void CreateDescriptorPool();
@@ -159,7 +163,7 @@ private:
     void CreateSyncObjects();
 
     // DRAW FRAME
-    void DrawFrame();
+    void DrawFrame(float deltaTime);
 
     //void updateUniformBuffer(uint32_t currentImage);
 

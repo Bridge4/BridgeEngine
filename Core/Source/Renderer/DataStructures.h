@@ -62,6 +62,7 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
 };
+
 // This is doing some weird stuff I got from the vulkan tutorial I followed. Something about hashing vertex data
 namespace std {
     template<> struct hash<Vertex> {
