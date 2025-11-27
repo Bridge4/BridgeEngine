@@ -97,10 +97,15 @@ void VulkanContext::Construct() {
 }
 
 void VulkanContext::RenderLoop() {
+    std::chrono::high_resolution_clock::time_point lastFrameTime;
+    lastFrameTime = std::chrono::high_resolution_clock::now();
+
     while (!windowHandler->ShouldClose()) {
-        
+        auto currentFrameTime = std::chrono::high_resolution_clock::now();
+        float deltaTime = std::chrono::duration<float>(currentFrameTime - lastFrameTime).count();
+        lastFrameTime = currentFrameTime;
         windowHandler->Poll();
-        DrawFrame();
+        DrawFrame(deltaTime);
     }
     vkDeviceWaitIdle(*m_vulkanInstanceManager->GetRefLogicalDevice());
     Destroy();
@@ -677,7 +682,7 @@ void VulkanContext::CreateSyncObjects() {
     }
 }
 
-void VulkanContext::DrawFrame() {
+void VulkanContext::DrawFrame(float deltaTime) {
     /*
         - Wait for the previous frame to finish
         - Acquire an image from the swap chain
@@ -685,8 +690,8 @@ void VulkanContext::DrawFrame() {
         - Submit the recorded command buffer
         - Present the swap chain image
     */
-    cameraHandler->HandleInput();
-    cameraHandler->UpdateUniformBuffer(m_vulkanInstanceManager->m_currentFrame);
+    cameraHandler->HandleInput(deltaTime);
+    cameraHandler->UpdateUniformBuffer(m_vulkanInstanceManager->m_currentFrame, deltaTime);
     vkWaitForFences(*m_vulkanInstanceManager->GetRefLogicalDevice(), 1, &m_vulkanInstanceManager->m_inFlightFences[m_vulkanInstanceManager->m_currentFrame], VK_TRUE, UINT64_MAX);
 
     // Acquire an image from the swap chain

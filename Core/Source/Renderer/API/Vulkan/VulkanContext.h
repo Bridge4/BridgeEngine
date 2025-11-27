@@ -163,7 +163,7 @@ private:
     void CreateSyncObjects();
 
     // DRAW FRAME
-    void DrawFrame();
+    void DrawFrame(float deltaTime);
 
     //void updateUniformBuffer(uint32_t currentImage);
 

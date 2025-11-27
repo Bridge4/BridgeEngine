@@ -34,34 +34,34 @@ void CameraHandler::Initialize() {
 }
 
 
-void CameraHandler::HandleInput() {
+void CameraHandler::HandleInput(float deltaTime) {
     if (glfwGetKey(windowHandler->m_window, GLFW_KEY_W)) {
         //cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f, 0.001f, 0.001f));
         //cameraViewMatrix = glm::lookAt(eyePosition, viewDirection+eyePosition, upVector);
-        eyePosition += 0.001f * viewDirection;
+        eyePosition += deltaTime * cameraSpeed * viewDirection;
     }
     if (glfwGetKey(windowHandler->m_window, GLFW_KEY_S)) {
         //cameraViewMatrix = glm::translate(cameraViewMatrix, -glm::vec3(0.001f, 0.001f, 0.001f));
-        eyePosition -= 0.001f * viewDirection;
+        eyePosition -= deltaTime * cameraSpeed * viewDirection;
 
     }
     if (glfwGetKey(windowHandler->m_window, GLFW_KEY_A)) {
         //glm::rotate(glm::vec3(0.0f, 0.0f, 0.0f), glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         //cameraViewMatrix = glm::rotate(cameraViewMatrix, glm::radians(0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
-        eyePosition += 0.001f * -glm::normalize(glm::cross(viewDirection, upVector));
+        eyePosition += deltaTime * cameraSpeed * -glm::normalize(glm::cross(viewDirection, upVector));
     }
     if (glfwGetKey(windowHandler->m_window, GLFW_KEY_D)) {
         //cameraViewMatrix = glm::rotate(cameraViewMatrix, glm::radians(-0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
-        eyePosition -= 0.001f * -glm::normalize(glm::cross(viewDirection, upVector));
+        eyePosition -= deltaTime * cameraSpeed * -glm::normalize(glm::cross(viewDirection, upVector));
     }
 
     if (glfwGetKey(windowHandler->m_window, GLFW_KEY_SPACE)) {
         //cameraViewMatrix = glm::rotate(cameraViewMatrix, glm::radians(-0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
-        eyePosition += 0.001f * -glm::normalize(glm::cross(viewDirection, glm::vec3(1.0f, 0.0f, 0.0f)));
+        eyePosition += deltaTime * cameraSpeed * -glm::normalize(glm::cross(viewDirection, glm::vec3(1.0f, 0.0f, 0.0f)));
     }
     if (glfwGetKey(windowHandler->m_window, GLFW_KEY_LEFT_CONTROL)) {
         //cameraViewMatrix = glm::rotate(cameraViewMatrix, glm::radians(-0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
-        eyePosition -= 0.001f * -glm::normalize(glm::cross(viewDirection, glm::vec3(1.0f, 0.0f, 0.0f)));
+        eyePosition -= deltaTime * cameraSpeed * -glm::normalize(glm::cross(viewDirection, glm::vec3(1.0f, 0.0f, 0.0f)));
     }
     if (glfwGetKey(windowHandler->m_window, GLFW_KEY_ESCAPE)) {
         exit(0);
@@ -80,7 +80,7 @@ void CameraHandler::HandleInput() {
         lookActive = false;
     }
 }
-void CameraHandler::UpdateUniformBuffer(uint32_t currentImage)
+void CameraHandler::UpdateUniformBuffer(uint32_t currentImage, float deltaTime)
 {   
     if (lookActive) {
         double xPos, yPos;

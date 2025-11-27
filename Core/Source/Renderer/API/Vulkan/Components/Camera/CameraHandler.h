@@ -23,8 +23,9 @@ public:
 	}
 	glm::mat4 getViewMatrix();
 	void Initialize();
-	void HandleInput();
-	void UpdateUniformBuffer(uint32_t currentImage);
+	void HandleInput(float deltaTime);
+	void UpdateUniformBuffer(uint32_t currentImage, float deltaTime);
+    float cameraSpeed = 1.0f;
 private:
 
 	
