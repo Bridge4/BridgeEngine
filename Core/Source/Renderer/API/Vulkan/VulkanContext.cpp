@@ -81,7 +81,7 @@ void VulkanContext::Construct() {
     CreateTextureImage(TEXTURE_PATH2, &m_vulkanInstanceManager->m_meshList[1]);
     CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[1]);
     CreateTextureSampler(&m_vulkanInstanceManager->m_meshList[1]);
-    
+
     bufferHandler->BuildVertexBuffer(m_vertices);
     bufferHandler->BuildIndexBuffer(m_indices);
     //CreateIndexBuffer();
@@ -390,7 +390,6 @@ void VulkanContext::CreateTextureImage(std::string texturePath, Mesh3D *mesh) {
 // TEXTURE IMAGE VIEW
 void VulkanContext::CreateTextureImageView(Mesh3D *mesh) {
     mesh->m_textureImageView = imageViewBuilder->CreateImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
-    std::cout << "DEBUG txtImageView"<< mesh->m_textureImageView << "\n";
 }
 
 // TEXTURE SAMPLER
@@ -423,7 +422,6 @@ void VulkanContext::CreateTextureSampler(Mesh3D *mesh) {
     if (vkCreateSampler(*m_vulkanInstanceManager->GetRefLogicalDevice(), &samplerInfo, nullptr, &mesh->m_textureSampler) != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
-    std::cout << "DEBUG txtSampler"<< mesh->m_textureSampler<< "\n";
 }
 
 // TODO: Move this to its own class, we should be passing in loaded objects to the renderer, renderer makes draw calls on those objects
@@ -483,6 +481,7 @@ void VulkanContext::LoadModel(std::string modelPath) {
     mesh.m_indexBufferEndIndex = indexBufferEndIndex;
     mesh.m_vertexBufferEndIndex = vertexBufferEndIndex;
     mesh.m_indexCount = indexBufferEndIndex-indexBufferStartIndex;
+    mesh.scale = glm::vec3(1.0f, 1.0f, 1.0f);
     m_vulkanInstanceManager->m_meshList.push_back(mesh);
 }
 
@@ -632,7 +631,6 @@ void VulkanContext::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
     for(auto& mesh: m_vulkanInstanceManager->m_meshList) {
         int counter = 0;
         for (auto& descriptorSet: mesh.m_descriptorSets){
-            std::cout <<"Mesh " << counter<< "\n"<< "DEBUG DESCRIPTOR SET: "<< descriptorSet << "\n";
             counter++;
         }
 
