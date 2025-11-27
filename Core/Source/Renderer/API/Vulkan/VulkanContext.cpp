@@ -1,5 +1,6 @@
 #pragma once
 #include <cassert>
+#include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include "VulkanContext.h"
@@ -75,6 +76,11 @@ void VulkanContext::Construct() {
     CreateTextureImage(TEXTURE_PATH1, &m_vulkanInstanceManager->m_meshList[0]);
     CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[0]);
     CreateTextureSampler(&m_vulkanInstanceManager->m_meshList[0]);
+    
+    LoadModel(MODEL_PATH2);
+    CreateTextureImage(TEXTURE_PATH2, &m_vulkanInstanceManager->m_meshList[1]);
+    CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[1]);
+    CreateTextureSampler(&m_vulkanInstanceManager->m_meshList[1]);
     
     bufferHandler->BuildVertexBuffer(m_vertices);
     bufferHandler->BuildIndexBuffer(m_indices);
@@ -384,6 +390,7 @@ void VulkanContext::CreateTextureImage(std::string texturePath, Mesh3D *mesh) {
 // TEXTURE IMAGE VIEW
 void VulkanContext::CreateTextureImageView(Mesh3D *mesh) {
     mesh->m_textureImageView = imageViewBuilder->CreateImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+    std::cout << "DEBUG txtImageView"<< mesh->m_textureImageView << "\n";
 }
 
 // TEXTURE SAMPLER
@@ -416,6 +423,7 @@ void VulkanContext::CreateTextureSampler(Mesh3D *mesh) {
     if (vkCreateSampler(*m_vulkanInstanceManager->GetRefLogicalDevice(), &samplerInfo, nullptr, &mesh->m_textureSampler) != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
+    std::cout << "DEBUG txtSampler"<< mesh->m_textureSampler<< "\n";
 }
 
 // TODO: Move this to its own class, we should be passing in loaded objects to the renderer, renderer makes draw calls on those objects
@@ -431,6 +439,15 @@ void VulkanContext::LoadModel(std::string modelPath) {
     }
 
     std::unordered_map<Vertex, uint32_t> uniqueVertices{};
+
+    int indexBufferStartIndex = 0;
+    int vertexBufferStartIndex = 0;
+    if (m_indices.size() > 0) {
+        indexBufferStartIndex = m_indices.size()-1;
+    }
+    if (m_vertices.size() > 0) {
+        vertexBufferStartIndex = m_vertices.size()-1;
+    }
 
     for (const auto& shape : shapes) {
         for (const auto& index : shape.mesh.indices) {
@@ -449,6 +466,7 @@ void VulkanContext::LoadModel(std::string modelPath) {
 
 
 
+
             if (uniqueVertices.count(vertex) == 0) {
                 uniqueVertices[vertex] = static_cast<uint32_t>(m_vertices.size());
                 m_vertices.push_back(vertex);
@@ -459,6 +477,8 @@ void VulkanContext::LoadModel(std::string modelPath) {
         }
     }
     Mesh3D mesh = Mesh3D();
+    mesh.m_indexBufferStartIndex = indexBufferStartIndex;
+    mesh.m_vertexBufferStartIndex = vertexBufferStartIndex;
     m_vulkanInstanceManager->m_meshList.push_back(mesh);
 }
 
@@ -601,11 +621,17 @@ void VulkanContext::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
 
     VkBuffer vertexBuffers[] = { bufferHandler->VertexBuffer };
     VkDeviceSize offsets[] = { 0 };
+
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
     vkCmdBindIndexBuffer(commandBuffer, bufferHandler->IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
     for(auto& mesh: m_vulkanInstanceManager->m_meshList) {
+        int counter = 0;
+        for (auto& descriptorSet: mesh.m_descriptorSets){
+            std::cout <<"Mesh " << counter<< "\n"<< "DEBUG DESCRIPTOR SET: "<< descriptorSet << "\n";
+            counter++;
+        }
+
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vulkanInstanceManager->m_pipelineLayout, 0, 1,
             &mesh.m_descriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
 
@@ -618,10 +644,9 @@ void VulkanContext::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
         */
         //vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indices.size()), 1, 0, 0, 0);
-
     }
-    vkCmdEndRenderPass(commandBuffer);
 
+    vkCmdEndRenderPass(commandBuffer);
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to record command buffer!");
     }
