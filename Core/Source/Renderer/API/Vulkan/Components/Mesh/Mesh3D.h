@@ -17,8 +17,11 @@ public:
 
     // Mesh Properties
     int m_indexBufferStartIndex = 0;
+    int m_indexBufferEndIndex = 0;
     int m_vertexBufferStartIndex = 0;
+    int m_vertexBufferEndIndex = 0;
 
+    int m_indexCount = 0;
     // Vulkan Texture Properties
     VkImage m_textureImage = VK_NULL_HANDLE;
     VkDeviceMemory m_textureImageMemory = VK_NULL_HANDLE;

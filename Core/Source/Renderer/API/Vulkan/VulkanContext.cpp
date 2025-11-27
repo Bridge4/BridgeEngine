@@ -442,11 +442,13 @@ void VulkanContext::LoadModel(std::string modelPath) {
 
     int indexBufferStartIndex = 0;
     int vertexBufferStartIndex = 0;
+    int vertexBufferEndIndex = 0;
+    int indexBufferEndIndex = 0;
     if (m_indices.size() > 0) {
-        indexBufferStartIndex = m_indices.size()-1;
+        indexBufferStartIndex = m_indices.size();
     }
     if (m_vertices.size() > 0) {
-        vertexBufferStartIndex = m_vertices.size()-1;
+        vertexBufferStartIndex = m_vertices.size();
     }
 
     for (const auto& shape : shapes) {
@@ -464,9 +466,6 @@ void VulkanContext::LoadModel(std::string modelPath) {
                 1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
             };
 
-
-
-
             if (uniqueVertices.count(vertex) == 0) {
                 uniqueVertices[vertex] = static_cast<uint32_t>(m_vertices.size());
                 m_vertices.push_back(vertex);
@@ -474,11 +473,16 @@ void VulkanContext::LoadModel(std::string modelPath) {
             m_indices.push_back(uniqueVertices[vertex]);
 
             vertex.color = { 1.0f, 1.0f, 1.0f };
+            vertexBufferEndIndex = m_vertices.size()-1;
+            indexBufferEndIndex = m_indices.size()-1;
         }
     }
     Mesh3D mesh = Mesh3D();
     mesh.m_indexBufferStartIndex = indexBufferStartIndex;
     mesh.m_vertexBufferStartIndex = vertexBufferStartIndex;
+    mesh.m_indexBufferEndIndex = indexBufferEndIndex;
+    mesh.m_vertexBufferEndIndex = vertexBufferEndIndex;
+    mesh.m_indexCount = indexBufferEndIndex-indexBufferStartIndex;
     m_vulkanInstanceManager->m_meshList.push_back(mesh);
 }
 
@@ -643,7 +647,7 @@ void VulkanContext::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
             firstInstance: Used as an offset for instanced rendering, defines the lowest value of gl_InstanceIndex.
         */
         //vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indices.size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh.m_indexCount), 1, mesh.m_indexBufferStartIndex, 0, 0);
     }
 
     vkCmdEndRenderPass(commandBuffer);
