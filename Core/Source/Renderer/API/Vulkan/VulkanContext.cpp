@@ -1,5 +1,6 @@
 #pragma once
 #include <cassert>
+#include <string>
 #include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -71,15 +72,16 @@ void VulkanContext::Create() {
 
 
 
-    LoadModel(MODEL_PATH1);
-    CreateTextureImage(TEXTURE_PATH1, &m_vulkanInstanceManager->m_meshList[0]);
-    CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[0]);
-    CreateTextureSampler(&m_vulkanInstanceManager->m_meshList[0]);
-    
-    LoadModel(MODEL_PATH2);
-    CreateTextureImage(TEXTURE_PATH2, &m_vulkanInstanceManager->m_meshList[1]);
-    CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[1]);
-    CreateTextureSampler(&m_vulkanInstanceManager->m_meshList[1]);
+    int meshCount = 0;
+    for (const auto &obj: objList){
+        std::string modelPath = std::get<0>(obj);
+        std::string texturePath = std::get<1>(obj);
+        LoadModel(modelPath);
+        CreateTextureImage(texturePath, &m_vulkanInstanceManager->m_meshList[meshCount]);
+        CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[meshCount]);
+        CreateTextureSampler(&m_vulkanInstanceManager->m_meshList[meshCount]);
+        meshCount++;
+    }
 
     bufferHandler->CreateVertexBuffer(m_vertices);
     bufferHandler->CreateIndexBuffer(m_indices);
@@ -810,59 +812,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
     std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
     return VK_FALSE;
-}
-
-void VulkanContext::CreateVulkanContext()
-{
-    // A lot of information is passed through structs rather than function parameters
-    if (enableValidationLayers && !checkValidationLayerSupport(&validationLayers)) {
-        throw std::runtime_error("validation layers requested but not available...");
-    }
-
-    // optional but helpful information for the driver
-    VkApplicationInfo appInfo{};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "Bridge Engine";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "Bridge Engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_3;
-
-    // MANDATORY for instance creation
-    // Telling Vulkan what global (program) extensions and validations we want to use
-    VkInstanceCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-
-
-    // ADDING appInfo to createInfo
-    createInfo.pApplicationInfo = &appInfo;
-
-
-    // Vulkan is platform agnostic. Here we provide the GLFW extension to interface with the window system
-    std::vector<const char*> extensions = getRequiredExtensions(&enableValidationLayers);
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    createInfo.ppEnabledExtensionNames = extensions.data();
-
-    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-    if (enableValidationLayers) {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
-        //populateDebugMessengerCreateInfo(debugCreateInfo);
-        debugCreateInfo = {};
-        debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        debugCreateInfo.pfnUserCallback = debugCallback;
-        debugCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
-    }
-    else {
-        createInfo.enabledLayerCount = 0;
-        createInfo.pNext = nullptr;
-    }
-
-    if (vkCreateInstance(&createInfo, nullptr, &m_instance) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create instance!");
-    }
 }
 
 

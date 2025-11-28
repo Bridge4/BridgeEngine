@@ -4,6 +4,7 @@
 
 
 // VULKAN PLATFORM DEFINITION
+#include <map>
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif // !VK_USE_PLATFORM_WIN32_KHR
@@ -79,10 +80,10 @@ public:
     //Window window;
     uint32_t WIDTH = 800;
     uint32_t HEIGHT = 600;
-    std::string MODEL_PATH1 = "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.obj";
-    std::string TEXTURE_PATH1 = "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.png";
-    std::string MODEL_PATH2 = "C:/Source/Engines/BridgeEngine/Models/Ship/ship.obj";
-    std::string TEXTURE_PATH2 = "C:/Source/Engines/BridgeEngine/Models/Ship/ship.png";
+    std::vector<std::tuple<std::string, std::string>> objList = {
+        {"C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.obj", "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.png"},
+        {"C:/Source/Engines/BridgeEngine/Models/Ship/ship.obj", "C:/Source/Engines/BridgeEngine/Models/Ship/ship.png"}
+    };
     const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
     const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     VkInstance m_instance;
@@ -94,8 +95,6 @@ private:
     * Window is polled and frames are drawn until window is closed
     */
     
-
-    void CreateVulkanContext();
 
     void CreateDescriptorSetLayout();
 
