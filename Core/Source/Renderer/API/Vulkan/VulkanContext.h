@@ -122,15 +122,15 @@ private:
 
 
     // helper function used in createTextureImage();
-    void createImage(uint32_t width, uint32_t height, VkFormat format,
+    void CreateImage(uint32_t width, uint32_t height, VkFormat format,
         VkImageTiling tiling, VkImageUsageFlags usage,
         VkMemoryPropertyFlags properties,
         VkImage& image, VkDeviceMemory& imageMemory);
 
     // TODO: Figure out what the fuck this does
-    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
-    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+    void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 
     void LoadModel(std::string modelPath);
@@ -142,17 +142,17 @@ private:
     void CreateDescriptorSets();
 
     // beginSingleTimeCommands and endSingleTimeCommands are helpers for copyBuffer
-    VkCommandBuffer beginSingleTimeCommands();
+    VkCommandBuffer BeginSingleTimeCommands();
 
-    void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+    void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 
     // COPY BUFFER
-    void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+    void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+    uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 
-    void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+    void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
     // SEMAPHORES AND FENCES
     // Creates semaphores and fences for each frame in flight
@@ -164,7 +164,7 @@ private:
     //void updateUniformBuffer(uint32_t currentImage);
 
     // SHADER MODULES
-    VkShaderModule createShaderModule(const std::vector<char>& code);
+    VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
     // Reading in SPIRV shaders
     static std::vector<char> readFile(const std::string& fileName) {

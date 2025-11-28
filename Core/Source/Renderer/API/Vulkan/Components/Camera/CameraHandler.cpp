@@ -81,7 +81,7 @@ void CameraHandler::HandleInput(float deltaTime) {
     }
 }
 void CameraHandler::UpdateUniformBuffer(uint32_t currentImage, float deltaTime)
-{   
+{
     if (lookActive) {
         double xPos, yPos;
         glfwSetInputMode(windowHandler->m_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);

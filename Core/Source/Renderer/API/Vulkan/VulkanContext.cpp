@@ -61,6 +61,7 @@ void VulkanContext::CreateVulkanContext() {
     CreateDescriptorSetLayout();
     CreateGraphicsPipeline();
 
+    // Load objects from object list
     int meshCount = 0;
     for (const auto &obj: m_objList){
         std::string modelPath = std::get<0>(obj);
@@ -133,8 +134,8 @@ void VulkanContext::CreateGraphicsPipeline() {
     std::vector<char> vertShaderCode = readFile("C:/Source/Engines/BridgeEngine/Core/Shaders/vert.spv");
     std::vector<char> fragShaderCode = readFile("C:/Source/Engines/BridgeEngine/Core/Shaders/frag.spv");
 
-    VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
-    VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+    VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
+    VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
     // CODE BELOW THIS
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -368,13 +369,13 @@ void VulkanContext::CreateTextureImage(std::string texturePath, Mesh3D *mesh) {
 
     stbi_image_free(pixels);
 
-    createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+    CreateImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mesh->m_textureImage, mesh->m_textureImageMemory);
 
-    transitionImageLayout(mesh->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    copyBufferToImage(stagingBuffer, mesh->m_textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-    transitionImageLayout(mesh->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    TransitionImageLayout(mesh->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    CopyBufferToImage(stagingBuffer, mesh->m_textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+    TransitionImageLayout(mesh->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vkDestroyBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBuffer, nullptr);
     vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBufferMemory, nullptr);
@@ -558,7 +559,7 @@ void VulkanContext::CreateDescriptorSets() {
 }
 
 
-void VulkanContext::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
     /*
         If the command buffer was already recorded once, then a call to vkBeginCommandBuffer will implicitly reset it.
@@ -700,7 +701,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
 
     // Record a command buffer which draws the scene onto that image
     vkResetCommandBuffer(m_vulkanInstanceManager->m_commandBuffers[m_vulkanInstanceManager->m_currentFrame], 0);
-    recordCommandBuffer(m_vulkanInstanceManager->m_commandBuffers[m_vulkanInstanceManager->m_currentFrame], imageIndex);
+    RecordCommandBuffer(m_vulkanInstanceManager->m_commandBuffers[m_vulkanInstanceManager->m_currentFrame], imageIndex);
 
     // Submit the recorded command buffer
     VkSubmitInfo submitInfo{};
@@ -753,6 +754,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
 }
 
 
+// Helpers
 static bool checkValidationLayerSupport(const std::vector<const char*>* validationLayers) {
 
     uint32_t layerCount;
@@ -846,7 +848,7 @@ void VulkanContext::Destroy() {
     m_windowHandler->Destroy();
 }
 
-VkShaderModule VulkanContext::createShaderModule(const std::vector<char>& code)
+VkShaderModule VulkanContext::CreateShaderModule(const std::vector<char>& code)
 {
     
     VkShaderModuleCreateInfo createInfo{};
@@ -863,12 +865,12 @@ VkShaderModule VulkanContext::createShaderModule(const std::vector<char>& code)
 }
 // Helpers
 
-bool hasStencilComponent(VkFormat format) {
+bool HasStencilComponent(VkFormat format) {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void VulkanContext::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+void VulkanContext::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+    VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
     region.bufferRowLength = 0;
@@ -893,11 +895,11 @@ void VulkanContext::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t w
         1,
         &region
     );
-    endSingleTimeCommands(commandBuffer);
+    EndSingleTimeCommands(commandBuffer);
 }
 
 // beginSingleTimeCommands and endSingleTimeCommands are helpers for copyBuffer
-VkCommandBuffer VulkanContext::beginSingleTimeCommands() {
+VkCommandBuffer VulkanContext::BeginSingleTimeCommands() {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -916,7 +918,7 @@ VkCommandBuffer VulkanContext::beginSingleTimeCommands() {
     return commandBuffer;
 }
 
-void VulkanContext::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+void VulkanContext::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{};
@@ -930,7 +932,7 @@ void VulkanContext::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
     vkFreeCommandBuffers(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_commandPool, 1, &commandBuffer);
 }
 
-void VulkanContext::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
+void VulkanContext::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
 {
 
     VkImageCreateInfo imageInfo{};
@@ -965,7 +967,7 @@ void VulkanContext::createImage(uint32_t width, uint32_t height, VkFormat format
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
     if (vkAllocateMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate image memory!");
@@ -974,8 +976,8 @@ void VulkanContext::createImage(uint32_t width, uint32_t height, VkFormat format
     vkBindImageMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), image, imageMemory, 0);
 }
 
-void VulkanContext::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+void VulkanContext::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
+    VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout = oldLayout;
@@ -986,7 +988,7 @@ void VulkanContext::transitionImageLayout(VkImage image, VkFormat format, VkImag
     if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-        if (hasStencilComponent(format)) {
+        if (HasStencilComponent(format)) {
             barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
         }
     }
@@ -1037,19 +1039,19 @@ void VulkanContext::transitionImageLayout(VkImage image, VkFormat format, VkImag
         0, nullptr,
         1, &barrier
     );
-    endSingleTimeCommands(commandBuffer);
+    EndSingleTimeCommands(commandBuffer);
 }
 
 // COPY BUFFER
-void VulkanContext::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+void VulkanContext::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+    VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
     VkBufferCopy copyRegion{};
     copyRegion.size = size;
     vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-    endSingleTimeCommands(commandBuffer);
+    EndSingleTimeCommands(commandBuffer);
 }
 
-uint32_t VulkanContext::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+uint32_t VulkanContext::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(m_vulkanInstanceManager->GetPhysicalDevice(), &memProperties);
 
