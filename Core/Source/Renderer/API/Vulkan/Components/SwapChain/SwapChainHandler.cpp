@@ -290,31 +290,6 @@ void SwapChainHandler::TransitionImageLayout(VkImage image, VkFormat format, VkI
     );
     EndSingleTimeCommands(commandBuffer);
 }
-//void SwapChainHandler::CreateFramebuffers() {
-//    SwapChainFramebuffers.resize(SwapChainImageViews.size());
-//
-//    // Loop through swap chain image views
-//    for (size_t i = 0; i < SwapChainImageViews.size(); i++) {
-//        std::array<VkImageView, 2> attachments = {
-//            SwapChainImageViews[i],
-//            m_depthImageView
-//        };
-//
-//        VkFramebufferCreateInfo framebufferInfo{};
-//        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-//        framebufferInfo.renderPass = renderPassHandler->renderPass;
-//        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-//        framebufferInfo.pAttachments = attachments.data();
-//        framebufferInfo.pAttachments = attachments.data();
-//        framebufferInfo.width = SwapChainExtent.width;
-//        framebufferInfo.height = SwapChainExtent.height;
-//        framebufferInfo.layers = 1;
-//
-//        if (vkCreateFramebuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), &framebufferInfo, nullptr, &SwapChainFramebuffers[i]) != VK_SUCCESS) {
-//            throw std::runtime_error("failed to create framebuffer!");
-//        }
-//    }
-//}
 
 VkCommandBuffer SwapChainHandler::BeginSingleTimeCommands() {
     VkCommandBufferAllocateInfo allocInfo{};
