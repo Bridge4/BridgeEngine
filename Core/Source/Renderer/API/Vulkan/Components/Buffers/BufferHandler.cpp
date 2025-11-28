@@ -48,6 +48,7 @@ STAGED example:
 */
 
 void BufferHandler::DestroyBuffers() {
+    vkQueueWaitIdle(m_vulkanInstanceManager->m_presentQueue);
     vkDestroyBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), IndexBuffer, nullptr);
     vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), IndexBufferMemory, nullptr);
     vkDestroyBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), VertexBuffer, nullptr);

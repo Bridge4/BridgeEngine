@@ -61,6 +61,9 @@ public:
 
     void RunVulkanRenderer();
 
+    void LoadSceneObjects();
+    void UnloadSceneObjects();
+
     VulkanInstanceManager* m_vulkanInstanceManager;
     WindowHandler* m_windowHandler;
 

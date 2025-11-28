@@ -1,4 +1,3 @@
-#pragma once
 #include <cassert>
 #include <string>
 #include <vulkan/vulkan_core.h>
@@ -62,24 +61,24 @@ void VulkanContext::CreateVulkanContext() {
     CreateGraphicsPipeline();
 
     // Load objects from object list
-    int meshCount = 0;
-    for (const auto &obj: m_objList){
-        std::string modelPath = std::get<0>(obj);
-        std::string texturePath = std::get<1>(obj);
-        LoadModel(modelPath);
-        CreateTextureImage(texturePath, &m_vulkanInstanceManager->m_meshList[meshCount]);
-        CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[meshCount]);
-        CreateTextureSampler(&m_vulkanInstanceManager->m_meshList[meshCount]);
-        meshCount++;
-    }
+    //int meshCount = 0;
+    //for (const auto &obj: m_objList){
+    //    std::string modelPath = std::get<0>(obj);
+    //    std::string texturePath = std::get<1>(obj);
+    //    LoadModel(modelPath);
+    //    CreateTextureImage(texturePath, &m_vulkanInstanceManager->m_meshList[meshCount]);
+    //    CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[meshCount]);
+    //    CreateTextureSampler(&m_vulkanInstanceManager->m_meshList[meshCount]);
+    //    meshCount++;
+    //}
 
-    m_bufferHandler->CreateVertexBuffer(m_vertices);
-    m_bufferHandler->CreateIndexBuffer(m_indices);
+    //m_bufferHandler->CreateVertexBuffer(m_vertices);
+    //m_bufferHandler->CreateIndexBuffer(m_indices);
 
-    m_bufferHandler->CreateUniformBuffers();
+    //m_bufferHandler->CreateUniformBuffers();
 
-    CreateDescriptorPool();
-    CreateDescriptorSets();
+    //CreateDescriptorPool();
+    //CreateDescriptorSets();
 
     m_bufferHandler->BuildCommandBuffers();
     CreateSyncObjects();
@@ -94,13 +93,61 @@ void VulkanContext::RunVulkanRenderer() {
         float deltaTime = std::chrono::duration<float>(currentFrameTime - lastFrameTime).count();
         lastFrameTime = currentFrameTime;
         m_windowHandler->Poll();
+        m_cameraHandler->HandleInput(deltaTime);
+        m_cameraHandler->UpdateUniformBuffer(m_vulkanInstanceManager->m_currentFrame, deltaTime);
         DrawFrame(deltaTime);
     }
     vkDeviceWaitIdle(*m_vulkanInstanceManager->GetRefLogicalDevice());
     Destroy();
 }
 
+void VulkanContext::LoadSceneObjects() {
+    std::cout << "LOADING SCENE OBJECTS \n";
+    int meshCount = 0;
+    for (const auto &obj: m_objList){
+        std::string modelPath = std::get<0>(obj);
+        std::string texturePath = std::get<1>(obj);
+        LoadModel(modelPath);
+        std::cout << "OBJECT LOADED...\n";
+        CreateTextureImage(texturePath, &m_vulkanInstanceManager->m_meshList[meshCount]);
+        CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[meshCount]);
+        CreateTextureSampler(&m_vulkanInstanceManager->m_meshList[meshCount]);
+        meshCount++;
+    }
 
+    m_bufferHandler->CreateVertexBuffer(m_vertices);
+    m_bufferHandler->CreateIndexBuffer(m_indices);
+
+    m_bufferHandler->CreateUniformBuffers();
+
+    CreateDescriptorPool();
+    CreateDescriptorSets();
+}
+
+void VulkanContext::UnloadSceneObjects() {
+    if (!m_vulkanInstanceManager->m_meshList.empty()){
+        std::cout << "UNLOADING SCENE OBJECTS \n";
+        vkQueueWaitIdle(m_vulkanInstanceManager->m_presentQueue);
+        vkDestroyDescriptorPool(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_descriptorPool, nullptr);
+        for (auto& mesh: m_vulkanInstanceManager->m_meshList){
+            vkDestroySampler(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh.m_textureSampler, nullptr);
+            vkDestroyImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh.m_textureImageView, nullptr);
+            vkDestroyImage(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh.m_textureImage, nullptr);
+            vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh.m_textureImageMemory, nullptr);
+            int bufCount = 0;
+            for(auto& buffer: mesh.m_uniformBuffers){
+                vkDestroyBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), buffer, nullptr);
+                vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh.m_uniformBuffersMemory[bufCount], nullptr);
+                bufCount++;
+            }
+        }
+        m_bufferHandler->DestroyBuffers();
+        m_vulkanInstanceManager->m_meshList = {};
+    }
+    else {
+        std::cout << "No Scene Objects to Unload\n";
+    }
+}
 void VulkanContext::CreateDescriptorSetLayout() {
 
     VkDescriptorSetLayoutBinding uboLayoutBinding{};
@@ -616,30 +663,32 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
     scissor.extent = m_vulkanInstanceManager->GetSwapChainExtent();
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    VkBuffer vertexBuffers[] = { m_bufferHandler->VertexBuffer };
-    VkDeviceSize offsets[] = { 0 };
 
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+    if (!m_vulkanInstanceManager->m_meshList.empty()){
+        VkBuffer vertexBuffers[] = { m_bufferHandler->VertexBuffer };
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-    vkCmdBindIndexBuffer(commandBuffer, m_bufferHandler->IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-    for(auto& mesh: m_vulkanInstanceManager->m_meshList) {
-        int counter = 0;
-        for (auto& descriptorSet: mesh.m_descriptorSets){
-            counter++;
+        vkCmdBindIndexBuffer(commandBuffer, m_bufferHandler->IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        for(auto& mesh: m_vulkanInstanceManager->m_meshList) {
+            int counter = 0;
+            for (auto& descriptorSet: mesh.m_descriptorSets){
+                counter++;
+            }
+
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vulkanInstanceManager->m_pipelineLayout, 0, 1,
+                &mesh.m_descriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
+
+            /*
+                vkCmdDraw(VkCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance)
+                vertexCount: Even though we don't have a vertex buffer, we technically still have 3 vertices to draw.
+                instanceCount: Used for instanced rendering, use 1 if you're not doing that.
+                firstVertex: Used as an offset into the vertex buffer, defines the lowest value of gl_VertexIndex.
+                firstInstance: Used as an offset for instanced rendering, defines the lowest value of gl_InstanceIndex.
+            */
+            //vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+            vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh.m_indexCount), 1, mesh.m_indexBufferStartIndex, 0, 0);
         }
-
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vulkanInstanceManager->m_pipelineLayout, 0, 1,
-            &mesh.m_descriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
-
-        /*
-            vkCmdDraw(VkCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance)
-            vertexCount: Even though we don't have a vertex buffer, we technically still have 3 vertices to draw.
-            instanceCount: Used for instanced rendering, use 1 if you're not doing that.
-            firstVertex: Used as an offset into the vertex buffer, defines the lowest value of gl_VertexIndex.
-            firstInstance: Used as an offset for instanced rendering, defines the lowest value of gl_InstanceIndex.
-        */
-        //vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh.m_indexCount), 1, mesh.m_indexBufferStartIndex, 0, 0);
     }
 
     vkCmdEndRenderPass(commandBuffer);
@@ -679,8 +728,6 @@ void VulkanContext::DrawFrame(float deltaTime) {
         - Submit the recorded command buffer
         - Present the swap chain image
     */
-    m_cameraHandler->HandleInput(deltaTime);
-    m_cameraHandler->UpdateUniformBuffer(m_vulkanInstanceManager->m_currentFrame, deltaTime);
     vkWaitForFences(*m_vulkanInstanceManager->GetRefLogicalDevice(), 1, &m_vulkanInstanceManager->m_inFlightFences[m_vulkanInstanceManager->m_currentFrame], VK_TRUE, UINT64_MAX);
 
     // Acquire an image from the swap chain
