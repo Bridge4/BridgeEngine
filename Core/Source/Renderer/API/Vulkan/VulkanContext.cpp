@@ -37,26 +37,20 @@
 #include "Components/VulkanInstanceManager/VulkanInstanceManager.h"
 
 void VulkanContext::Create() {
-
     m_vulkanInstanceManager = new VulkanInstanceManager(this);
 
     deviceHandler = new DeviceHandler(m_vulkanInstanceManager);
-    imageViewBuilder = new ImageHandler(this);
-    swapChainHandler = new SwapChainHandler(this, deviceHandler, windowHandler, imageViewBuilder, m_vulkanInstanceManager);
+    imageHandler = new ImageHandler(this);
+    swapChainHandler = new SwapChainHandler(this, deviceHandler, windowHandler, imageHandler, m_vulkanInstanceManager);
     bufferHandler = new BufferHandler(m_vulkanInstanceManager);
     renderPassHandler = new RenderPassHandler(this, swapChainHandler, deviceHandler, m_vulkanInstanceManager);
-    //VulkanContext* vulkanContext, WindowHandler* windowHandler, SwapChainHandler* swapChainHandler, BufferHandler* bufferHandler
     cameraHandler = new CameraHandler(this, windowHandler, swapChainHandler, bufferHandler, m_vulkanInstanceManager);
-    //camera = new Camera(this, windowHandler);
 
-    //CreateVulkanContext();
     m_vulkanInstanceManager->CreateVulkanInstance();
     windowHandler->vulkanContext = this;
     if (windowHandler->CreateSurface() != VK_SUCCESS)
         throw std::runtime_error("Failed to create window surface");
-    // DONE
     deviceHandler->Initialize();
-    // DONE 
     swapChainHandler->Initialize();
     renderPassHandler->Initialize();
 
@@ -66,11 +60,6 @@ void VulkanContext::Create() {
 
     CreateDescriptorSetLayout();
     CreateGraphicsPipeline();
-
-    /*CreateDepthResources();
-    CreateFramebuffers();*/
-
-
 
     int meshCount = 0;
     for (const auto &obj: objList){
@@ -91,9 +80,8 @@ void VulkanContext::Create() {
     CreateDescriptorPool();
     CreateDescriptorSets();
 
-    //CreateCommandBuffers();
     bufferHandler->BuildCommandBuffers();
-    CreateSyncObjects();   
+    CreateSyncObjects();
 }
 
 void VulkanContext::RenderLoop() {
@@ -394,7 +382,7 @@ void VulkanContext::CreateTextureImage(std::string texturePath, Mesh3D *mesh) {
 
 // TEXTURE IMAGE VIEW
 void VulkanContext::CreateTextureImageView(Mesh3D *mesh) {
-    mesh->m_textureImageView = imageViewBuilder->CreateImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+    mesh->m_textureImageView = imageHandler->CreateImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 // TEXTURE SAMPLER

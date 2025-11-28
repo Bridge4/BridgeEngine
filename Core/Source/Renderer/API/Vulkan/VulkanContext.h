@@ -69,7 +69,7 @@ public:
     RenderPassHandler* renderPassHandler;
     CameraHandler* cameraHandler;
 
-    ImageHandler* imageViewBuilder;
+    ImageHandler* imageHandler;
 
     // TODO: Move this to some sort of object abstraction rather than making it a part of the API context
 
