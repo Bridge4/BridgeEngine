@@ -57,7 +57,7 @@ void VulkanContext::CreateVulkanContext() {
     CreateDescriptorSetLayout();
     CreateGraphicsPipeline();
 
-    m_bufferHandler->BuildCommandBuffers();
+    m_bufferHandler->CreateCommandBuffers();
     CreateSyncObjects();
 }
 
@@ -94,7 +94,6 @@ void VulkanContext::LoadSceneObjects() {
 
     m_bufferHandler->CreateVertexBuffer(m_vertices);
     m_bufferHandler->CreateIndexBuffer(m_indices);
-
     m_bufferHandler->CreateUniformBuffers();
 
     CreateDescriptorPool();
@@ -382,7 +381,7 @@ void VulkanContext::CreateTextureImage(std::string texturePath, Mesh3D *mesh) {
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
 
-    m_bufferHandler->BuildBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    m_bufferHandler->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         stagingBuffer, stagingBufferMemory);
 

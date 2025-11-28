@@ -1,11 +1,8 @@
-#ifndef BUFFERBUILDER_H
-#define BUFFERBUILDER_H
+#ifndef BUFFERHANDLER_H
+#define BUFFERHANDLER_H
 #include <vulkan/vulkan.h>
 #include <vector>
 #include "../ComponentDeclarations.h"
-//class VulkanContext;
-//class DeviceHandler;
-//class SwapChainHandler;
 
 struct Vertex;
 struct UniformBufferObject;
@@ -26,9 +23,9 @@ public:
 
 	void CreateUniformBuffers();
 
-	void BuildCommandBuffers();
+	void CreateCommandBuffers();
 
-	void BuildBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 
 	VkBuffer VertexBuffer = 0;
 	VkDeviceMemory VertexBufferMemory = 0;
@@ -49,12 +46,12 @@ private:
 	VulkanInstanceManager* m_vulkanInstanceManager = nullptr;
 
 
-	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 	// COPY BUFFER
 	
 	
 
-	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+	uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 };
 #endif

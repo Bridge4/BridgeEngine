@@ -62,7 +62,7 @@ void BufferHandler::CreateVertexBuffer(std::vector<Vertex> vertices) {
     // Create staging buffer
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    BuildBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+    CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
     
     // Map it
     void* data;
@@ -71,13 +71,13 @@ void BufferHandler::CreateVertexBuffer(std::vector<Vertex> vertices) {
     vkUnmapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBufferMemory);
 
     // Create vertex buffer
-    BuildBuffer(bufferSize,
+    CreateBuffer(bufferSize,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         VertexBuffer, VertexBufferMemory);
 
     // Copy data from staging buffer to vertex buffer
-    copyBuffer(stagingBuffer, VertexBuffer, bufferSize);
+    CopyBuffer(stagingBuffer, VertexBuffer, bufferSize);
 
     // cleanup
     vkDestroyBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBuffer, nullptr);
@@ -108,16 +108,16 @@ void BufferHandler::CreateIndexBuffer(std::vector<uint32_t> indices) {
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    BuildBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+    CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
     void* data;
     vkMapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
     memcpy(data, indices.data(), (size_t)bufferSize);
     vkUnmapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBufferMemory);
 
-    BuildBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, IndexBuffer, IndexBufferMemory);
+    CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, IndexBuffer, IndexBufferMemory);
 
-    copyBuffer(stagingBuffer, IndexBuffer, bufferSize);
+    CopyBuffer(stagingBuffer, IndexBuffer, bufferSize);
 
     vkDestroyBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBuffer, nullptr);
     vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBufferMemory, nullptr);
@@ -137,7 +137,7 @@ void BufferHandler::CreateUniformBuffers()
         for (size_t i = 0; i < m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT; i++) {
             // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i], m_uniformBuffersMemory[i], UNSTAGED)
             // Create then Map to memory
-            BuildBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, mesh.m_uniformBuffers[i], mesh.m_uniformBuffersMemory[i]);
+            CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, mesh.m_uniformBuffers[i], mesh.m_uniformBuffersMemory[i]);
             vkMapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh.m_uniformBuffersMemory[i], 0, bufferSize, 0, &mesh.m_uniformBuffersMapped[i]);
         }
 
@@ -145,7 +145,7 @@ void BufferHandler::CreateUniformBuffers()
 }
 
 
-void BufferHandler::BuildCommandBuffers() {
+void BufferHandler::CreateCommandBuffers() {
     m_vulkanInstanceManager->m_commandBuffers.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
 
     VkCommandBufferAllocateInfo allocInfo{};
@@ -163,7 +163,7 @@ void BufferHandler::BuildCommandBuffers() {
     }
 }
 
-void BufferHandler::BuildBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) 
+void BufferHandler::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) 
 {
     // bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_uniformBuffers[i], m_uniformBuffersMemory[i]
     // Creation
@@ -184,7 +184,7 @@ void BufferHandler::BuildBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkM
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
     // VkAllocateMemory is an expensive operation on the CPU side, so we should minimize calls to it
     // "Aggressively allocate your buffer as large as you believe it will grow" - dude on stackoverflow
@@ -196,7 +196,7 @@ void BufferHandler::BuildBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkM
     vkBindBufferMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), buffer, bufferMemory, 0);
 }
 
-void BufferHandler::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+void BufferHandler::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
     VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
     VkBufferCopy copyRegion{};
     copyRegion.size = size;
@@ -240,7 +240,7 @@ void BufferHandler::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
 }
 
 
-uint32_t BufferHandler::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t BufferHandler::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(m_vulkanInstanceManager->GetPhysicalDevice(), &memProperties);
