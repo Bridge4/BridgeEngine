@@ -61,6 +61,8 @@ public:
 
     void RenderLoop();
 
+private:
+
     VulkanInstanceManager* m_vulkanInstanceManager;
     DeviceHandler* deviceHandler;
     SwapChainHandler* swapChainHandler;
@@ -89,8 +91,6 @@ public:
     VkInstance m_instance;
     VkDebugUtilsMessengerEXT m_debugMessenger;
     int MAX_FRAMES_IN_FLIGHT = 2;
-private:
-
     /*
     * Window is polled and frames are drawn until window is closed
     */
