@@ -20,11 +20,11 @@ public:
 
 	void DestroyBuffers();
 
-	void BuildVertexBuffer(std::vector<Vertex> vertices);
+	void CreateVertexBuffer(std::vector<Vertex> vertices);
 
-	void BuildIndexBuffer(std::vector<uint32_t> indices);
+	void CreateIndexBuffer(std::vector<uint32_t> indices);
 
-	void BuildUniformBuffers();
+	void CreateUniformBuffers();
 
 	void BuildCommandBuffers();
 

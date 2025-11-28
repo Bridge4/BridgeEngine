@@ -35,7 +35,7 @@
 #include "Components/Images/ImageHandler.h"
 #include "Components/VulkanInstanceManager/VulkanInstanceManager.h"
 
-void VulkanContext::Construct() {
+void VulkanContext::Create() {
 
     m_vulkanInstanceManager = new VulkanInstanceManager(this);
 
@@ -49,7 +49,7 @@ void VulkanContext::Construct() {
     //camera = new Camera(this, windowHandler);
 
     //CreateVulkanContext();
-    m_vulkanInstanceManager->CreateInstance();
+    m_vulkanInstanceManager->CreateVulkanInstance();
     windowHandler->vulkanContext = this;
     if (windowHandler->CreateSurface() != VK_SUCCESS)
         throw std::runtime_error("Failed to create window surface");
@@ -62,7 +62,6 @@ void VulkanContext::Construct() {
     swapChainHandler->AttachRenderPassHandler(renderPassHandler);
     CreateCommandPool();
     swapChainHandler->CreateFramebuffers();
-    //swapChainHandler->CreateDepthResources();
 
     CreateDescriptorSetLayout();
     CreateGraphicsPipeline();
@@ -82,11 +81,10 @@ void VulkanContext::Construct() {
     CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[1]);
     CreateTextureSampler(&m_vulkanInstanceManager->m_meshList[1]);
 
-    bufferHandler->BuildVertexBuffer(m_vertices);
-    bufferHandler->BuildIndexBuffer(m_indices);
-    //CreateIndexBuffer();
-    //CreateUniformBuffers();
-    bufferHandler->BuildUniformBuffers();
+    bufferHandler->CreateVertexBuffer(m_vertices);
+    bufferHandler->CreateIndexBuffer(m_indices);
+
+    bufferHandler->CreateUniformBuffers();
 
     CreateDescriptorPool();
     CreateDescriptorSets();
@@ -765,8 +763,6 @@ void VulkanContext::DrawFrame(float deltaTime) {
 }
 
 
-// BEGIN_REGION CreateVulkanContext()
-// BEGIN_REGION CreateVulkanContext_helpers
 static bool checkValidationLayerSupport(const std::vector<const char*>* validationLayers) {
 
     uint32_t layerCount;
@@ -815,7 +811,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
 
     return VK_FALSE;
 }
-// END_REGION CreateVulkanContext_helpers
 
 void VulkanContext::CreateVulkanContext()
 {
@@ -869,17 +864,18 @@ void VulkanContext::CreateVulkanContext()
         throw std::runtime_error("failed to create instance!");
     }
 }
-// END_REGION CreateVulkanContext()
 
 
 void VulkanContext::Destroy() {
     swapChainHandler->Destroy();
     //DestroySwapChain();
 
-    vkDestroySampler(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_textureSampler, nullptr);
-    vkDestroyImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_textureImageView, nullptr);
-    vkDestroyImage(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_textureImage, nullptr);
-    vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_textureImageMemory, nullptr);
+    for (auto& mesh: m_vulkanInstanceManager->m_meshList){
+        vkDestroySampler(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh.m_textureSampler, nullptr);
+        vkDestroyImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh.m_textureImageView, nullptr);
+        vkDestroyImage(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh.m_textureImage, nullptr);
+        vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh.m_textureImageMemory, nullptr);
+    }
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), bufferHandler->UniformBuffers[i], nullptr);

@@ -56,7 +56,7 @@ public:
 #else
     const bool enableValidationLayers = true;
 #endif
-    void Construct();
+    void Create();
 
     void RenderLoop();
 

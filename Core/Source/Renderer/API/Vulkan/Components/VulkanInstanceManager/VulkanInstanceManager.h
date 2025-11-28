@@ -16,7 +16,7 @@ public:
 
 
 
-    void CreateInstance();
+    void CreateVulkanInstance();
 
     // Getters
     VkInstance GetVulkanInstance() { return m_instance; }
@@ -72,11 +72,6 @@ public:
     VkPipeline m_graphicsPipeline;
     std::vector<VkFramebuffer> m_swapChainFramebuffers;
     VkCommandPool m_commandPool;
-
-    VkImage m_textureImage;
-    VkImageView m_textureImageView;
-    VkSampler m_textureSampler;
-    VkDeviceMemory m_textureImageMemory;
 
 
 

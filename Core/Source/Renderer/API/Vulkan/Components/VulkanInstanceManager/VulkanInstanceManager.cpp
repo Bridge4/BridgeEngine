@@ -30,7 +30,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
     return VK_FALSE;
 }
 
-void VulkanInstanceManager::CreateInstance()
+void VulkanInstanceManager::CreateVulkanInstance()
 {
 	// Helpers needed: getRequiredExtensions
 	// getRequiredExtensions is actuall calling a bunch of glfw functions
