@@ -39,24 +39,24 @@
 void VulkanContext::Create() {
     m_vulkanInstanceManager = new VulkanInstanceManager(this);
 
-    deviceHandler = new DeviceHandler(m_vulkanInstanceManager);
-    imageHandler = new ImageHandler(this);
-    swapChainHandler = new SwapChainHandler(this, deviceHandler, windowHandler, imageHandler, m_vulkanInstanceManager);
-    bufferHandler = new BufferHandler(m_vulkanInstanceManager);
-    renderPassHandler = new RenderPassHandler(this, swapChainHandler, deviceHandler, m_vulkanInstanceManager);
-    cameraHandler = new CameraHandler(this, windowHandler, swapChainHandler, bufferHandler, m_vulkanInstanceManager);
+    m_deviceHandler = new DeviceHandler(m_vulkanInstanceManager);
+    m_imageHandler = new ImageHandler(this);
+    m_swapChainHandler = new SwapChainHandler(this, m_deviceHandler, windowHandler, m_imageHandler, m_vulkanInstanceManager);
+    m_bufferHandler = new BufferHandler(m_vulkanInstanceManager);
+    m_renderPassHandler = new RenderPassHandler(this, m_swapChainHandler, m_deviceHandler, m_vulkanInstanceManager);
+    m_cameraHandler = new CameraHandler(this, windowHandler, m_swapChainHandler, m_bufferHandler, m_vulkanInstanceManager);
 
     m_vulkanInstanceManager->CreateVulkanInstance();
     windowHandler->vulkanContext = this;
     if (windowHandler->CreateSurface() != VK_SUCCESS)
         throw std::runtime_error("Failed to create window surface");
-    deviceHandler->Initialize();
-    swapChainHandler->Initialize();
-    renderPassHandler->Initialize();
+    m_deviceHandler->Initialize();
+    m_swapChainHandler->Initialize();
+    m_renderPassHandler->Initialize();
 
-    swapChainHandler->AttachRenderPassHandler(renderPassHandler);
+    m_swapChainHandler->AttachRenderPassHandler(m_renderPassHandler);
     CreateCommandPool();
-    swapChainHandler->CreateFramebuffers();
+    m_swapChainHandler->CreateFramebuffers();
 
     CreateDescriptorSetLayout();
     CreateGraphicsPipeline();
@@ -72,15 +72,15 @@ void VulkanContext::Create() {
         meshCount++;
     }
 
-    bufferHandler->CreateVertexBuffer(m_vertices);
-    bufferHandler->CreateIndexBuffer(m_indices);
+    m_bufferHandler->CreateVertexBuffer(m_vertices);
+    m_bufferHandler->CreateIndexBuffer(m_indices);
 
-    bufferHandler->CreateUniformBuffers();
+    m_bufferHandler->CreateUniformBuffers();
 
     CreateDescriptorPool();
     CreateDescriptorSets();
 
-    bufferHandler->BuildCommandBuffers();
+    m_bufferHandler->BuildCommandBuffers();
     CreateSyncObjects();
 }
 
@@ -328,7 +328,7 @@ void VulkanContext::CreateGraphicsPipeline() {
 }
 
 void VulkanContext::CreateCommandPool() {
-    QueueFamilyIndices queueFamilyIndices = deviceHandler->findQueueFamilies(m_vulkanInstanceManager->GetPhysicalDevice());
+    QueueFamilyIndices queueFamilyIndices = m_deviceHandler->findQueueFamilies(m_vulkanInstanceManager->GetPhysicalDevice());
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -357,7 +357,7 @@ void VulkanContext::CreateTextureImage(std::string texturePath, Mesh3D *mesh) {
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
 
-    bufferHandler->BuildBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    m_bufferHandler->BuildBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         stagingBuffer, stagingBufferMemory);
 
@@ -382,7 +382,7 @@ void VulkanContext::CreateTextureImage(std::string texturePath, Mesh3D *mesh) {
 
 // TEXTURE IMAGE VIEW
 void VulkanContext::CreateTextureImageView(Mesh3D *mesh) {
-    mesh->m_textureImageView = imageHandler->CreateImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+    mesh->m_textureImageView = m_imageHandler->CreateImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 // TEXTURE SAMPLER
@@ -615,12 +615,12 @@ void VulkanContext::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
     scissor.extent = m_vulkanInstanceManager->GetSwapChainExtent();
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    VkBuffer vertexBuffers[] = { bufferHandler->VertexBuffer };
+    VkBuffer vertexBuffers[] = { m_bufferHandler->VertexBuffer };
     VkDeviceSize offsets[] = { 0 };
 
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-    vkCmdBindIndexBuffer(commandBuffer, bufferHandler->IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindIndexBuffer(commandBuffer, m_bufferHandler->IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
     for(auto& mesh: m_vulkanInstanceManager->m_meshList) {
         int counter = 0;
         for (auto& descriptorSet: mesh.m_descriptorSets){
@@ -678,8 +678,8 @@ void VulkanContext::DrawFrame(float deltaTime) {
         - Submit the recorded command buffer
         - Present the swap chain image
     */
-    cameraHandler->HandleInput(deltaTime);
-    cameraHandler->UpdateUniformBuffer(m_vulkanInstanceManager->m_currentFrame, deltaTime);
+    m_cameraHandler->HandleInput(deltaTime);
+    m_cameraHandler->UpdateUniformBuffer(m_vulkanInstanceManager->m_currentFrame, deltaTime);
     vkWaitForFences(*m_vulkanInstanceManager->GetRefLogicalDevice(), 1, &m_vulkanInstanceManager->m_inFlightFences[m_vulkanInstanceManager->m_currentFrame], VK_TRUE, UINT64_MAX);
 
     // Acquire an image from the swap chain
@@ -688,7 +688,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
     // SWAP CHAIN RECREATION
     VkResult result = vkAcquireNextImageKHR(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_swapChain, UINT64_MAX, m_vulkanInstanceManager->m_imageAvailableSemaphores[m_vulkanInstanceManager->m_currentFrame], VK_NULL_HANDLE, &imageIndex);
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        swapChainHandler->Rebuild();
+        m_swapChainHandler->Rebuild();
         return;
     }
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
@@ -742,7 +742,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || windowHandler->framebufferResized) {
         windowHandler->framebufferResized = false;
-        swapChainHandler->Rebuild();
+        m_swapChainHandler->Rebuild();
     }
     else if (result != VK_SUCCESS) {
         throw std::runtime_error("Failed to present swap chain image");
@@ -804,7 +804,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
 
 
 void VulkanContext::Destroy() {
-    swapChainHandler->Destroy();
+    m_swapChainHandler->Destroy();
     //DestroySwapChain();
 
     for (auto& mesh: m_vulkanInstanceManager->m_meshList){
@@ -815,8 +815,8 @@ void VulkanContext::Destroy() {
     }
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), bufferHandler->UniformBuffers[i], nullptr);
-        vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), bufferHandler->UniformBuffersMemory[i], nullptr);
+        vkDestroyBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_bufferHandler->UniformBuffers[i], nullptr);
+        vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_bufferHandler->UniformBuffersMemory[i], nullptr);
     }
 
     vkDestroyDescriptorPool(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_descriptorPool, nullptr);
@@ -825,13 +825,13 @@ void VulkanContext::Destroy() {
 
     // Buffer cleanup
     // Call BufferHandler::DestroyBuffers
-    bufferHandler->DestroyBuffers();
+    m_bufferHandler->DestroyBuffers();
     
 
     vkDestroyPipeline(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_graphicsPipeline, nullptr);
     vkDestroyPipelineLayout(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_pipelineLayout, nullptr);
 
-    vkDestroyRenderPass(*m_vulkanInstanceManager->GetRefLogicalDevice(), renderPassHandler->renderPass, nullptr);
+    vkDestroyRenderPass(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_renderPassHandler->renderPass, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_renderFinishedSemaphores[i], nullptr);
@@ -841,7 +841,7 @@ void VulkanContext::Destroy() {
     vkDestroyCommandPool(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_commandPool, nullptr);
 
     // DEVICE DESTRUCTION
-    deviceHandler->Destroy();
+    m_deviceHandler->Destroy();
     // GLFW DESTRUCTION
     windowHandler->Destroy();
 }

@@ -62,22 +62,11 @@ public:
     void RenderLoop();
 
     VulkanInstanceManager* m_vulkanInstanceManager;
-    DeviceHandler* deviceHandler;
-    SwapChainHandler* swapChainHandler;
     WindowHandler* windowHandler;
-    BufferHandler* bufferHandler;
-    RenderPassHandler* renderPassHandler;
-    CameraHandler* cameraHandler;
-
-    ImageHandler* imageHandler;
-
-    // TODO: Move this to some sort of object abstraction rather than making it a part of the API context
 
     std::vector<Vertex> m_vertices;
     std::vector<uint32_t> m_indices;
 
-
-    //Window window;
     uint32_t WIDTH = 800;
     uint32_t HEIGHT = 600;
     std::vector<std::tuple<std::string, std::string>> objList = {
@@ -90,6 +79,13 @@ public:
     VkDebugUtilsMessengerEXT m_debugMessenger;
     int MAX_FRAMES_IN_FLIGHT = 2;
 private:
+    DeviceHandler* m_deviceHandler;
+    SwapChainHandler* m_swapChainHandler;
+    BufferHandler* m_bufferHandler;
+    RenderPassHandler* m_renderPassHandler;
+    CameraHandler* m_cameraHandler;
+
+    ImageHandler* m_imageHandler;
 
     /*
     * Window is polled and frames are drawn until window is closed
@@ -170,8 +166,8 @@ private:
     VkShaderModule createShaderModule(const std::vector<char>& code);
 
     // Reading in SPIRV shaders
-    static std::vector<char> readFile(const std::string& filename) {
-        std::ifstream file(filename, std::ios::ate | std::ios::binary);
+    static std::vector<char> readFile(const std::string& fileName) {
+        std::ifstream file(fileName, std::ios::ate | std::ios::binary);
 
         if (!file.is_open()) {
             throw std::runtime_error("failed to open file!");
