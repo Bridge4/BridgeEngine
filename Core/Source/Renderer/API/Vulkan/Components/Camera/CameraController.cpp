@@ -1,6 +1,5 @@
-#include "CameraHandler.h"
+#include "CameraController.h"
 #include "../VulkanInstanceManager/VulkanInstanceManager.h"
-#include <chrono>
 // GLM INCLUDES
 
 #include "../SwapChain/SwapChainHandler.h"
@@ -16,111 +15,109 @@
 #include "../Window/WindowHandler.h"
 #include "GLFW/glfw3.h"
 #include "../../VulkanContext.h"
-#include <iostream>
 
-glm::mat4 CameraHandler::getViewMatrix() {
+glm::mat4 CameraController::getViewMatrix() {
     //glm::mat4 tempMat = glm::lookAt(eyePosition, viewDirection, upVector);
 
     //std::cout << glm::to_string(tempMat) << std::endl;
-    return(glm::lookAt(eyePosition, eyePosition + viewDirection, upVector));
+    return(glm::lookAt(m_eyePosition, m_eyePosition + m_viewDirection, m_upVector));
 }
 
-void CameraHandler::Initialize() {
-   eyePosition = glm::vec3(0.0f, 0.0f, 2.0f);
-   viewDirection = glm::vec3(0.0f, 0.0f, -1.0f);
-   upVector = glm::vec3(0.0f, 1.0f, 0.0f);
-   cameraViewMatrix = getViewMatrix();
-   lookActive = false;
-   lookToggled = false;
+void CameraController::Initialize() {
+   m_eyePosition = glm::vec3(0.0f, 0.0f, 2.0f);
+   m_viewDirection = glm::vec3(0.0f, 0.0f, -1.0f);
+   m_upVector = glm::vec3(0.0f, 1.0f, 0.0f);
+   m_cameraViewMatrix = getViewMatrix();
+   m_lookActive = false;
+   m_lookToggled = false;
 }
 
 
-void CameraHandler::HandleInput(float deltaTime) {
-    if (glfwGetKey(windowHandler->m_window, GLFW_KEY_W)) {
+void CameraController::HandleInput(float deltaTime) {
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_W)) {
         //cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f, 0.001f, 0.001f));
         //cameraViewMatrix = glm::lookAt(eyePosition, viewDirection+eyePosition, upVector);
-        eyePosition += deltaTime * cameraSpeed * viewDirection;
+        m_eyePosition += deltaTime * m_cameraSpeed * m_viewDirection;
     }
-    if (glfwGetKey(windowHandler->m_window, GLFW_KEY_S)) {
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_S)) {
         //cameraViewMatrix = glm::translate(cameraViewMatrix, -glm::vec3(0.001f, 0.001f, 0.001f));
-        eyePosition -= deltaTime * cameraSpeed * viewDirection;
+        m_eyePosition -= deltaTime * m_cameraSpeed * m_viewDirection;
 
     }
-    if (glfwGetKey(windowHandler->m_window, GLFW_KEY_A)) {
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_A)) {
         //glm::rotate(glm::vec3(0.0f, 0.0f, 0.0f), glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         //cameraViewMatrix = glm::rotate(cameraViewMatrix, glm::radians(0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
-        eyePosition += deltaTime * cameraSpeed * -glm::normalize(glm::cross(viewDirection, upVector));
+        m_eyePosition += deltaTime * m_cameraSpeed * -glm::normalize(glm::cross(m_viewDirection, m_upVector));
     }
-    if (glfwGetKey(windowHandler->m_window, GLFW_KEY_D)) {
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_D)) {
         //cameraViewMatrix = glm::rotate(cameraViewMatrix, glm::radians(-0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
-        eyePosition -= deltaTime * cameraSpeed * -glm::normalize(glm::cross(viewDirection, upVector));
+        m_eyePosition -= deltaTime * m_cameraSpeed * -glm::normalize(glm::cross(m_viewDirection, m_upVector));
     }
 
-    if (glfwGetKey(windowHandler->m_window, GLFW_KEY_SPACE)) {
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_SPACE)) {
         //cameraViewMatrix = glm::rotate(cameraViewMatrix, glm::radians(-0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
-        eyePosition += deltaTime * cameraSpeed * -glm::normalize(glm::cross(viewDirection, glm::vec3(1.0f, 0.0f, 0.0f)));
+        m_eyePosition += deltaTime * m_cameraSpeed * -glm::normalize(glm::cross(m_viewDirection, glm::vec3(1.0f, 0.0f, 0.0f)));
     }
-    if (glfwGetKey(windowHandler->m_window, GLFW_KEY_LEFT_CONTROL)) {
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_LEFT_CONTROL)) {
         //cameraViewMatrix = glm::rotate(cameraViewMatrix, glm::radians(-0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
-        eyePosition -= deltaTime * cameraSpeed * -glm::normalize(glm::cross(viewDirection, glm::vec3(1.0f, 0.0f, 0.0f)));
+        m_eyePosition -= deltaTime * m_cameraSpeed * -glm::normalize(glm::cross(m_viewDirection, glm::vec3(1.0f, 0.0f, 0.0f)));
     }
-    if (glfwGetKey(windowHandler->m_window, GLFW_KEY_ESCAPE)) {
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_ESCAPE)) {
         exit(0);
     }
 
-    if (glfwGetMouseButton(windowHandler->m_window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
-        if (!lookActive) {
-            glfwSetCursorPos(windowHandler->m_window, (swapChainHandler->SwapChainExtent.width / 2), (swapChainHandler->SwapChainExtent.height / 2));
-            lookToggled = true;
+    if (glfwGetMouseButton(m_windowHandler->m_window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
+        if (!m_lookActive) {
+            glfwSetCursorPos(m_windowHandler->m_window, (m_swapChainHandler->SwapChainExtent.width / 2.0f), (m_swapChainHandler->SwapChainExtent.height / 2.0f));
+            m_lookToggled = true;
 
         }
-        lookActive = true;
+        m_lookActive = true;
 
     }
-    if (glfwGetMouseButton(windowHandler->m_window, GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE) {
-        lookActive = false;
+    if (glfwGetMouseButton(m_windowHandler->m_window, GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE) {
+        m_lookActive = false;
     }
-    if (glfwGetKey(windowHandler->m_window, GLFW_KEY_L)) {
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_L)) {
         //cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f, 0.001f, 0.001f));
         //cameraViewMatrix = glm::lookAt(eyePosition, viewDirection+eyePosition, upVector);
-        vulkanContext->LoadSceneObjects();
+        m_vulkanContext->LoadSceneObjects();
     }
-    if (glfwGetKey(windowHandler->m_window, GLFW_KEY_U)) {
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_U)) {
         //cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f, 0.001f, 0.001f));
         //cameraViewMatrix = glm::lookAt(eyePosition, viewDirection+eyePosition, upVector);
-        vulkanContext->UnloadSceneObjects();
+        m_vulkanContext->UnloadSceneObjects();
     }
 }
-void CameraHandler::UpdateUniformBuffer(uint32_t currentImage, float deltaTime)
+void CameraController::UpdateUniformBuffer(uint32_t currentImage, float deltaTime)
 {
-    if (lookActive) {
+    if (m_lookActive) {
         double xPos, yPos;
-        glfwSetInputMode(windowHandler->m_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-        glfwGetCursorPos(windowHandler->m_window, &xPos, &yPos);
+        glfwSetInputMode(m_windowHandler->m_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+        glfwGetCursorPos(m_windowHandler->m_window, &xPos, &yPos);
         //std::cout << "X: " << xPos << " " << "Y: " << yPos << std::endl;
         float deltaX, deltaY;
-        deltaX = xPos - prevMouseX;
-        deltaY = yPos - prevMouseY;
-        if (!lookToggled) {
+        deltaX = xPos - m_prevMouseX;
+        deltaY = yPos - m_prevMouseY;
+        if (!m_lookToggled) {
             if (deltaX != 0 || deltaY != 0) {
-                glm::vec3 newViewDirection = glm::rotate(viewDirection, glm::radians(-deltaY), glm::normalize(glm::cross(viewDirection, upVector)));
-                if (abs(glm::angle(newViewDirection, upVector) - glm::radians(90.0f)) <= glm::radians(85.0f))
+                glm::vec3 newViewDirection = glm::rotate(m_viewDirection, glm::radians(-deltaY), glm::normalize(glm::cross(m_viewDirection, m_upVector)));
+                if (abs(glm::angle(newViewDirection, m_upVector) - glm::radians(90.0f)) <= glm::radians(85.0f))
                 {
-                    viewDirection = newViewDirection;
+                    m_viewDirection = newViewDirection;
                 }
 
-                viewDirection = glm::rotate(viewDirection, glm::radians(-deltaX), upVector);
+                m_viewDirection = glm::rotate(m_viewDirection, glm::radians(-deltaX), m_upVector);
             }
         }
         else {
-            lookToggled = false;
+            m_lookToggled = false;
         }
-        
-        prevMouseX = xPos;
-        prevMouseY = yPos;
+        m_prevMouseX = xPos;
+        m_prevMouseY = yPos;
     }
-    else if (!lookActive && glfwGetInputMode(windowHandler->m_window, GLFW_CURSOR) == GLFW_CURSOR_HIDDEN){
-        glfwSetInputMode(windowHandler->m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    else if (!m_lookActive && glfwGetInputMode(m_windowHandler->m_window, GLFW_CURSOR) == GLFW_CURSOR_HIDDEN){
+        glfwSetInputMode(m_windowHandler->m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
 
@@ -134,7 +131,7 @@ void CameraHandler::UpdateUniformBuffer(uint32_t currentImage, float deltaTime)
             ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
 
-            if (glfwGetMouseButton(windowHandler->m_window, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
+            if (glfwGetMouseButton(m_windowHandler->m_window, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
                 ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             }
             //ubo.model = glm::rotate(ubo.model, -glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -149,8 +146,6 @@ void CameraHandler::UpdateUniformBuffer(uint32_t currentImage, float deltaTime)
             ubo.proj[1][1] *= -1;
 
             memcpy(mesh.m_uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
-
         }
-
     }
  }

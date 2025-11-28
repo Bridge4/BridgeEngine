@@ -21,7 +21,7 @@
 #include <cstring>
 #include <optional>
 
-#include "Components/Camera/CameraHandler.h"
+#include "Components/Camera/CameraController.h"
 #include "Components/Devices/DeviceHandler.h"
 #include "Components/SwapChain/SwapChainHandler.h"
 #include "Components/Window/WindowHandler.h"
@@ -41,7 +41,7 @@ void VulkanContext::CreateVulkanContext() {
     m_swapChainHandler = new SwapChainHandler(this, m_deviceHandler, m_windowHandler, m_imageHandler, m_vulkanInstanceManager);
     m_bufferHandler = new BufferHandler(m_vulkanInstanceManager);
     m_renderPassHandler = new RenderPassHandler(this, m_swapChainHandler, m_deviceHandler, m_vulkanInstanceManager);
-    m_cameraHandler = new CameraHandler(this, m_windowHandler, m_swapChainHandler, m_bufferHandler, m_vulkanInstanceManager);
+    m_cameraController = new CameraController(this, m_windowHandler, m_swapChainHandler, m_bufferHandler, m_vulkanInstanceManager);
 
     m_vulkanInstanceManager->CreateVulkanInstance();
     m_windowHandler->vulkanContext = this;
@@ -71,8 +71,8 @@ void VulkanContext::RunVulkanRenderer() {
         float deltaTime = std::chrono::duration<float>(currentFrameTime - lastFrameTime).count();
         lastFrameTime = currentFrameTime;
         m_windowHandler->Poll();
-        m_cameraHandler->HandleInput(deltaTime);
-        m_cameraHandler->UpdateUniformBuffer(m_vulkanInstanceManager->m_currentFrame, deltaTime);
+        m_cameraController->HandleInput(deltaTime);
+        m_cameraController->UpdateUniformBuffer(m_vulkanInstanceManager->m_currentFrame, deltaTime);
         DrawFrame(deltaTime);
     }
     vkDeviceWaitIdle(*m_vulkanInstanceManager->GetRefLogicalDevice());

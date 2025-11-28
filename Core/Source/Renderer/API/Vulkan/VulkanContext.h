@@ -4,7 +4,7 @@
 
 
 // VULKAN PLATFORM DEFINITION
-#include <map>
+#include "Source/Renderer/API/Vulkan/Components/Camera/CameraController.h"
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif // !VK_USE_PLATFORM_WIN32_KHR
@@ -46,7 +46,7 @@ class ImageHandler;
 class BufferHandler;
 class WindowHandler;
 class RenderPassHandler;
-class CameraHandler;
+class CameraController;
 class VulkanInstanceManager;
 class Mesh3D;
 
@@ -75,7 +75,7 @@ private:
     SwapChainHandler* m_swapChainHandler;
     BufferHandler* m_bufferHandler;
     RenderPassHandler* m_renderPassHandler;
-    CameraHandler* m_cameraHandler;
+    CameraController* m_cameraController;
 
     ImageHandler* m_imageHandler;
 
