@@ -7,8 +7,8 @@ void Renderer::CreateAPIContext()
     this->vulkanContext = new VulkanContext();
 
     windowRef->vulkanContext = vulkanContext;
-    vulkanContext->windowHandler = windowRef;
-    vulkanContext->Create();
+    vulkanContext->m_windowHandler = windowRef;
+    vulkanContext->CreateVulkanContext();
 }
 
 void Renderer::SetWindowRef(WindowHandler* window) 
@@ -16,7 +16,7 @@ void Renderer::SetWindowRef(WindowHandler* window)
     this->windowRef = window;
 }
 
-void Renderer::RenderLoop()
+void Renderer::RunRenderer()
 {
-    vulkanContext->RenderLoop();
+    vulkanContext->RunVulkanRenderer();
 }

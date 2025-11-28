@@ -57,27 +57,16 @@ public:
 #else
     const bool enableValidationLayers = true;
 #endif
-    void Create();
+    void CreateVulkanContext();
 
-    void RenderLoop();
+    void RunVulkanRenderer();
 
     VulkanInstanceManager* m_vulkanInstanceManager;
-    WindowHandler* windowHandler;
+    WindowHandler* m_windowHandler;
 
-    std::vector<Vertex> m_vertices;
-    std::vector<uint32_t> m_indices;
+    const std::vector<const char*> m_validationLayers = { "VK_LAYER_KHRONOS_validation" };
+    const std::vector<const char*> m_deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
-    uint32_t WIDTH = 800;
-    uint32_t HEIGHT = 600;
-    std::vector<std::tuple<std::string, std::string>> objList = {
-        {"C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.obj", "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.png"},
-        {"C:/Source/Engines/BridgeEngine/Models/Ship/ship.obj", "C:/Source/Engines/BridgeEngine/Models/Ship/ship.png"}
-    };
-    const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-    const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-    VkInstance m_instance;
-    VkDebugUtilsMessengerEXT m_debugMessenger;
-    int MAX_FRAMES_IN_FLIGHT = 2;
 private:
     DeviceHandler* m_deviceHandler;
     SwapChainHandler* m_swapChainHandler;
@@ -87,6 +76,18 @@ private:
 
     ImageHandler* m_imageHandler;
 
+    std::vector<Vertex> m_vertices;
+    std::vector<uint32_t> m_indices;
+
+    uint32_t m_windowWidth = 800;
+    uint32_t m_windowHeight = 600;
+    std::vector<std::tuple<std::string, std::string>> m_objList = {
+        {"C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.obj", "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.png"},
+        {"C:/Source/Engines/BridgeEngine/Models/Ship/ship.obj", "C:/Source/Engines/BridgeEngine/Models/Ship/ship.png"}
+    };
+
+    VkDebugUtilsMessengerEXT m_debugMessenger;
+    int m_maxFramesInFlight = 2;
     /*
     * Window is polled and frames are drawn until window is closed
     */

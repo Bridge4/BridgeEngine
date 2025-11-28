@@ -63,8 +63,8 @@ void VulkanInstanceManager::CreateVulkanInstance()
 
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
     if (m_vulkanContext->enableValidationLayers) {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(m_vulkanContext->validationLayers.size());
-        createInfo.ppEnabledLayerNames = m_vulkanContext->validationLayers.data();
+        createInfo.enabledLayerCount = static_cast<uint32_t>(m_vulkanContext->m_validationLayers.size());
+        createInfo.ppEnabledLayerNames = m_vulkanContext->m_validationLayers.data();
         //populateDebugMessengerCreateInfo(debugCreateInfo);
         debugCreateInfo = {};
         debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;

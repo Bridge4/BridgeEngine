@@ -36,19 +36,19 @@
 #include "Components/Images/ImageHandler.h"
 #include "Components/VulkanInstanceManager/VulkanInstanceManager.h"
 
-void VulkanContext::Create() {
+void VulkanContext::CreateVulkanContext() {
     m_vulkanInstanceManager = new VulkanInstanceManager(this);
 
     m_deviceHandler = new DeviceHandler(m_vulkanInstanceManager);
     m_imageHandler = new ImageHandler(this);
-    m_swapChainHandler = new SwapChainHandler(this, m_deviceHandler, windowHandler, m_imageHandler, m_vulkanInstanceManager);
+    m_swapChainHandler = new SwapChainHandler(this, m_deviceHandler, m_windowHandler, m_imageHandler, m_vulkanInstanceManager);
     m_bufferHandler = new BufferHandler(m_vulkanInstanceManager);
     m_renderPassHandler = new RenderPassHandler(this, m_swapChainHandler, m_deviceHandler, m_vulkanInstanceManager);
-    m_cameraHandler = new CameraHandler(this, windowHandler, m_swapChainHandler, m_bufferHandler, m_vulkanInstanceManager);
+    m_cameraHandler = new CameraHandler(this, m_windowHandler, m_swapChainHandler, m_bufferHandler, m_vulkanInstanceManager);
 
     m_vulkanInstanceManager->CreateVulkanInstance();
-    windowHandler->vulkanContext = this;
-    if (windowHandler->CreateSurface() != VK_SUCCESS)
+    m_windowHandler->vulkanContext = this;
+    if (m_windowHandler->CreateSurface() != VK_SUCCESS)
         throw std::runtime_error("Failed to create window surface");
     m_deviceHandler->Initialize();
     m_swapChainHandler->Initialize();
@@ -62,7 +62,7 @@ void VulkanContext::Create() {
     CreateGraphicsPipeline();
 
     int meshCount = 0;
-    for (const auto &obj: objList){
+    for (const auto &obj: m_objList){
         std::string modelPath = std::get<0>(obj);
         std::string texturePath = std::get<1>(obj);
         LoadModel(modelPath);
@@ -84,15 +84,15 @@ void VulkanContext::Create() {
     CreateSyncObjects();
 }
 
-void VulkanContext::RenderLoop() {
+void VulkanContext::RunVulkanRenderer() {
     std::chrono::high_resolution_clock::time_point lastFrameTime;
     lastFrameTime = std::chrono::high_resolution_clock::now();
 
-    while (!windowHandler->ShouldClose()) {
+    while (!m_windowHandler->ShouldClose()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
         float deltaTime = std::chrono::duration<float>(currentFrameTime - lastFrameTime).count();
         lastFrameTime = currentFrameTime;
-        windowHandler->Poll();
+        m_windowHandler->Poll();
         DrawFrame(deltaTime);
     }
     vkDeviceWaitIdle(*m_vulkanInstanceManager->GetRefLogicalDevice());
@@ -486,7 +486,7 @@ void VulkanContext::CreateDescriptorPool() {
         Some will let you get away with bad allocations, some won't. Be careful.
     */
 
-    uint32_t poolSize = MAX_FRAMES_IN_FLIGHT * m_vulkanInstanceManager->m_meshList.size();
+    uint32_t poolSize = m_maxFramesInFlight * m_vulkanInstanceManager->m_meshList.size();
     std::array<VkDescriptorPoolSize, 2> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSizes[0].descriptorCount = poolSize;
@@ -507,19 +507,19 @@ void VulkanContext::CreateDescriptorPool() {
 // DESCRIPTOR SETS
 void VulkanContext::CreateDescriptorSets() {
     for (auto& mesh: m_vulkanInstanceManager->m_meshList){
-        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_vulkanInstanceManager->m_descriptorSetLayout);
+        std::vector<VkDescriptorSetLayout> layouts(m_maxFramesInFlight, m_vulkanInstanceManager->m_descriptorSetLayout);
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = m_vulkanInstanceManager->m_descriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        allocInfo.descriptorSetCount = static_cast<uint32_t>(m_maxFramesInFlight);
         allocInfo.pSetLayouts = layouts.data();
 
-        mesh.m_descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+        mesh.m_descriptorSets.resize(m_maxFramesInFlight);
         if (vkAllocateDescriptorSets(*m_vulkanInstanceManager->GetRefLogicalDevice(), &allocInfo, mesh.m_descriptorSets.data()) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate descriptor sets!");
         }
 
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        for (size_t i = 0; i < m_maxFramesInFlight; i++) {
             VkDescriptorBufferInfo bufferInfo{};
             bufferInfo.buffer = mesh.m_uniformBuffers[i];
             bufferInfo.offset = 0;
@@ -649,9 +649,9 @@ void VulkanContext::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
 }
 
 void VulkanContext::CreateSyncObjects() {
-    m_vulkanInstanceManager->m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    m_vulkanInstanceManager->m_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    m_vulkanInstanceManager->m_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+    m_vulkanInstanceManager->m_imageAvailableSemaphores.resize(m_maxFramesInFlight);
+    m_vulkanInstanceManager->m_renderFinishedSemaphores.resize(m_maxFramesInFlight);
+    m_vulkanInstanceManager->m_inFlightFences.resize(m_maxFramesInFlight);
 
 
     VkSemaphoreCreateInfo semaphoreInfo{};
@@ -661,7 +661,7 @@ void VulkanContext::CreateSyncObjects() {
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (int i = 0; i < m_maxFramesInFlight; i++) {
         if (vkCreateSemaphore(*m_vulkanInstanceManager->GetRefLogicalDevice(), &semaphoreInfo, nullptr, &m_vulkanInstanceManager->m_imageAvailableSemaphores[i]) != VK_SUCCESS ||
             vkCreateSemaphore(*m_vulkanInstanceManager->GetRefLogicalDevice(), &semaphoreInfo, nullptr, &m_vulkanInstanceManager->m_renderFinishedSemaphores[i]) != VK_SUCCESS ||
             vkCreateFence(*m_vulkanInstanceManager->GetRefLogicalDevice(), &fenceInfo, nullptr, &m_vulkanInstanceManager->m_inFlightFences[i]) != VK_SUCCESS) {
@@ -740,8 +740,8 @@ void VulkanContext::DrawFrame(float deltaTime) {
     // SWAP CHAIN RECREATION
     result = vkQueuePresentKHR(m_vulkanInstanceManager->m_presentQueue, &presentInfo);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || windowHandler->framebufferResized) {
-        windowHandler->framebufferResized = false;
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_windowHandler->framebufferResized) {
+        m_windowHandler->framebufferResized = false;
         m_swapChainHandler->Rebuild();
     }
     else if (result != VK_SUCCESS) {
@@ -749,7 +749,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
     }
 
     // Progress to next frame
-    m_vulkanInstanceManager->m_currentFrame = (m_vulkanInstanceManager->m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    m_vulkanInstanceManager->m_currentFrame = (m_vulkanInstanceManager->m_currentFrame + 1) % m_maxFramesInFlight;
 }
 
 
@@ -814,7 +814,7 @@ void VulkanContext::Destroy() {
         vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh.m_textureImageMemory, nullptr);
     }
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < m_maxFramesInFlight; i++) {
         vkDestroyBuffer(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_bufferHandler->UniformBuffers[i], nullptr);
         vkFreeMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_bufferHandler->UniformBuffersMemory[i], nullptr);
     }
@@ -833,7 +833,7 @@ void VulkanContext::Destroy() {
 
     vkDestroyRenderPass(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_renderPassHandler->renderPass, nullptr);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < m_maxFramesInFlight; i++) {
         vkDestroySemaphore(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_renderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_imageAvailableSemaphores[i], nullptr);
         vkDestroyFence(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_inFlightFences[i], nullptr);
@@ -843,7 +843,7 @@ void VulkanContext::Destroy() {
     // DEVICE DESTRUCTION
     m_deviceHandler->Destroy();
     // GLFW DESTRUCTION
-    windowHandler->Destroy();
+    m_windowHandler->Destroy();
 }
 
 VkShaderModule VulkanContext::createShaderModule(const std::vector<char>& code)

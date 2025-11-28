@@ -16,5 +16,5 @@ public:
 
     void CreateAPIContext();
     void SetWindowRef(WindowHandler* window);
-    void RenderLoop();
+    void RunRenderer();
 };
