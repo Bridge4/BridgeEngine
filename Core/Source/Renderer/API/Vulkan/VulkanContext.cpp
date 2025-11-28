@@ -19,9 +19,7 @@
 #include <cstdlib>
 #include <vector>
 #include <cstring>
-#include <map>
 #include <optional>
-#include <set>
 
 #include "Components/Camera/CameraHandler.h"
 #include "Components/Devices/DeviceHandler.h"
@@ -59,26 +57,6 @@ void VulkanContext::CreateVulkanContext() {
 
     CreateDescriptorSetLayout();
     CreateGraphicsPipeline();
-
-    // Load objects from object list
-    //int meshCount = 0;
-    //for (const auto &obj: m_objList){
-    //    std::string modelPath = std::get<0>(obj);
-    //    std::string texturePath = std::get<1>(obj);
-    //    LoadModel(modelPath);
-    //    CreateTextureImage(texturePath, &m_vulkanInstanceManager->m_meshList[meshCount]);
-    //    CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[meshCount]);
-    //    CreateTextureSampler(&m_vulkanInstanceManager->m_meshList[meshCount]);
-    //    meshCount++;
-    //}
-
-    //m_bufferHandler->CreateVertexBuffer(m_vertices);
-    //m_bufferHandler->CreateIndexBuffer(m_indices);
-
-    //m_bufferHandler->CreateUniformBuffers();
-
-    //CreateDescriptorPool();
-    //CreateDescriptorSets();
 
     m_bufferHandler->BuildCommandBuffers();
     CreateSyncObjects();
