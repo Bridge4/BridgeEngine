@@ -3,7 +3,6 @@
 #include "../Images/ImageHandler.h"
 #include "../Devices/DeviceHandler.h"
 #include "../Window/WindowHandler.h"
-#include "../RenderPass/RenderPassHandler.h"
 #include "../VulkanInstanceManager/VulkanInstanceManager.h"
 #include <stdexcept>
 #include <cstdlib>
@@ -12,18 +11,14 @@
 #include "../../VulkanContext.h"
 
 void SwapChainHandler::Initialize() {
-    /*VkSwapchainKHR m_swapChain;
-    std::vector<VkImageView> m_swapChainImageViews;
-    VkFormat m_swapChainImageFormat;
-    VkExtent2D  m_swapChainExtent;*/
 
     VkSurfaceKHR surface = m_vulkanInstanceManager->GetSurface();
 
-    SwapChainSupportDetails swapChainSupport = deviceHandler->querySwapChainSupport(m_vulkanInstanceManager->GetPhysicalDevice());
+    SwapChainSupportDetails swapChainSupport = deviceHandler->QuerySwapChainSupport(m_vulkanInstanceManager->GetPhysicalDevice());
 
-    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-    VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
+    VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
+    VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
+    VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities);
 
     // the reason we do +1 is because we will have to wait for the driver to complete internal operations before acquiring another image.
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
@@ -31,7 +26,6 @@ void SwapChainHandler::Initialize() {
     if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
         imageCount = swapChainSupport.capabilities.maxImageCount;
     }
-                                                
     // Populating swapchain struct with necessary info we just queried for 
     VkSwapchainCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -43,7 +37,7 @@ void SwapChainHandler::Initialize() {
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndices indices = deviceHandler->findQueueFamilies(m_vulkanInstanceManager->GetPhysicalDevice());
+    QueueFamilyIndices indices = deviceHandler->FindQueueFamilies(m_vulkanInstanceManager->GetPhysicalDevice());
     uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
     if (indices.graphicsFamily != indices.presentFamily) {
@@ -81,15 +75,8 @@ void SwapChainHandler::Initialize() {
     for (size_t i = 0; i < swapChainImages.size(); i++) {
         // Moved definition for createImageView() to a class and turned into a static function
         swapChainImageViews[i] = imageViewBuilder->CreateImageView(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_swapChainImages[i], m_vulkanInstanceManager->m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
-        
     }
     m_vulkanInstanceManager->SetSwapChainImageViews(swapChainImageViews);
-
-    /*SwapChain = SwapChain;
-    SwapChainImageFormat = SwapChainImageFormat;
-    SwapChainExtent = SwapChainExtent;
-    SwapChainImageViews = SwapChainImageViews;*/
-    //CreateFramebuffers();
 }
 
 void SwapChainHandler::Rebuild() {
@@ -364,7 +351,7 @@ void SwapChainHandler::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
 }
 
 // HELPERS
-VkSurfaceFormatKHR SwapChainHandler::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
+VkSurfaceFormatKHR SwapChainHandler::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
     for (const auto& availableFormat : availableFormats) {
         if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             return availableFormat;
@@ -374,7 +361,7 @@ VkSurfaceFormatKHR SwapChainHandler::chooseSwapSurfaceFormat(const std::vector<V
     return availableFormats[0];
 }
 
-VkPresentModeKHR SwapChainHandler::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
+VkPresentModeKHR SwapChainHandler::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
     for (const auto& availablePresentMode : availablePresentModes) {
         if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
             return availablePresentMode;
@@ -384,7 +371,7 @@ VkPresentModeKHR SwapChainHandler::chooseSwapPresentMode(const std::vector<VkPre
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D SwapChainHandler::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
+VkExtent2D SwapChainHandler::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
     //Fun fact: wrapping a function call with parentheses can prevent macro expansions
     if (capabilities.currentExtent.width != (std::numeric_limits<uint32_t>::max)()) {
         return capabilities.currentExtent;

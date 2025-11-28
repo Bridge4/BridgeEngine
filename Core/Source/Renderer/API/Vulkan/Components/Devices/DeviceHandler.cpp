@@ -24,7 +24,7 @@ void DeviceHandler::InitializeDebugMessenger() {
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    createInfo.pfnUserCallback = debugCallback;
+    createInfo.pfnUserCallback = DebugCallback;
 
     if (CreateDebugUtilsMessengerEXT(&createInfo, nullptr, &m_vulkanInstanceManager->m_debugMessenger) != VK_SUCCESS) {
         throw std::runtime_error("failed to set up debug messenger!");
@@ -46,7 +46,7 @@ void DeviceHandler::InitializePhysicalDevice() {
 
 
     for (const auto& device : devices) {
-        if (isDeviceSuitable(device)) {
+        if (IsDeviceSuitable(device)) {
             m_vulkanInstanceManager->SetPhysicalDevice(device);
             break;
         }
@@ -59,7 +59,7 @@ void DeviceHandler::InitializePhysicalDevice() {
 
 void DeviceHandler::InitializeLogicalDevice() {
     // Specifying queues to be created
-    QueueFamilyIndices indices = findQueueFamilies(m_vulkanInstanceManager->GetPhysicalDevice());
+    QueueFamilyIndices indices = FindQueueFamilies(m_vulkanInstanceManager->GetPhysicalDevice());
     VkDeviceQueueCreateInfo queueCreateInfo{};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
@@ -118,7 +118,7 @@ void DeviceHandler::Destroy() {
 // HELPERS
 
 // createInstance()
-bool DeviceHandler::checkValidationLayerSupport() {
+bool DeviceHandler::CheckValidationLayerSupport() {
 
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -145,7 +145,7 @@ bool DeviceHandler::checkValidationLayerSupport() {
 }
 
 // pickPhysicalDevice()
-bool DeviceHandler::isDeviceSuitable(VkPhysicalDevice device) {
+bool DeviceHandler::IsDeviceSuitable(VkPhysicalDevice device) {
     // Fetching deviceProperties and deviceFeatures in case we want to check for specifics
     /*
     VkPhysicalDeviceProperties deviceProperties;
@@ -153,16 +153,16 @@ bool DeviceHandler::isDeviceSuitable(VkPhysicalDevice device) {
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
     */
-    QueueFamilyIndices indices = findQueueFamilies(device);
+    QueueFamilyIndices indices = FindQueueFamilies(device);
 
-    bool extensionsSupported = checkDeviceExtensionSupport(device);
+    bool extensionsSupported = CheckDeviceExtensionSupport(device);
 
     bool swapChainAdequate = false;
 
     // if the extensions required are supported then we can check for swap chain compatibility
     // otherwise there's no point
     if (extensionsSupported) {
-        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+        SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(device);
         swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
     }
 
@@ -173,7 +173,7 @@ bool DeviceHandler::isDeviceSuitable(VkPhysicalDevice device) {
 }
 
 // isDeviceSuitable()
-bool DeviceHandler::checkDeviceExtensionSupport(VkPhysicalDevice device) {
+bool DeviceHandler::CheckDeviceExtensionSupport(VkPhysicalDevice device) {
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
@@ -190,7 +190,7 @@ bool DeviceHandler::checkDeviceExtensionSupport(VkPhysicalDevice device) {
     return requiredExtensions.empty();
 }
 
-SwapChainSupportDetails DeviceHandler::querySwapChainSupport(VkPhysicalDevice physicalDevice) {
+SwapChainSupportDetails DeviceHandler::QuerySwapChainSupport(VkPhysicalDevice physicalDevice) {
 
     // Fetching the capabilities of the device and surface
 
@@ -220,7 +220,7 @@ SwapChainSupportDetails DeviceHandler::querySwapChainSupport(VkPhysicalDevice ph
 }
 
 // isDeviceSuitable() + createLogicalDevice()
-QueueFamilyIndices DeviceHandler::findQueueFamilies(VkPhysicalDevice physicalDevice) {
+QueueFamilyIndices DeviceHandler::FindQueueFamilies(VkPhysicalDevice physicalDevice) {
     QueueFamilyIndices indices;
     uint32_t queueFamilyCount = 0;
 
@@ -248,7 +248,7 @@ QueueFamilyIndices DeviceHandler::findQueueFamilies(VkPhysicalDevice physicalDev
     return indices;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL DeviceHandler::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
+VKAPI_ATTR VkBool32 VKAPI_CALL DeviceHandler::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
     std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
     return VK_FALSE;

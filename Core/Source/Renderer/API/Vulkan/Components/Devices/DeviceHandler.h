@@ -28,10 +28,10 @@ public:
 
     void Destroy();
 
-    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice physicalDevice);
+    SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice physicalDevice);
 
     // Used by isDeviceSuitable() and createLogicalDevice()
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice physicalDevice);
+    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physicalDevice);
 
     
     VkPhysicalDevice PhysicalDevice = nullptr;
@@ -49,17 +49,17 @@ private:
 
     // HELPER FUNCTIONS
     // Used by createInstance()
-    bool checkValidationLayerSupport();
+    bool CheckValidationLayerSupport();
     //std::vector<const char*> getRequiredExtensions();
 
     // Used by pickPhysicalDevice()
-    bool isDeviceSuitable(VkPhysicalDevice device);
+    bool IsDeviceSuitable(VkPhysicalDevice device);
 
     // Used by isDeviceSuitable()
-    bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+    bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
 
     // Used by populateDebugMessengerCreateInfo()
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* pUserData);

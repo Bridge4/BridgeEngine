@@ -1,5 +1,4 @@
 #pragma once
-#include <iostream>
 #include "../ComponentDeclarations.h"
 //class VulkanContext;
 #include "vulkan/vulkan.h"

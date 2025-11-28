@@ -353,7 +353,7 @@ void VulkanContext::CreateGraphicsPipeline() {
 }
 
 void VulkanContext::CreateCommandPool() {
-    QueueFamilyIndices queueFamilyIndices = m_deviceHandler->findQueueFamilies(m_vulkanInstanceManager->GetPhysicalDevice());
+    QueueFamilyIndices queueFamilyIndices = m_deviceHandler->FindQueueFamilies(m_vulkanInstanceManager->GetPhysicalDevice());
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
