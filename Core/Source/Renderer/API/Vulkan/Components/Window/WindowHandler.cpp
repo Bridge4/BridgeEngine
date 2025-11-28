@@ -3,7 +3,6 @@
 #include "WindowHandler.h"
 #include "../../VulkanContext.h"
 #include "../VulkanInstanceManager/VulkanInstanceManager.h"
-#include <string>
 
 VkResult WindowHandler::CreateSurface()
 {
@@ -26,13 +25,13 @@ void WindowHandler::Create(uint32_t w, uint32_t h) {
     m_window = glfwCreateWindow(w, h, "Bridge Engine", nullptr, nullptr);
     // Very important line, if you forget this then the callback with cause an access violation due to nullptr
     glfwSetWindowUserPointer(m_window, this);
-    glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
+    glfwSetFramebufferSizeCallback(m_window, FramebufferResizeCallback);
     //glfwSetKeyCallback(m_window, key_callback);
 
 }
 
 
-void WindowHandler::handleMinimization()
+void WindowHandler::HandleMinimization()
 {
     int w = 0, h = 0;
     glfwGetFramebufferSize(m_window, &w, &h);
@@ -44,7 +43,7 @@ void WindowHandler::handleMinimization()
     
 }
 
-void WindowHandler::getFramebufferSize(int* width, int* height)
+void WindowHandler::GetFramebufferSize(int* width, int* height)
 {
     glfwGetFramebufferSize(m_window, width, height);
 }
@@ -62,7 +61,7 @@ void WindowHandler::Poll() {
     glfwPollEvents();
 }
 // Checks if the framebuffer has been resized using GLFW function
-void WindowHandler::framebufferResizeCallback(GLFWwindow* window, int width, int height) {
+void WindowHandler::FramebufferResizeCallback(GLFWwindow* window, int width, int height) {
     // glfwWindowUserPointer returns a reference to our app, so we cast it to HelloTriangleApplication then set that app object's 
     // framebufferResized variable to true
     auto wnd = reinterpret_cast<WindowHandler*>(glfwGetWindowUserPointer(window));

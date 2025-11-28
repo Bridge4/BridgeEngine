@@ -779,7 +779,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
 
 
 // Helpers
-static bool checkValidationLayerSupport(const std::vector<const char*>* validationLayers) {
+static bool CheckValidationLayerSupport(const std::vector<const char*>* validationLayers) {
 
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -805,7 +805,7 @@ static bool checkValidationLayerSupport(const std::vector<const char*>* validati
     return true;
 }
 
-static std::vector<const char*> getRequiredExtensions(const bool* enableValidationLayers) {
+static std::vector<const char*> GetRequiredExtensions(const bool* enableValidationLayers) {
     uint32_t glfwExtensionCount = 0;
     const char** glfwExtensions;
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -819,7 +819,7 @@ static std::vector<const char*> getRequiredExtensions(const bool* enableValidati
     return extensions;
 }
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
+static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
                                                     VkDebugUtilsMessageTypeFlagsEXT messageType,
                                                     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, 
                                                     void* pUserData) {

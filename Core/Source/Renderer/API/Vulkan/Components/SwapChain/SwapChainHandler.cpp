@@ -94,7 +94,7 @@ void SwapChainHandler::Initialize() {
 
 void SwapChainHandler::Rebuild() {
     // Handling minimization
-    windowHandler->handleMinimization();
+    windowHandler->HandleMinimization();
 
     vkDeviceWaitIdle(*m_vulkanInstanceManager->GetRefLogicalDevice());
 
@@ -391,7 +391,7 @@ VkExtent2D SwapChainHandler::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& ca
     }
     else {
         int width, height;
-        windowHandler->getFramebufferSize(&width, &height);
+        windowHandler->GetFramebufferSize(&width, &height);
 
         VkExtent2D actualExtent = {
             static_cast<uint32_t>(width),
