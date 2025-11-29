@@ -136,7 +136,7 @@ private:
     void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 
-    void LoadModel(std::string modelPath);
+    void LoadModel(std::string modelPath, glm::vec3 scenePosition = glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3 objectRotation = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 objectScale = glm::vec3(1.0f, 1.0f, 1.0f));
 
     // DESCRIPTOR POOL
     void CreateDescriptorPool();

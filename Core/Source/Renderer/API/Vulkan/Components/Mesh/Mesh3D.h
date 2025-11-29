@@ -15,24 +15,20 @@ public:
 
     }
 
-    // Mesh Properties
+    // Offsets for shared index and vertex buffers during vkDraw calls
     int m_indexBufferStartIndex = 0;
     int m_indexBufferEndIndex = 0;
     int m_vertexBufferStartIndex = 0;
     int m_vertexBufferEndIndex = 0;
 
     int m_indexCount = 0;
-    // Vulkan Texture Properties
+    // Texture Properties
     VkImage m_textureImage = VK_NULL_HANDLE;
     VkDeviceMemory m_textureImageMemory = VK_NULL_HANDLE;
     VkImageView m_textureImageView = VK_NULL_HANDLE;
     VkSampler m_textureSampler = VK_NULL_HANDLE;
 
     // Vulkan Object Resources
-    VkBuffer m_vertexBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory m_vertexBufferMemory = VK_NULL_HANDLE;
-    VkBuffer m_indexBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory m_indexBufferMemory = VK_NULL_HANDLE;
     std::vector<VkBuffer> m_uniformBuffers = {};
     std::vector<VkDeviceMemory> m_uniformBuffersMemory = {};
 	std::vector<void*> m_uniformBuffersMapped = {};

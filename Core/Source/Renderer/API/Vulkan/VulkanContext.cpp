@@ -81,15 +81,17 @@ void VulkanContext::RunVulkanRenderer() {
 void VulkanContext::LoadSceneObjects() {
     std::cout << "LOADING SCENE OBJECTS \n";
     int meshCount = 0;
+    float xPos = 0.0f;
     for (const auto &obj: m_objList){
         std::string modelPath = std::get<0>(obj);
         std::string texturePath = std::get<1>(obj);
-        LoadModel(modelPath);
+        LoadModel(modelPath, glm::vec3(xPos, 0.0f, 0.0f));
         std::cout << "OBJECT LOADED...\n";
         CreateTextureImage(texturePath, &m_vulkanInstanceManager->m_meshList[meshCount]);
         CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[meshCount]);
         CreateTextureSampler(&m_vulkanInstanceManager->m_meshList[meshCount]);
         meshCount++;
+        xPos += 5.0f;
     }
 
     m_bufferHandler->CreateVertexBuffer(m_vertices);
@@ -442,7 +444,7 @@ void VulkanContext::CreateTextureSampler(Mesh3D *mesh) {
 }
 
 // TODO: Move this to its own class, we should be passing in loaded objects to the renderer, renderer makes draw calls on those objects
-void VulkanContext::LoadModel(std::string modelPath) {
+void VulkanContext::LoadModel(std::string modelPath, glm::vec3 scenePosition, glm::vec3 objectRotation, glm::vec3 objectScale) {
     tinyobj::attrib_t attrib;
 
     std::vector<tinyobj::shape_t> shapes;
@@ -498,6 +500,8 @@ void VulkanContext::LoadModel(std::string modelPath) {
     mesh.m_indexBufferEndIndex = indexBufferEndIndex;
     mesh.m_vertexBufferEndIndex = vertexBufferEndIndex;
     mesh.m_indexCount = indexBufferEndIndex-indexBufferStartIndex;
+    mesh.position = scenePosition;
+    mesh.rotation = objectRotation;
     mesh.scale = glm::vec3(1.0f, 1.0f, 1.0f);
     m_vulkanInstanceManager->m_meshList.push_back(mesh);
 }
