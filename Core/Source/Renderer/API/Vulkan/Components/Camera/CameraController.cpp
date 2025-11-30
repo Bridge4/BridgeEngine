@@ -127,7 +127,7 @@ void CameraController::UpdateUniformBuffer(uint32_t currentImage, float deltaTim
             
             // Where the object/model is placed in the world
             ubo.model = glm::mat4(1.0f);
-            ubo.model = glm::translate(ubo.model, mesh.position);
+            ubo.model = glm::translate(ubo.model, mesh.m_position);
             ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
             if (glfwGetMouseButton(m_windowHandler->m_window, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
@@ -136,7 +136,7 @@ void CameraController::UpdateUniformBuffer(uint32_t currentImage, float deltaTim
             //ubo.model = glm::rotate(ubo.model, -glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
             //ubo.model = glm::rotate(ubo.model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             // Where our camera is placed in the world
-            ubo.model = glm::scale(ubo.model, mesh.scale);
+            ubo.model = glm::scale(ubo.model, mesh.m_scale);
             ubo.view = getViewMatrix();
 
 

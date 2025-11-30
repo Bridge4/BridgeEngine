@@ -18,17 +18,17 @@ public:
     // Offsets for shared index and vertex buffers during vkDraw calls
     int m_indexBufferStartIndex = 0;
     int m_indexBufferEndIndex = 0;
+
     int m_vertexBufferStartIndex = 0;
     int m_vertexBufferEndIndex = 0;
 
     int m_indexCount = 0;
-    // Texture Properties
+
     VkImage m_textureImage = VK_NULL_HANDLE;
     VkDeviceMemory m_textureImageMemory = VK_NULL_HANDLE;
     VkImageView m_textureImageView = VK_NULL_HANDLE;
     VkSampler m_textureSampler = VK_NULL_HANDLE;
 
-    // Vulkan Object Resources
     std::vector<VkBuffer> m_uniformBuffers = {};
     std::vector<VkDeviceMemory> m_uniformBuffersMemory = {};
 	std::vector<void*> m_uniformBuffersMapped = {};
@@ -36,8 +36,8 @@ public:
     std::vector<VkDescriptorSet> m_descriptorSets = {};
 
     // Transform
-    glm::vec3 position = glm::vec3(1.0f,1.0f,1.0f);
-    glm::vec3 rotation = glm::vec3(1.0f,1.0f,1.0f);
-    glm::vec3 scale = glm::vec3(1.0f,1.0f,1.0f);
+    glm::vec3 m_position = glm::vec3(1.0f,1.0f,1.0f);
+    glm::vec3 m_rotation = glm::vec3(1.0f,1.0f,1.0f);
+    glm::vec3 m_scale = glm::vec3(1.0f,1.0f,1.0f);
 };
 #endif

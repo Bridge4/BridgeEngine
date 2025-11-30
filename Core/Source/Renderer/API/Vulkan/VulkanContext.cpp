@@ -500,9 +500,9 @@ void VulkanContext::LoadModel(std::string modelPath, glm::vec3 scenePosition, gl
     mesh.m_indexBufferEndIndex = indexBufferEndIndex;
     mesh.m_vertexBufferEndIndex = vertexBufferEndIndex;
     mesh.m_indexCount = indexBufferEndIndex-indexBufferStartIndex;
-    mesh.position = scenePosition;
-    mesh.rotation = objectRotation;
-    mesh.scale = glm::vec3(1.0f, 1.0f, 1.0f);
+    mesh.m_position = scenePosition;
+    mesh.m_rotation = objectRotation;
+    mesh.m_scale = glm::vec3(1.0f, 1.0f, 1.0f);
     m_vulkanInstanceManager->m_meshList.push_back(mesh);
 }
 

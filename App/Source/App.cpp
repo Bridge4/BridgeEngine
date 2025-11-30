@@ -10,7 +10,7 @@ int main() {
         Renderer* renderer = new Renderer(window);
         renderer->CreateAPIContext();
 
-        window->SetApiContext(renderer->vulkanContext);
+        window->SetApiContext(renderer->m_vulkanContext);
 
         renderer->RunRenderer();
     }
