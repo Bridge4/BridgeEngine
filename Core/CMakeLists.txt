@@ -21,7 +21,6 @@ target_sources(Core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Rendere
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Renderer.h"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/DataStructures.h"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/FileLoader.h"
-                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/FileLoader.cpp"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/ObjectData.h"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/VulkanContext.cpp"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Buffers/BufferHandler.cpp"

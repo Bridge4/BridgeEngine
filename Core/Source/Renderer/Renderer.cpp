@@ -2,7 +2,6 @@
 #include "API/Vulkan/VulkanContext.h"
 #include "API/Vulkan/Components/Window/WindowHandler.h"
 #include "FileLoader.h"
-#include <iostream>
 
 void Renderer::CreateAPIContext()
 {

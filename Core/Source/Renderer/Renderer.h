@@ -1,7 +1,6 @@
 #pragma once
 #include "Source/Renderer/FileLoader.h"
 #include <vector>
-#include <string>
 class WindowHandler;
 class VulkanContext;
 
