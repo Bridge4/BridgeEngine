@@ -19,7 +19,7 @@ public:
 	glm::mat4 getViewMatrix();
 	void HandleInput(float deltaTime);
 	void UpdateUniformBuffer(uint32_t currentImage, float deltaTime);
-    float m_cameraSpeed = 1.0f;
+    float m_cameraSpeed = 5.0f;
 private:
 	void Initialize();
 	VulkanContext* m_vulkanContext = 0;
