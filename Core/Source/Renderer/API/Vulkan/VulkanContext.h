@@ -5,6 +5,7 @@
 
 // VULKAN PLATFORM DEFINITION
 #include "Source/Renderer/API/Vulkan/Components/Camera/CameraController.h"
+#include "Source/Renderer/FileLoader.h"
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif // !VK_USE_PLATFORM_WIN32_KHR
@@ -59,9 +60,10 @@ public:
 #endif
     void CreateVulkanContext();
 
-    void RunVulkanRenderer();
+    void RunVulkanRenderer(std::vector<LoadedObject> objectsToRender);
 
     void LoadSceneObjects();
+
     void UnloadSceneObjects();
 
     VulkanInstanceManager* m_vulkanInstanceManager;
@@ -84,17 +86,13 @@ private:
 
     uint32_t m_windowWidth = 800;
     uint32_t m_windowHeight = 600;
-    std::vector<std::tuple<std::string, std::string>> m_objList = {
-        {"C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.obj", "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.png"},
-        {"C:/Source/Engines/BridgeEngine/Models/Ship/ship.obj", "C:/Source/Engines/BridgeEngine/Models/Ship/ship.png"}
-    };
+    std::vector<LoadedObject> m_objectsToRender = {};
 
     VkDebugUtilsMessengerEXT m_debugMessenger;
     int m_maxFramesInFlight = 2;
     /*
     * Window is polled and frames are drawn until window is closed
     */
-    
 
     void CreateDescriptorSetLayout();
 
@@ -115,7 +113,7 @@ private:
     //VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
     // TEXTURE IMAGE
-    void CreateTextureImage(std::string textureImage, Mesh3D *mesh);
+    void CreateTextureImage(TextureProperties props, Mesh3D *mesh);
 
     // TEXTURE IMAGE VIEW
     void CreateTextureImageView(Mesh3D *mesh);
@@ -136,7 +134,7 @@ private:
     void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 
-    void LoadModel(std::string modelPath, glm::vec3 scenePosition = glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3 objectRotation = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 objectScale = glm::vec3(1.0f, 1.0f, 1.0f));
+    void LoadMesh(ObjProperties props, glm::vec3 scenePosition = glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3 objectRotation = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 objectScale = glm::vec3(1.0f, 1.0f, 1.0f));
 
     // DESCRIPTOR POOL
     void CreateDescriptorPool();

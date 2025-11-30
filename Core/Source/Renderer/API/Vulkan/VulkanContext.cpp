@@ -1,3 +1,4 @@
+#include "Source/Renderer/FileLoader.h"
 #include <cassert>
 #include <string>
 #include <vulkan/vulkan_core.h>
@@ -61,9 +62,11 @@ void VulkanContext::CreateVulkanContext() {
     CreateSyncObjects();
 }
 
-void VulkanContext::RunVulkanRenderer() {
+void VulkanContext::RunVulkanRenderer(std::vector<LoadedObject> objectsToRender) {
     std::chrono::high_resolution_clock::time_point lastFrameTime;
     lastFrameTime = std::chrono::high_resolution_clock::now();
+
+    m_objectsToRender = objectsToRender;
 
     while (!m_windowHandler->ShouldClose()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
@@ -82,18 +85,15 @@ void VulkanContext::LoadSceneObjects() {
     std::cout << "LOADING SCENE OBJECTS \n";
     int meshCount = 0;
     float xPos = 0.0f;
-    for (const auto &obj: m_objList){
-        std::string modelPath = std::get<0>(obj);
-        std::string texturePath = std::get<1>(obj);
-        LoadModel(modelPath, glm::vec3(xPos, 0.0f, 0.0f));
+    for (const auto &obj: m_objectsToRender){
+        LoadMesh(obj.objProperties, glm::vec3(xPos, 0.0f, 0.0f));
         std::cout << "OBJECT LOADED...\n";
-        CreateTextureImage(texturePath, &m_vulkanInstanceManager->m_meshList[meshCount]);
+        CreateTextureImage(obj.textureProperties, &m_vulkanInstanceManager->m_meshList[meshCount]);
         CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[meshCount]);
         CreateTextureSampler(&m_vulkanInstanceManager->m_meshList[meshCount]);
         meshCount++;
         xPos += 5.0f;
     }
-
     m_bufferHandler->CreateVertexBuffer(m_vertices);
     m_bufferHandler->CreateIndexBuffer(m_indices);
     m_bufferHandler->CreateUniformBuffers();
@@ -368,12 +368,11 @@ void VulkanContext::CreateCommandPool() {
 }
 
 // Pass in the Model3D's texture path
-void VulkanContext::CreateTextureImage(std::string texturePath, Mesh3D *mesh) {
-    int texWidth, texHeight, texChannels;
-
-    stbi_uc* pixels = stbi_load(texturePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-
-    // The multiplication by 4 here is because the pixels are loaded row by row with 4 bytes per pixel
+void VulkanContext::CreateTextureImage(TextureProperties props, Mesh3D *mesh) {
+    auto pixels = props.pixels;
+    int texChannels = props.texChannels; 
+    int texHeight = props.texHeight;
+    int texWidth = props.texWidth; 
     VkDeviceSize imageSize = texWidth * texHeight * 4;
 
     if (!pixels) {
@@ -392,6 +391,7 @@ void VulkanContext::CreateTextureImage(std::string texturePath, Mesh3D *mesh) {
     memcpy(data, pixels, static_cast<size_t>(imageSize));
     vkUnmapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), stagingBufferMemory);
 
+    // WARN: Potential for memory leak here
     stbi_image_free(pixels);
 
     CreateImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
@@ -444,17 +444,7 @@ void VulkanContext::CreateTextureSampler(Mesh3D *mesh) {
 }
 
 // TODO: Move this to its own class, we should be passing in loaded objects to the renderer, renderer makes draw calls on those objects
-void VulkanContext::LoadModel(std::string modelPath, glm::vec3 scenePosition, glm::vec3 objectRotation, glm::vec3 objectScale) {
-    tinyobj::attrib_t attrib;
-
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string warn, err;
-
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.c_str())) {
-        throw std::runtime_error(warn + err);
-    }
-
+void VulkanContext::LoadMesh(ObjProperties props, glm::vec3 scenePosition, glm::vec3 objectRotation, glm::vec3 objectScale) {
     std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 
     int indexBufferStartIndex = 0;
@@ -467,6 +457,9 @@ void VulkanContext::LoadModel(std::string modelPath, glm::vec3 scenePosition, gl
     if (m_vertices.size() > 0) {
         vertexBufferStartIndex = m_vertices.size();
     }
+
+    auto shapes = props.shapes;
+    auto attrib = props.attrib;
 
     for (const auto& shape : shapes) {
         for (const auto& index : shape.mesh.indices) {

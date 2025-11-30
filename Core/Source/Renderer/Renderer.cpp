@@ -27,30 +27,5 @@ void Renderer::RunRenderer()
     }
 
 
-    m_vulkanContext->RunVulkanRenderer();
-}
-
-
-void VulkanContext::LoadSceneObjects() {
-    std::cout << "LOADING SCENE OBJECTS \n";
-    int meshCount = 0;
-    float xPos = 0.0f;
-    for (const auto &obj: m_objList){
-        std::string modelPath = std::get<0>(obj);
-        std::string texturePath = std::get<1>(obj);
-        LoadModel(modelPath, glm::vec3(xPos, 0.0f, 0.0f));
-        std::cout << "OBJECT LOADED...\n";
-        //CreateTextureImage(texturePath, &m_vulkanInstanceManager->m_meshList[meshCount]);
-        //CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[meshCount]);
-        //CreateTextureSampler(&m_vulkanInstanceManager->m_meshList[meshCount]);
-        meshCount++;
-        xPos += 5.0f;
-    }
-
-    //m_bufferHandler->CreateVertexBuffer(m_vertices);
-    //m_bufferHandler->CreateIndexBuffer(m_indices);
-    //m_bufferHandler->CreateUniformBuffers();
-
-    //CreateDescriptorPool();
-    //CreateDescriptorSets();
+    m_vulkanContext->RunVulkanRenderer(loadedObjects);
 }
