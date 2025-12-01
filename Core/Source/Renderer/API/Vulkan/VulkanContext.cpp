@@ -442,7 +442,6 @@ void VulkanContext::CreateTextureSampler(Mesh3D *mesh) {
     }
 }
 
-// TODO: Move this to its own class, we should be passing in loaded objects to the renderer, renderer makes draw calls on those objects
 void VulkanContext::LoadMesh(ObjProperties props, glm::vec3 scenePosition, glm::vec3 objectRotation, glm::vec3 objectScale) {
     std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 
@@ -468,6 +467,12 @@ void VulkanContext::LoadMesh(ObjProperties props, glm::vec3 scenePosition, glm::
                 attrib.vertices[3 * index.vertex_index + 0],
                 attrib.vertices[3 * index.vertex_index + 1],
                 attrib.vertices[3 * index.vertex_index + 2]
+            };
+
+            vertex.normal = {
+                attrib.normals[3 * index.normal_index + 0],
+                attrib.normals[3 * index.normal_index + 1],
+                attrib.normals[3 * index.normal_index + 2]
             };
 
             vertex.texCoord = {

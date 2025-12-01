@@ -5,6 +5,7 @@
 #include "../../VulkanDataStructures.h"
 #include "../SwapChain/SwapChainHandler.h"
 #include "../VulkanInstanceManager/VulkanInstanceManager.h"
+#include "Source/Renderer/DataStructures.h"
 #include <vulkan/vulkan.h>
 #include <chrono>
 
@@ -124,8 +125,34 @@ void BufferHandler::CreateIndexBuffer(std::vector<uint32_t> indices) {
 
 }
 
-void BufferHandler::CreateUniformBuffers()
-{
+void BufferHandler::CreateLightUBO() {
+    Light light;
+    light.position = glm::vec3(0.0f, 0.0f, 0.0f);
+    light.color = glm::vec3(1.0f, 1.0f, 1.0f);
+    light.intensity = 1.0f;
+    LightUBO lightUBO;
+    lightUBO.lights[0] = light;
+    lightUBO.numLights = 1;
+    // Create lightUBO
+    // Create lightUBOMemory
+    // Create lightUBOMapped
+    // Add lights to the UBO
+    VkDeviceSize bufferSize = sizeof(LightUBO);
+
+    // Create a uniform buffer per frame in flight
+    m_vulkanInstanceManager->m_lightUBO.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
+    m_vulkanInstanceManager->m_lightUBOMemory.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
+    m_vulkanInstanceManager->m_lightUBOMapped.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
+
+    for (size_t i = 0; i < m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT; i++) {
+        // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i], m_uniformBuffersMemory[i], UNSTAGED)
+        // Create then Map to memory
+        CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_vulkanInstanceManager->m_lightUBO[i], m_vulkanInstanceManager->m_lightUBOMemory[i]);
+        vkMapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_lightUBOMemory[i], 0, bufferSize, 0, &m_vulkanInstanceManager->m_lightUBOMapped[i]);
+    }
+}
+
+void BufferHandler::CreateUniformBuffers() {
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
     for(auto& mesh: m_vulkanInstanceManager->m_meshList){

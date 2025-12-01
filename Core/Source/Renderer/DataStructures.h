@@ -84,8 +84,13 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 proj;
 };
 
+struct Light {
+    alignas(16) glm::vec3 position;
+    alignas(16) glm::vec3 color;
+    alignas(16) float intensity;
+};
+
 struct LightUBO {
-    alignas(16) glm::vec3 lightPos;
-    alignas(16) glm::vec3 cameraPos;
-    alignas(16) glm::vec3 lightColor;
+    alignas(16) Light lights[16];
+    alignas(16) int numLights;
 };

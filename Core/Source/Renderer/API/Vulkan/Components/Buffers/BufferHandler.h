@@ -24,6 +24,8 @@ public:
 
 	void CreateUniformBuffers();
 
+	void CreateLightUBO();
+
 	void CreateCommandBuffers();
 
 	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
