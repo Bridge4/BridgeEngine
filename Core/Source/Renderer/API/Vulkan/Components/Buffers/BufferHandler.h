@@ -6,6 +6,7 @@
 
 struct Vertex;
 struct UniformBufferObject;
+struct LightUBO;
 
 
 class BufferHandler

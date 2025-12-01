@@ -156,8 +156,8 @@ void VulkanContext::CreateDescriptorSetLayout() {
 }
 
 void VulkanContext::CreateGraphicsPipeline() {
-    std::vector<char> vertShaderCode = readFile("C:/Source/Engines/BridgeEngine/Core/Shaders/vert.spv");
-    std::vector<char> fragShaderCode = readFile("C:/Source/Engines/BridgeEngine/Core/Shaders/frag.spv");
+    std::vector<char> vertShaderCode = ReadFile("C:/Source/Engines/BridgeEngine/Core/Shaders/vert.spv");
+    std::vector<char> fragShaderCode = ReadFile("C:/Source/Engines/BridgeEngine/Core/Shaders/frag.spv");
 
     VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
@@ -201,8 +201,8 @@ void VulkanContext::CreateGraphicsPipeline() {
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
+    auto bindingDescription = Vertex::GetBindingDescription();
+    auto attributeDescriptions = Vertex::GetAttributeDescriptions();
 
 
     vertexInputInfo.vertexBindingDescriptionCount = 1;

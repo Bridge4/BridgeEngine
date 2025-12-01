@@ -168,7 +168,7 @@ private:
     VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
     // Reading in SPIRV shaders
-    static std::vector<char> readFile(const std::string& fileName) {
+    static std::vector<char> ReadFile(const std::string& fileName) {
         std::ifstream file(fileName, std::ios::ate | std::ios::binary);
 
         if (!file.is_open()) {
