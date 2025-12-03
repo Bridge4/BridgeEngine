@@ -51,7 +51,7 @@ struct Vertex {
 
         attributeDescriptions[2].binding = 0;
         attributeDescriptions[2].location = 2;
-        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[2].offset = offsetof(Vertex, normal);
 
         attributeDescriptions[3].binding = 0;
@@ -63,7 +63,7 @@ struct Vertex {
     }
 
     bool operator==(const Vertex& other) const {
-        return pos == other.pos && color == other.color && texCoord == other.texCoord;
+        return pos == other.pos && color == other.color && normal == other.normal && texCoord == other.texCoord;
     }
 };
 
@@ -85,12 +85,6 @@ struct Light {
     alignas(16) float intensity;
 };
 
-// Uniform Buffer Objects (UBOs)
-struct UniformBufferObject {
-    alignas(16) glm::mat4 model;
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 proj;
-};
 // Scene-Wide Data
 struct CameraUBO {
     alignas(16) glm::mat4 view;

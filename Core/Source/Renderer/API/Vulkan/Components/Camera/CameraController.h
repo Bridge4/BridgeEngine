@@ -2,6 +2,7 @@
 #define CAMERACONTROLLER_H
 #include "../ComponentDeclarations.h"
 #include "../glm/glm.hpp"
+#include "Source/Renderer/DataStructures.h"
 
 
 class CameraController
@@ -30,6 +31,7 @@ private:
 	glm::vec3 m_eyePosition = glm::vec3(0.0f, 0.0f, 0.0f);
 	glm::vec3 m_viewDirection = glm::vec3(0.0f, 0.0f, 2.0f);
 	glm::vec3 m_upVector = glm::vec3(0.0f, 0.0f, 1.0f);
+    CameraUBO m_cameraUBO;
 
 	glm::mat4 m_cameraViewMatrix = glm::mat4(1.0f);
 

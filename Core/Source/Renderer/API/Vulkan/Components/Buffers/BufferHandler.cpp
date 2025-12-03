@@ -150,10 +150,7 @@ void BufferHandler::CreateLightUBO() {
     LightUBO lightUBO;
     lightUBO.lights[0] = light;
     lightUBO.numLights = 1;
-    // Create lightUBO
-    // Create lightUBOMemory
-    // Create lightUBOMapped
-    // Add lights to the UBO
+
     VkDeviceSize bufferSize = sizeof(LightUBO);
 
     // Create a uniform buffer per frame in flight
@@ -170,7 +167,7 @@ void BufferHandler::CreateLightUBO() {
 }
 
 void BufferHandler::CreateModelUBO(Mesh3D* mesh) {
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+    VkDeviceSize bufferSize = sizeof(ModelUBO);
 
     mesh->m_uniformBuffers.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
     mesh->m_uniformBuffersMemory.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);

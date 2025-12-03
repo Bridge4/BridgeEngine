@@ -58,14 +58,13 @@ void VulkanContext::CreateVulkanContext() {
     m_swapChainHandler->CreateFramebuffers();
 
     CreateDescriptorPool();
-    // Create Scene Descriptor Set Layout
+    // SceneDescriptorSets
     CreateSceneDescriptorSetLayout();
-
     m_bufferHandler->CreateCameraUBO();
     m_bufferHandler->CreateLightUBO();
-
     CreateSceneDescriptorSets();
-    // Create Per-Mesh Descriptors
+
+    // Create Per-Mesh Descriptor Set Layout
     CreatePerMeshDescriptorSetLayout();
     CreateGraphicsPipeline();
 
@@ -97,7 +96,7 @@ void VulkanContext::LoadSceneObjects() {
     int meshCount = 0;
     float xPos = 0.0f;
     for (const auto &obj: m_objectsToRender){
-        LoadMesh(obj.objProperties, glm::vec3(xPos, 0.0f, 0.0f));
+        LoadMesh(obj.objProperties, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(5.0f,5.0f,5.0f));
         std::cout << "OBJECT LOADED...\n";
         CreateTextureImage(obj.textureProperties, &m_vulkanInstanceManager->m_meshList[meshCount]);
         CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[meshCount]);
@@ -335,7 +334,7 @@ void VulkanContext::CreateGraphicsPipeline() {
 
     VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
-    // CODE BELOW THIS
+
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -513,7 +512,7 @@ void VulkanContext::CreateGraphicsPipeline() {
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = m_vulkanInstanceManager->m_pipelineLayout;
-    pipelineInfo.renderPass = *m_vulkanInstanceManager->GetRefRenderPass();
+    pipelineInfo.renderPass = m_vulkanInstanceManager->m_renderPass;
     // Subpass INDEX
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
@@ -523,7 +522,6 @@ void VulkanContext::CreateGraphicsPipeline() {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    // CODE ABOVE THIS
     vkDestroyShaderModule(*m_vulkanInstanceManager->GetRefLogicalDevice(), fragShaderModule, nullptr);
     vkDestroyShaderModule(*m_vulkanInstanceManager->GetRefLogicalDevice(), vertShaderModule, nullptr);
 }
@@ -696,57 +694,6 @@ void VulkanContext::CreateDescriptorPool() {
 
     if (vkCreateDescriptorPool(*m_vulkanInstanceManager->GetRefLogicalDevice(), &poolInfo, nullptr, &m_vulkanInstanceManager->m_descriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
-    }
-}
-
-// DESCRIPTOR SETS
-void VulkanContext::CreateMeshDescriptorSets() {
-    for (auto& mesh: m_vulkanInstanceManager->m_meshList){
-        std::vector<VkDescriptorSetLayout> layouts(m_maxFramesInFlight, m_vulkanInstanceManager->m_meshDescriptorSetLayout);
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = m_vulkanInstanceManager->m_descriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(m_maxFramesInFlight);
-        allocInfo.pSetLayouts = layouts.data();
-
-        mesh.m_descriptorSets.resize(m_maxFramesInFlight);
-        if (vkAllocateDescriptorSets(*m_vulkanInstanceManager->GetRefLogicalDevice(), &allocInfo, mesh.m_descriptorSets.data()) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate descriptor sets!");
-        }
-
-        for (size_t i = 0; i < m_maxFramesInFlight; i++) {
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = mesh.m_uniformBuffers[i];
-            bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(UniformBufferObject);
-
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = mesh.m_textureImageView;
-            imageInfo.sampler = mesh.m_textureSampler;
-
-            std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
-            descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[0].dstSet = mesh.m_descriptorSets[i];
-            descriptorWrites[0].dstBinding = 0;
-            descriptorWrites[0].dstArrayElement = 0;
-            descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites[0].descriptorCount = 1;
-            descriptorWrites[0].pBufferInfo = &bufferInfo;
-            descriptorWrites[0].pImageInfo = nullptr; // Optional
-            descriptorWrites[0].pTexelBufferView = nullptr; // Optional
-
-            descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[1].dstSet = mesh.m_descriptorSets[i];
-            descriptorWrites[1].dstBinding = 1;
-            descriptorWrites[1].dstArrayElement = 0;
-            descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[1].descriptorCount = 1;
-            descriptorWrites[1].pImageInfo = &imageInfo;
-
-            uint32_t descriptorCopyCount = 0;
-            vkUpdateDescriptorSets(*m_vulkanInstanceManager->GetRefLogicalDevice(), (uint32_t)descriptorWrites.size(), descriptorWrites.data(), descriptorCopyCount, nullptr);
-        }
     }
 }
 
