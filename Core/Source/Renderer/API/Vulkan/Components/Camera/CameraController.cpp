@@ -22,7 +22,7 @@ glm::mat4 CameraController::GetViewMatrix() {
 }
 
 void CameraController::Initialize() {
-   m_eyePosition = glm::vec3(0.0f, 0.0f, 10.0f);
+   m_eyePosition = glm::vec3(0.0f, 0.0f, 0.0f);
    m_viewDirection = glm::vec3(0.0f, 0.0f, -1.0f);
    m_upVector = glm::vec3(0.0f, 1.0f, 0.0f);
    m_cameraViewMatrix = GetViewMatrix();
