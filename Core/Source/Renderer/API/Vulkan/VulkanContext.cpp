@@ -1,6 +1,7 @@
 #include "Source/Renderer/DataStructures.h"
 #include "Source/Renderer/FileLoader.h"
 #include <cassert>
+#include <iterator>
 #include <string>
 #include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
@@ -57,10 +58,15 @@ void VulkanContext::CreateVulkanContext() {
     m_swapChainHandler->CreateFramebuffers();
 
     CreateDescriptorPool();
-    CreateMeshDescriptorSetLayout();
+    // Create Scene Descriptor Set Layout
+    CreateSceneDescriptorSetLayout();
+
+    m_bufferHandler->CreateCameraUBO();
     m_bufferHandler->CreateLightUBO();
-    CreateLightDescriptorSetLayout();
-    CreateLightDescriptorSet();
+
+    CreateSceneDescriptorSets();
+    // Create Per-Mesh Descriptors
+    CreatePerMeshDescriptorSetLayout();
     CreateGraphicsPipeline();
 
     m_bufferHandler->CreateCommandBuffers();
@@ -79,7 +85,7 @@ void VulkanContext::RunVulkanRenderer(std::vector<LoadedObject> objectsToRender)
         lastFrameTime = currentFrameTime;
         m_windowHandler->Poll();
         m_cameraController->HandleInput(deltaTime);
-        m_cameraController->UpdateUniformBuffer(m_vulkanInstanceManager->m_currentFrame, deltaTime);
+        m_cameraController->UpdateCameraUBO(m_vulkanInstanceManager->m_currentFrame, deltaTime);
         DrawFrame(deltaTime);
     }
     vkDeviceWaitIdle(*m_vulkanInstanceManager->GetRefLogicalDevice());
@@ -96,14 +102,14 @@ void VulkanContext::LoadSceneObjects() {
         CreateTextureImage(obj.textureProperties, &m_vulkanInstanceManager->m_meshList[meshCount]);
         CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[meshCount]);
         CreateTextureSampler(&m_vulkanInstanceManager->m_meshList[meshCount]);
+        // Create Mesh Uniform Buffers
+        m_bufferHandler->CreateModelUBO(&m_vulkanInstanceManager->m_meshList[meshCount]);
+        CreatePerMeshDescriptorSets(&m_vulkanInstanceManager->m_meshList[meshCount]);
         meshCount++;
         xPos += 5.0f;
     }
     m_bufferHandler->CreateVertexBuffer(m_vertices);
     m_bufferHandler->CreateIndexBuffer(m_indices);
-    m_bufferHandler->CreateUniformBuffers();
-
-    CreateMeshDescriptorSets();
 }
 
 void VulkanContext::UnloadSceneObjects() {
@@ -136,7 +142,7 @@ void VulkanContext::CreateMeshDescriptorSetLayout() {
     uboLayoutBinding.binding = 0;
     uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
     VkDescriptorSetLayoutBinding samplerLayoutBinding{};
@@ -175,6 +181,152 @@ void VulkanContext::CreateLightDescriptorSetLayout() {
         throw std::runtime_error("failed to create descriptor set layout!");
     }
 
+}
+
+void VulkanContext::CreateSceneDescriptorSetLayout() {
+    // Binding 0 = CameraUBO
+    VkDescriptorSetLayoutBinding cameraUBO{};
+    cameraUBO.binding = 0;
+    cameraUBO.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    cameraUBO.descriptorCount = 1;
+    cameraUBO.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    cameraUBO.pImmutableSamplers = nullptr; // Optional
+    // Binding 1 = LightUBO
+    VkDescriptorSetLayoutBinding lightUBO{};
+    lightUBO.binding = 1;
+    lightUBO.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    lightUBO.descriptorCount = 1;
+    lightUBO.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    lightUBO.pImmutableSamplers = nullptr; // Optional
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { cameraUBO, lightUBO };
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
+
+    if (vkCreateDescriptorSetLayout(*m_vulkanInstanceManager->GetRefLogicalDevice(), &layoutInfo, nullptr, &m_vulkanInstanceManager->m_sceneDescriptorSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+}
+
+void VulkanContext::CreateSceneDescriptorSets() {
+    std::vector<VkDescriptorSetLayout> layouts(m_maxFramesInFlight, m_vulkanInstanceManager->m_sceneDescriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = m_vulkanInstanceManager->m_descriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(m_maxFramesInFlight);
+    allocInfo.pSetLayouts = layouts.data();
+
+    m_vulkanInstanceManager->m_sceneDescriptorSets.resize(m_maxFramesInFlight);
+    if (vkAllocateDescriptorSets(*m_vulkanInstanceManager->GetRefLogicalDevice(), &allocInfo, m_vulkanInstanceManager->m_sceneDescriptorSets.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor sets!");
+    }
+
+    for (size_t i = 0; i < m_maxFramesInFlight; i++) {
+        VkDescriptorBufferInfo cameraUBOInfo{};
+        cameraUBOInfo.buffer = m_vulkanInstanceManager->m_cameraUBO[i];
+        cameraUBOInfo.offset = 0;
+        cameraUBOInfo.range = sizeof(CameraUBO);
+
+        VkDescriptorBufferInfo lightUBOInfo{};
+        lightUBOInfo.buffer = m_vulkanInstanceManager->m_lightUBO[i];
+        lightUBOInfo.offset = 0;
+        lightUBOInfo.range = sizeof(LightUBO);
+
+        std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = m_vulkanInstanceManager->m_sceneDescriptorSets[i];
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].dstArrayElement = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &cameraUBOInfo;
+
+        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[1].dstSet = m_vulkanInstanceManager->m_sceneDescriptorSets[i];
+        descriptorWrites[1].dstBinding = 0;
+        descriptorWrites[1].dstArrayElement = 0;
+        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].pBufferInfo = &lightUBOInfo;
+
+        uint32_t descriptorCopyCount = 0;
+        vkUpdateDescriptorSets(*m_vulkanInstanceManager->GetRefLogicalDevice(), (uint32_t)descriptorWrites.size(), descriptorWrites.data(), descriptorCopyCount, nullptr);
+    }
+}
+
+void VulkanContext::CreatePerMeshDescriptorSetLayout() {
+    // Binding 0 = ModelUBO
+    VkDescriptorSetLayoutBinding modelUBO{};
+    modelUBO.binding = 0;
+    modelUBO.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    modelUBO.descriptorCount = 1;
+    modelUBO.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    modelUBO.pImmutableSamplers = nullptr; // Optional
+    // Binding 1 = Sampler2D
+    VkDescriptorSetLayoutBinding textureSampler{};
+    textureSampler.binding = 1;
+    textureSampler.descriptorCount = 1;
+    textureSampler.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    textureSampler.pImmutableSamplers = nullptr;
+    textureSampler.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { modelUBO, textureSampler };
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
+
+    if (vkCreateDescriptorSetLayout(*m_vulkanInstanceManager->GetRefLogicalDevice(), &layoutInfo, nullptr, &m_vulkanInstanceManager->m_perMeshDescriptorSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+}
+
+void VulkanContext::CreatePerMeshDescriptorSets(Mesh3D* mesh) {
+    std::vector<VkDescriptorSetLayout> layouts(m_maxFramesInFlight, m_vulkanInstanceManager->m_perMeshDescriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = m_vulkanInstanceManager->m_descriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(m_maxFramesInFlight);
+    allocInfo.pSetLayouts = layouts.data();
+
+    mesh->m_descriptorSets.resize(m_maxFramesInFlight);
+    if (vkAllocateDescriptorSets(*m_vulkanInstanceManager->GetRefLogicalDevice(), &allocInfo, mesh->m_descriptorSets.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor sets!");
+    }
+
+    for (size_t i = 0; i < m_maxFramesInFlight; i++) {
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = mesh->m_uniformBuffers[i];
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(ModelUBO);
+
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = mesh->m_textureImageView;
+        imageInfo.sampler = mesh->m_textureSampler;
+
+        std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = mesh->m_descriptorSets[i];
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].dstArrayElement = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[1].dstSet = mesh->m_descriptorSets[i];
+        descriptorWrites[1].dstBinding = 1;
+        descriptorWrites[1].dstArrayElement = 0;
+        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].pImageInfo = &imageInfo;
+
+        uint32_t descriptorCopyCount = 0;
+        vkUpdateDescriptorSets(*m_vulkanInstanceManager->GetRefLogicalDevice(), (uint32_t)descriptorWrites.size(), descriptorWrites.data(), descriptorCopyCount, nullptr);
+    }
 }
 
 void VulkanContext::CreateGraphicsPipeline() {
@@ -336,8 +488,8 @@ void VulkanContext::CreateGraphicsPipeline() {
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    m_vulkanInstanceManager->m_descriptorSetLayouts.push_back(m_vulkanInstanceManager->m_meshDescriptorSetLayout);
-    m_vulkanInstanceManager->m_descriptorSetLayouts.push_back(m_vulkanInstanceManager->m_lightDescriptorSetLayout);
+    m_vulkanInstanceManager->m_descriptorSetLayouts.push_back(m_vulkanInstanceManager->m_sceneDescriptorSetLayout);
+    m_vulkanInstanceManager->m_descriptorSetLayouts.push_back(m_vulkanInstanceManager->m_perMeshDescriptorSetLayout);
     pipelineLayoutInfo.setLayoutCount = m_vulkanInstanceManager->m_descriptorSetLayouts.size();
     pipelineLayoutInfo.pSetLayouts = m_vulkanInstanceManager->m_descriptorSetLayouts.data();
     pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
@@ -529,24 +681,18 @@ void VulkanContext::LoadMesh(ObjProperties props, glm::vec3 scenePosition, glm::
 
 // DESCRIPTOR POOL
 void VulkanContext::CreateDescriptorPool() {
-
-    /*
-        Incorrectly sized descriptor pools could result in errors on some devices but not others depending on the GPU drivers
-        Some will let you get away with bad allocations, some won't. Be careful.
-    */
-
-    uint32_t poolSize = m_maxFramesInFlight * m_vulkanInstanceManager->m_maxMeshes * 2 * sizeof(LightUBO);
     std::array<VkDescriptorPoolSize, 2> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = poolSize;
+    poolSizes[0].descriptorCount = (4*m_maxFramesInFlight) + (4*m_vulkanInstanceManager->m_maxMeshes);
+
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = poolSize;
+    poolSizes[1].descriptorCount = (2*m_vulkanInstanceManager->m_maxMeshes);
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = static_cast<uint32_t> (poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = poolSize;
+    poolInfo.maxSets = m_maxFramesInFlight * m_vulkanInstanceManager->m_maxMeshes;
 
     if (vkCreateDescriptorPool(*m_vulkanInstanceManager->GetRefLogicalDevice(), &poolInfo, nullptr, &m_vulkanInstanceManager->m_descriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
@@ -699,10 +845,13 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
 //                            m_vulkanInstanceManager->m_pipelineLayout, 
 //                            0, 1, &m_vulkanInstanceManager->m_lightDescriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
 
+    vkCmdBindDescriptorSets(commandBuffer, 
+                            VK_PIPELINE_BIND_POINT_GRAPHICS, 
+                            m_vulkanInstanceManager->m_pipelineLayout, 
+                            0,
+                            1,
+                            &m_vulkanInstanceManager->m_sceneDescriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
     std::vector<VkDescriptorSet> descriptorSetsToBind;
-    for (auto& dSet: m_vulkanInstanceManager->m_lightDescriptorSets) {
-        descriptorSetsToBind.push_back(dSet);
-    }
     if (!m_vulkanInstanceManager->m_meshList.empty()){
         VkBuffer vertexBuffers[] = { m_bufferHandler->VertexBuffer };
         VkDeviceSize offsets[] = { 0 };
@@ -722,7 +871,7 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
             vkCmdBindDescriptorSets(commandBuffer, 
                                     VK_PIPELINE_BIND_POINT_GRAPHICS, 
                                     m_vulkanInstanceManager->m_pipelineLayout, 
-                                    0,
+                                    1,
                                     1,
                                     &mesh.m_descriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
             /*
@@ -735,14 +884,6 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
             //vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
             vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh.m_indexCount), 1, mesh.m_indexBufferStartIndex, 0, 0);
         }
-    }
-    else {
-            vkCmdBindDescriptorSets(commandBuffer, 
-                                    VK_PIPELINE_BIND_POINT_GRAPHICS, 
-                                    m_vulkanInstanceManager->m_pipelineLayout, 
-                                    1,
-                                    1,
-                                    &m_vulkanInstanceManager->m_lightDescriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
     }
 
     vkCmdEndRenderPass(commandBuffer);

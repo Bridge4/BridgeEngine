@@ -5,6 +5,7 @@
 #include "vulkan/vulkan.h"
 #include "../ComponentDeclarations.h"
 #include <vector>
+#include <vulkan/vulkan_core.h>
 
 class VulkanInstanceManager {
 public:
@@ -66,6 +67,11 @@ public:
 
     VkDescriptorSetLayout m_meshDescriptorSetLayout;
     VkDescriptorSetLayout m_lightDescriptorSetLayout;
+
+    VkDescriptorSetLayout m_sceneDescriptorSetLayout;
+    std::vector<VkDescriptorSet> m_sceneDescriptorSets;
+    VkDescriptorSetLayout m_perMeshDescriptorSetLayout;
+
     std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
     VkDescriptorPool m_descriptorPool;
     std::vector<VkDescriptorSet> m_descriptorSets;
@@ -78,6 +84,9 @@ public:
     VkCommandPool m_commandPool;
 
 
+	std::vector<VkBuffer> m_cameraUBO = {};
+	std::vector<VkDeviceMemory> m_cameraUBOMemory = {};
+	std::vector<void*> m_cameraUBOMapped = {};
 
 	std::vector<VkBuffer> m_lightUBO = {};
 	std::vector<VkDeviceMemory> m_lightUBOMemory = {};

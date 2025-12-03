@@ -5,6 +5,7 @@
 #include "../../VulkanDataStructures.h"
 #include "../SwapChain/SwapChainHandler.h"
 #include "../VulkanInstanceManager/VulkanInstanceManager.h"
+#include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
 #include "Source/Renderer/DataStructures.h"
 #include <vulkan/vulkan.h>
 #include <chrono>
@@ -125,6 +126,22 @@ void BufferHandler::CreateIndexBuffer(std::vector<uint32_t> indices) {
 
 }
 
+void BufferHandler::CreateCameraUBO() {
+    VkDeviceSize bufferSize = sizeof(CameraUBO);
+
+    // Create a uniform buffer per frame in flight
+    m_vulkanInstanceManager->m_cameraUBO.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
+    m_vulkanInstanceManager->m_cameraUBOMemory.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
+    m_vulkanInstanceManager->m_cameraUBOMapped.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
+
+    for (size_t i = 0; i < m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT; i++) {
+        // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i], m_uniformBuffersMemory[i], UNSTAGED)
+        // Create then Map to memory
+        CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_vulkanInstanceManager->m_cameraUBO[i], m_vulkanInstanceManager->m_cameraUBOMemory[i]);
+        vkMapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_cameraUBOMemory[i], 0, bufferSize, 0, &m_vulkanInstanceManager->m_cameraUBOMapped[i]);
+    }
+}
+
 void BufferHandler::CreateLightUBO() {
     Light light;
     light.position = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -152,22 +169,18 @@ void BufferHandler::CreateLightUBO() {
     }
 }
 
-void BufferHandler::CreateUniformBuffers() {
+void BufferHandler::CreateModelUBO(Mesh3D* mesh) {
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
-    for(auto& mesh: m_vulkanInstanceManager->m_meshList){
-        // Create a uniform buffer per frame in flight
-        mesh.m_uniformBuffers.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
-        mesh.m_uniformBuffersMemory.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
-        mesh.m_uniformBuffersMapped.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
+    mesh->m_uniformBuffers.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
+    mesh->m_uniformBuffersMemory.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
+    mesh->m_uniformBuffersMapped.resize(m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT);
 
-        for (size_t i = 0; i < m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT; i++) {
-            // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i], m_uniformBuffersMemory[i], UNSTAGED)
-            // Create then Map to memory
-            CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, mesh.m_uniformBuffers[i], mesh.m_uniformBuffersMemory[i]);
-            vkMapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh.m_uniformBuffersMemory[i], 0, bufferSize, 0, &mesh.m_uniformBuffersMapped[i]);
-        }
-
+    for (size_t i = 0; i < m_vulkanInstanceManager->MAX_FRAMES_IN_FLIGHT; i++) {
+        // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i], m_uniformBuffersMemory[i], UNSTAGED)
+        // Create then Map to memory
+        CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, mesh->m_uniformBuffers[i], mesh->m_uniformBuffersMemory[i]);
+        vkMapMemory(*m_vulkanInstanceManager->GetRefLogicalDevice(), mesh->m_uniformBuffersMemory[i], 0, bufferSize, 0, &mesh->m_uniformBuffersMapped[i]);
     }
 }
 

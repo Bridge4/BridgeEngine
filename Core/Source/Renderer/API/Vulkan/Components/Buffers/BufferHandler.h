@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include "../ComponentDeclarations.h"
+#include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
 
 struct Vertex;
 struct UniformBufferObject;
@@ -24,7 +25,11 @@ public:
 
 	void CreateUniformBuffers();
 
+	void CreateCameraUBO();
+
 	void CreateLightUBO();
+
+	void CreateModelUBO(Mesh3D* mesh);
 
 	void CreateCommandBuffers();
 

@@ -16,9 +16,9 @@ public:
 		this->m_vulkanInstanceManager = vulkanInstanceManager;
 		Initialize();
 	}
-	glm::mat4 getViewMatrix();
+	glm::mat4 GetViewMatrix();
 	void HandleInput(float deltaTime);
-	void UpdateUniformBuffer(uint32_t currentImage, float deltaTime);
+	void UpdateCameraUBO(uint32_t currentImage, float deltaTime);
     float m_cameraSpeed = 5.0f;
 private:
 	void Initialize();

@@ -78,11 +78,6 @@ namespace std {
     };
 }
 
-struct UniformBufferObject {
-    alignas(16) glm::mat4 model;
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 proj;
-};
 
 struct Light {
     alignas(16) glm::vec3 position;
@@ -90,7 +85,26 @@ struct Light {
     alignas(16) float intensity;
 };
 
+// Uniform Buffer Objects (UBOs)
+struct UniformBufferObject {
+    alignas(16) glm::mat4 model;
+    alignas(16) glm::mat4 view;
+    alignas(16) glm::mat4 proj;
+};
+// Scene-Wide Data
+struct CameraUBO {
+    alignas(16) glm::mat4 view;
+    alignas(16) glm::mat4 proj;
+    alignas(16) glm::vec3 cameraPos;
+};
+
 struct LightUBO {
     alignas(16) Light lights[16];
     alignas(16) int numLights;
+};
+
+// Per-Mesh Data
+struct ModelUBO {
+    alignas(16) glm::mat4 model;
+
 };

@@ -94,6 +94,11 @@ private:
     * Window is polled and frames are drawn until window is closed
     */
 
+    void CreateSceneDescriptorSetLayout();
+    void CreateSceneDescriptorSets();
+    void CreatePerMeshDescriptorSetLayout();
+    void CreatePerMeshDescriptorSets(Mesh3D* mesh);
+
     void CreateMeshDescriptorSetLayout();
     void CreateLightDescriptorSetLayout();
 

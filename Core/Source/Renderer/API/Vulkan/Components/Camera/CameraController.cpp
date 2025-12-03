@@ -16,7 +16,7 @@
 #include "GLFW/glfw3.h"
 #include "../../VulkanContext.h"
 
-glm::mat4 CameraController::getViewMatrix() {
+glm::mat4 CameraController::GetViewMatrix() {
     //glm::mat4 tempMat = glm::lookAt(eyePosition, viewDirection, upVector);
 
     //std::cout << glm::to_string(tempMat) << std::endl;
@@ -27,7 +27,7 @@ void CameraController::Initialize() {
    m_eyePosition = glm::vec3(0.0f, 0.0f, 2.0f);
    m_viewDirection = glm::vec3(0.0f, 0.0f, -1.0f);
    m_upVector = glm::vec3(0.0f, 1.0f, 0.0f);
-   m_cameraViewMatrix = getViewMatrix();
+   m_cameraViewMatrix = GetViewMatrix();
    m_lookActive = false;
    m_lookToggled = false;
 }
@@ -82,6 +82,21 @@ void CameraController::HandleInput(float deltaTime) {
         //cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f, 0.001f, 0.001f));
         //cameraViewMatrix = glm::lookAt(eyePosition, viewDirection+eyePosition, upVector);
         m_vulkanContext->LoadSceneObjects();
+        if (!m_vulkanInstanceManager->m_meshList.empty()){
+            for(auto& mesh: m_vulkanInstanceManager->m_meshList) {
+                ModelUBO modelUBO{}; 
+                modelUBO.model = glm::mat4(1.0f);
+                modelUBO.model = glm::translate(modelUBO.model, mesh.m_position);
+                modelUBO.model = glm::rotate(modelUBO.model, -glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                modelUBO.model = glm::rotate(modelUBO.model, -glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                if (glfwGetMouseButton(m_windowHandler->m_window, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
+                    modelUBO.model = glm::rotate(modelUBO.model, -glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                }
+                modelUBO.model = glm::scale(modelUBO.model, mesh.m_scale);
+
+                memcpy(mesh.m_uniformBuffersMapped[m_vulkanInstanceManager->m_currentFrame], &modelUBO, sizeof(modelUBO));
+            }
+        }
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_U)) {
         //cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f, 0.001f, 0.001f));
@@ -89,7 +104,7 @@ void CameraController::HandleInput(float deltaTime) {
         m_vulkanContext->UnloadSceneObjects();
     }
 }
-void CameraController::UpdateUniformBuffer(uint32_t currentImage, float deltaTime)
+void CameraController::UpdateCameraUBO(uint32_t currentImage, float deltaTime)
 {
     if (m_lookActive) {
         double xPos, yPos;
@@ -121,30 +136,11 @@ void CameraController::UpdateUniformBuffer(uint32_t currentImage, float deltaTim
     }
 
 
-    if (!m_vulkanInstanceManager->m_meshList.empty()){
-        for(auto& mesh: m_vulkanInstanceManager->m_meshList) {
-            UniformBufferObject ubo{}; 
-            
-            // Where the object/model is placed in the world
-            ubo.model = glm::mat4(1.0f);
-            ubo.model = glm::translate(ubo.model, mesh.m_position);
-            ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-            if (glfwGetMouseButton(m_windowHandler->m_window, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
-                ubo.model = glm::rotate(ubo.model, -glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            }
-            //ubo.model = glm::rotate(ubo.model, -glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-            //ubo.model = glm::rotate(ubo.model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            // Where our camera is placed in the world
-            ubo.model = glm::scale(ubo.model, mesh.m_scale);
-            ubo.view = getViewMatrix();
+    CameraUBO cameraUBO{};
+    cameraUBO.view = GetViewMatrix();
+    cameraUBO.proj = glm::perspective(glm::radians(90.0f), m_vulkanInstanceManager->GetSwapChainExtent().width / (float)m_vulkanInstanceManager->GetSwapChainExtent().height, 0.001f, 100000.0f);
+    // IMPORTANT: VULKAN HAS INVERTED Y AXIS TO OPENGL AND GLM WAS DESIGNED FOR OPENGL. THIS CONVERTS TO VULKAN.
+    cameraUBO.proj[1][1] *= -1;
+    memcpy(m_vulkanInstanceManager->m_cameraUBOMapped[currentImage], &cameraUBO, sizeof(cameraUBO));
 
-
-            ubo.proj = glm::perspective(glm::radians(90.0f), m_vulkanInstanceManager->GetSwapChainExtent().width / (float)m_vulkanInstanceManager->GetSwapChainExtent().height, 0.001f, 100000.0f);
-            // IMPORTANT: VULKAN HAS INVERTED Y AXIS TO OPENGL AND GLM WAS DESIGNED FOR OPENGL. THIS CONVERTS TO VULKAN.
-            ubo.proj[1][1] *= -1;
-
-            memcpy(mesh.m_uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
-        }
-    }
  }
