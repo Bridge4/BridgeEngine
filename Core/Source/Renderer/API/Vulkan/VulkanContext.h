@@ -94,7 +94,8 @@ private:
     * Window is polled and frames are drawn until window is closed
     */
 
-    void CreateDescriptorSetLayout();
+    void CreateMeshDescriptorSetLayout();
+    void CreateLightDescriptorSetLayout();
 
     // GRAPHICS PIPELINE
     /*
@@ -140,7 +141,9 @@ private:
     void CreateDescriptorPool();
 
     // DESCRIPTOR SETS
-    void CreateDescriptorSets();
+    void CreateMeshDescriptorSets();
+
+    void CreateLightDescriptorSet();
 
     // beginSingleTimeCommands and endSingleTimeCommands are helpers for copyBuffer
     VkCommandBuffer BeginSingleTimeCommands();

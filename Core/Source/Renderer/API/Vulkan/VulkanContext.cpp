@@ -1,3 +1,4 @@
+#include "Source/Renderer/DataStructures.h"
 #include "Source/Renderer/FileLoader.h"
 #include <cassert>
 #include <string>
@@ -55,7 +56,11 @@ void VulkanContext::CreateVulkanContext() {
     CreateCommandPool();
     m_swapChainHandler->CreateFramebuffers();
 
-    CreateDescriptorSetLayout();
+    CreateDescriptorPool();
+    CreateMeshDescriptorSetLayout();
+    m_bufferHandler->CreateLightUBO();
+    CreateLightDescriptorSetLayout();
+    CreateLightDescriptorSet();
     CreateGraphicsPipeline();
 
     m_bufferHandler->CreateCommandBuffers();
@@ -98,8 +103,7 @@ void VulkanContext::LoadSceneObjects() {
     m_bufferHandler->CreateIndexBuffer(m_indices);
     m_bufferHandler->CreateUniformBuffers();
 
-    CreateDescriptorPool();
-    CreateDescriptorSets();
+    CreateMeshDescriptorSets();
 }
 
 void VulkanContext::UnloadSceneObjects() {
@@ -126,7 +130,7 @@ void VulkanContext::UnloadSceneObjects() {
         std::cout << "No Scene Objects to Unload\n";
     }
 }
-void VulkanContext::CreateDescriptorSetLayout() {
+void VulkanContext::CreateMeshDescriptorSetLayout() {
 
     VkDescriptorSetLayoutBinding uboLayoutBinding{};
     uboLayoutBinding.binding = 0;
@@ -135,7 +139,6 @@ void VulkanContext::CreateDescriptorSetLayout() {
     uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
-    // Example comment
     VkDescriptorSetLayoutBinding samplerLayoutBinding{};
     samplerLayoutBinding.binding = 1;
     samplerLayoutBinding.descriptorCount = 1;
@@ -143,23 +146,35 @@ void VulkanContext::CreateDescriptorSetLayout() {
     samplerLayoutBinding.pImmutableSamplers = nullptr;
     samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    VkDescriptorSetLayoutBinding lightBinding{};
-    uboLayoutBinding.binding = 2;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
-
-    std::array<VkDescriptorSetLayoutBinding, 3> bindings = { uboLayoutBinding, samplerLayoutBinding, lightBinding};
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    // Another Example Comment
-    if (vkCreateDescriptorSetLayout(*m_vulkanInstanceManager->GetRefLogicalDevice(), &layoutInfo, nullptr, &m_vulkanInstanceManager->m_descriptorSetLayout) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(*m_vulkanInstanceManager->GetRefLogicalDevice(), &layoutInfo, nullptr, &m_vulkanInstanceManager->m_meshDescriptorSetLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
     }
+}
+
+void VulkanContext::CreateLightDescriptorSetLayout() {
+    VkDescriptorSetLayoutBinding lightUBOBinding{};
+    lightUBOBinding.binding = 0;
+    lightUBOBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    lightUBOBinding.descriptorCount = 1;
+    lightUBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    lightUBOBinding.pImmutableSamplers = nullptr; // Optional
+
+    std::array<VkDescriptorSetLayoutBinding, 1> bindings = { lightUBOBinding };
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
+
+    if (vkCreateDescriptorSetLayout(*m_vulkanInstanceManager->GetRefLogicalDevice(), &layoutInfo, nullptr, &m_vulkanInstanceManager->m_lightDescriptorSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+
 }
 
 void VulkanContext::CreateGraphicsPipeline() {
@@ -321,8 +336,10 @@ void VulkanContext::CreateGraphicsPipeline() {
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &m_vulkanInstanceManager->m_descriptorSetLayout;
+    m_vulkanInstanceManager->m_descriptorSetLayouts.push_back(m_vulkanInstanceManager->m_meshDescriptorSetLayout);
+    m_vulkanInstanceManager->m_descriptorSetLayouts.push_back(m_vulkanInstanceManager->m_lightDescriptorSetLayout);
+    pipelineLayoutInfo.setLayoutCount = m_vulkanInstanceManager->m_descriptorSetLayouts.size();
+    pipelineLayoutInfo.pSetLayouts = m_vulkanInstanceManager->m_descriptorSetLayouts.data();
     pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
     pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
@@ -518,7 +535,7 @@ void VulkanContext::CreateDescriptorPool() {
         Some will let you get away with bad allocations, some won't. Be careful.
     */
 
-    uint32_t poolSize = m_maxFramesInFlight * m_vulkanInstanceManager->m_meshList.size();
+    uint32_t poolSize = m_maxFramesInFlight * m_vulkanInstanceManager->m_maxMeshes * 2 * sizeof(LightUBO);
     std::array<VkDescriptorPoolSize, 2> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSizes[0].descriptorCount = poolSize;
@@ -537,9 +554,9 @@ void VulkanContext::CreateDescriptorPool() {
 }
 
 // DESCRIPTOR SETS
-void VulkanContext::CreateDescriptorSets() {
+void VulkanContext::CreateMeshDescriptorSets() {
     for (auto& mesh: m_vulkanInstanceManager->m_meshList){
-        std::vector<VkDescriptorSetLayout> layouts(m_maxFramesInFlight, m_vulkanInstanceManager->m_descriptorSetLayout);
+        std::vector<VkDescriptorSetLayout> layouts(m_maxFramesInFlight, m_vulkanInstanceManager->m_meshDescriptorSetLayout);
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = m_vulkanInstanceManager->m_descriptorPool;
@@ -584,11 +601,40 @@ void VulkanContext::CreateDescriptorSets() {
             uint32_t descriptorCopyCount = 0;
             vkUpdateDescriptorSets(*m_vulkanInstanceManager->GetRefLogicalDevice(), (uint32_t)descriptorWrites.size(), descriptorWrites.data(), descriptorCopyCount, nullptr);
         }
-
-
     }
 }
 
+void VulkanContext::CreateLightDescriptorSet() {
+    std::vector<VkDescriptorSetLayout> layouts(m_maxFramesInFlight, m_vulkanInstanceManager->m_lightDescriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = m_vulkanInstanceManager->m_descriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(m_maxFramesInFlight);
+    allocInfo.pSetLayouts = layouts.data();
+
+    m_vulkanInstanceManager->m_lightDescriptorSets.resize(m_maxFramesInFlight);
+    if (vkAllocateDescriptorSets(*m_vulkanInstanceManager->GetRefLogicalDevice(), &allocInfo, m_vulkanInstanceManager->m_lightDescriptorSets.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor sets!");
+    }
+
+    for (size_t i = 0; i < m_maxFramesInFlight; i++) {
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = m_vulkanInstanceManager->m_lightUBO[i];
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(LightUBO);
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = m_vulkanInstanceManager->m_lightDescriptorSets[i];
+        // WARN: This may cause errors if i got the binding wrong
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfo;
+
+        vkUpdateDescriptorSets(*m_vulkanInstanceManager->GetRefLogicalDevice(), 1, &descriptorWrite, 0, nullptr);
+    }
+}
 
 void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
@@ -648,6 +694,15 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 
+//    vkCmdBindDescriptorSets(commandBuffer, 
+//                            VK_PIPELINE_BIND_POINT_GRAPHICS, 
+//                            m_vulkanInstanceManager->m_pipelineLayout, 
+//                            0, 1, &m_vulkanInstanceManager->m_lightDescriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
+
+    std::vector<VkDescriptorSet> descriptorSetsToBind;
+    for (auto& dSet: m_vulkanInstanceManager->m_lightDescriptorSets) {
+        descriptorSetsToBind.push_back(dSet);
+    }
     if (!m_vulkanInstanceManager->m_meshList.empty()){
         VkBuffer vertexBuffers[] = { m_bufferHandler->VertexBuffer };
         VkDeviceSize offsets[] = { 0 };
@@ -659,10 +714,17 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
             for (auto& descriptorSet: mesh.m_descriptorSets){
                 counter++;
             }
+            descriptorSetsToBind.push_back(mesh.m_descriptorSets[m_vulkanInstanceManager->m_currentFrame]);
 
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vulkanInstanceManager->m_pipelineLayout, 0, 1,
-                &mesh.m_descriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
+            //vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vulkanInstanceManager->m_pipelineLayout, 0, 1,
+            //    &mesh.m_descriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
 
+            vkCmdBindDescriptorSets(commandBuffer, 
+                                    VK_PIPELINE_BIND_POINT_GRAPHICS, 
+                                    m_vulkanInstanceManager->m_pipelineLayout, 
+                                    0,
+                                    1,
+                                    &mesh.m_descriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
             /*
                 vkCmdDraw(VkCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance)
                 vertexCount: Even though we don't have a vertex buffer, we technically still have 3 vertices to draw.
@@ -673,6 +735,14 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
             //vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
             vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh.m_indexCount), 1, mesh.m_indexBufferStartIndex, 0, 0);
         }
+    }
+    else {
+            vkCmdBindDescriptorSets(commandBuffer, 
+                                    VK_PIPELINE_BIND_POINT_GRAPHICS, 
+                                    m_vulkanInstanceManager->m_pipelineLayout, 
+                                    1,
+                                    1,
+                                    &m_vulkanInstanceManager->m_lightDescriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
     }
 
     vkCmdEndRenderPass(commandBuffer);
@@ -854,7 +924,7 @@ void VulkanContext::Destroy() {
 
     vkDestroyDescriptorPool(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_descriptorPool, nullptr);
 
-    vkDestroyDescriptorSetLayout(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_descriptorSetLayout, nullptr);
+    vkDestroyDescriptorSetLayout(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_meshDescriptorSetLayout, nullptr);
 
     // Buffer cleanup
     // Call BufferHandler::DestroyBuffers

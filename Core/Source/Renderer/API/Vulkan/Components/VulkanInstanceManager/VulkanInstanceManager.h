@@ -1,6 +1,7 @@
 #ifndef VULKANINSTANCEMANAGER_H
 #define VULKANINSTANCEMANAGER_H
 #include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
+#include "Source/Renderer/DataStructures.h"
 #include "vulkan/vulkan.h"
 #include "../ComponentDeclarations.h"
 #include <vector>
@@ -63,9 +64,12 @@ public:
     VkQueue m_graphicsQueue;
     VkQueue m_presentQueue;
 
-    VkDescriptorSetLayout m_descriptorSetLayout;
+    VkDescriptorSetLayout m_meshDescriptorSetLayout;
+    VkDescriptorSetLayout m_lightDescriptorSetLayout;
+    std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
     VkDescriptorPool m_descriptorPool;
     std::vector<VkDescriptorSet> m_descriptorSets;
+    std::vector<VkDescriptorSet> m_lightDescriptorSets;
 
     VkPipelineLayout m_pipelineLayout;
 
@@ -100,6 +104,7 @@ public:
     VkInstance m_instance;
     VkDebugUtilsMessengerEXT m_debugMessenger;
     int MAX_FRAMES_IN_FLIGHT = 2;
+    int m_maxMeshes = 10 * sizeof(Mesh3D);
 
 private:
 
