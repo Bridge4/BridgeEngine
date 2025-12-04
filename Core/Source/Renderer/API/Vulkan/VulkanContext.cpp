@@ -98,7 +98,8 @@ void VulkanContext::RunVulkanRenderer(std::vector<LoadedObject> objectsToRender)
         float deltaTime = std::chrono::duration<float>(currentFrameTime - lastFrameTime).count();
         lastFrameTime = currentFrameTime;
         m_windowHandler->Poll();
-        m_cameraController->HandleInput(deltaTime);
+        //m_cameraController->HandleInputNoClip(deltaTime);
+        m_cameraController->HandleInputOrbit(deltaTime);
         m_cameraController->UpdateCameraUBO(m_vulkanInstanceManager->m_currentFrame, deltaTime);
 
         //for (auto& model: m_vulkanInstanceManager->m_meshList){

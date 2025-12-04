@@ -1,6 +1,7 @@
 #ifndef CAMERACONTROLLER_H
 #define CAMERACONTROLLER_H
 #include "../ComponentDeclarations.h"
+#include "Source/Renderer/API/Vulkan/Components/Camera/OrbitCamera.h"
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <../glm/glm.hpp>
@@ -14,7 +15,7 @@ enum CameraType {
 class CameraController
 {
 public:
-    CameraController(VulkanContext* vulkanContext, WindowHandler* windowHandler, SwapChainHandler* swapChainHandler, BufferHandler* bufferHandler, VulkanInstanceManager* vulkanInstanceManager, CameraType camType=NO_CLIP) {
+    CameraController(VulkanContext* vulkanContext, WindowHandler* windowHandler, SwapChainHandler* swapChainHandler, BufferHandler* bufferHandler, VulkanInstanceManager* vulkanInstanceManager, CameraType camType=ORBIT) {
         this->m_vulkanContext = vulkanContext;
         this->m_bufferHandler = bufferHandler;
         this->m_windowHandler = windowHandler;
@@ -24,7 +25,8 @@ public:
         Initialize();
     }
     glm::mat4 GetViewMatrix();
-    void HandleInput(float deltaTime);
+    void HandleInputNoClip(float deltaTime);
+    void HandleInputOrbit(float deltaTime);
     void UpdateCameraUBO(uint32_t currentImage, float deltaTime);
     float m_cameraSpeed = 1.0f;
     CameraUBO m_cameraUBO;
@@ -32,6 +34,7 @@ public:
     glm::vec3 m_viewDirection = glm::vec3(0.0f, 0.0f, 2.0f);
     glm::vec3 m_upVector = glm::vec3(0.0f, 0.0f, 1.0f);
     CameraType m_cameraType = NO_CLIP;
+    OrbitCamera* orbitCam = nullptr;
 private:
     void Initialize();
     VulkanContext* m_vulkanContext = 0;
