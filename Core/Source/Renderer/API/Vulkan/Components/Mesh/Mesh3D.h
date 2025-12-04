@@ -9,12 +9,18 @@
 #include <../glm/gtc/matrix_transform.hpp>
 #include <../glm/gtx/hash.hpp>
 
+enum Mesh3DTypes {
+    TEXTURED,
+    UNTEXTURED
+};
+
 class Mesh3D {
 public:
     Mesh3D(){
 
     }
 
+    Mesh3DTypes MeshType = TEXTURED;
     // Offsets for shared index and vertex buffers during vkDraw calls
     int m_indexBufferStartIndex = 0;
     int m_indexBufferEndIndex = 0;

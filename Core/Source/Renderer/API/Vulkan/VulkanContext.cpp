@@ -79,7 +79,9 @@ void VulkanContext::CreateVulkanContext() {
 
     // Create Per-Mesh Descriptor Set Layout
     CreatePerMeshDescriptorSetLayout();
-    CreateGraphicsPipeline();
+    std::vector<char> vertTextured = ReadFile("C:/Source/Engines/BridgeEngine/Core/Shaders/vertTextured.spv");
+    std::vector<char> fragTextured = ReadFile("C:/Source/Engines/BridgeEngine/Core/Shaders/fragTextured.spv");
+    CreateGraphicsPipeline(vertTextured, fragTextured, &m_vulkanInstanceManager->m_texturedPipeline);
 
     m_bufferHandler->CreateCommandBuffers();
     CreateSyncObjects();
@@ -355,9 +357,7 @@ void VulkanContext::CreatePerMeshDescriptorSets(Mesh3D* mesh) {
     }
 }
 
-void VulkanContext::CreateGraphicsPipeline() {
-    std::vector<char> vertShaderCode = ReadFile("C:/Source/Engines/BridgeEngine/Core/Shaders/vert.spv");
-    std::vector<char> fragShaderCode = ReadFile("C:/Source/Engines/BridgeEngine/Core/Shaders/frag.spv");
+void VulkanContext::CreateGraphicsPipeline(std::vector<char> vertShaderCode, std::vector<char> fragShaderCode, VkPipeline* pipeline) {
 
     VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
@@ -545,7 +545,7 @@ void VulkanContext::CreateGraphicsPipeline() {
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
     pipelineInfo.basePipelineIndex = -1; // Optional
 
-    if (vkCreateGraphicsPipelines(*m_vulkanInstanceManager->GetRefLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_vulkanInstanceManager->m_graphicsPipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(*m_vulkanInstanceManager->GetRefLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
@@ -693,6 +693,7 @@ void VulkanContext::LoadMesh(ObjProperties props, glm::vec3 scenePosition, glm::
         }
     }
     Mesh3D mesh = Mesh3D();
+    mesh.MeshType = TEXTURED;
     mesh.m_indexBufferStartIndex = indexBufferStartIndex;
     mesh.m_vertexBufferStartIndex = vertexBufferStartIndex;
     mesh.m_indexBufferEndIndex = indexBufferEndIndex;
@@ -793,8 +794,6 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    // Binding the graphics pipeline
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vulkanInstanceManager->m_graphicsPipeline);
 
     // We set the viewport and scissor state as dynamic in the pipeline 
     // We need to set those up in the command buffer now  
@@ -832,16 +831,16 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
 
         vkCmdBindIndexBuffer(commandBuffer, m_bufferHandler->IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
         for(auto& mesh: m_vulkanInstanceManager->m_meshList) {
-            int counter = 0;
-            for (auto& descriptorSet: mesh.m_descriptorSets){
-                counter++;
+            // Binding the graphics pipeline
+            if (mesh.MeshType == TEXTURED){
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vulkanInstanceManager->m_texturedPipeline);
+                vkCmdBindDescriptorSets(commandBuffer, 
+                                        VK_PIPELINE_BIND_POINT_GRAPHICS, 
+                                        m_vulkanInstanceManager->m_pipelineLayout, 
+                                        1,
+                                        1,
+                                        &mesh.m_descriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
             }
-            vkCmdBindDescriptorSets(commandBuffer, 
-                                    VK_PIPELINE_BIND_POINT_GRAPHICS, 
-                                    m_vulkanInstanceManager->m_pipelineLayout, 
-                                    1,
-                                    1,
-                                    &mesh.m_descriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
             /*
                 vkCmdDraw(VkCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance)
                 vertexCount: Even though we don't have a vertex buffer, we technically still have 3 vertices to draw.
@@ -1040,7 +1039,7 @@ void VulkanContext::Destroy() {
     m_bufferHandler->DestroyBuffers();
     
 
-    vkDestroyPipeline(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_graphicsPipeline, nullptr);
+    vkDestroyPipeline(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_texturedPipeline, nullptr);
     vkDestroyPipelineLayout(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_vulkanInstanceManager->m_pipelineLayout, nullptr);
 
     vkDestroyRenderPass(*m_vulkanInstanceManager->GetRefLogicalDevice(), m_renderPassHandler->renderPass, nullptr);

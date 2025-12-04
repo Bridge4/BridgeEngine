@@ -79,7 +79,7 @@ public:
 
     VkPipelineLayout m_pipelineLayout;
 
-    VkPipeline m_graphicsPipeline;
+    VkPipeline m_texturedPipeline;
     std::vector<VkFramebuffer> m_swapChainFramebuffers;
     VkCommandPool m_commandPool;
 

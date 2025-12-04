@@ -107,7 +107,7 @@ private:
     *   Create a graphics pipeline to render
     *
     */
-    void CreateGraphicsPipeline();
+    void CreateGraphicsPipeline(std::vector<char> vertShaderCode, std::vector<char> fragShaderCode, VkPipeline* pipeline);
 
     // COMMAND POOL
     /*
