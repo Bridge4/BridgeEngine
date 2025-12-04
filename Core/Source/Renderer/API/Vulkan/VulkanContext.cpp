@@ -62,6 +62,19 @@ void VulkanContext::CreateVulkanContext() {
     CreateSceneDescriptorSetLayout();
     m_bufferHandler->CreateCameraUBO();
     m_bufferHandler->CreateLightUBO();
+    Light light0;
+    light0.position = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+    light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    light0.intensity = 0.2f;
+    Light light1;
+    light1.position = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+    light1.color = glm::vec4(0.408f, 0.765f, 0.831f, 1.0f);
+    light1.intensity = 1.5f;
+    LightUBO lightUBO;
+    lightUBO.lights[0] = light0;
+    lightUBO.lights[1] = light1;
+    lightUBO.numLights = 2;
+    memcpy(m_vulkanInstanceManager->m_lightUBOMapped[m_vulkanInstanceManager->m_currentFrame], &lightUBO, sizeof(lightUBO));
     CreateSceneDescriptorSets();
 
     // Create Per-Mesh Descriptor Set Layout
@@ -85,6 +98,19 @@ void VulkanContext::RunVulkanRenderer(std::vector<LoadedObject> objectsToRender)
         m_windowHandler->Poll();
         m_cameraController->HandleInput(deltaTime);
         m_cameraController->UpdateCameraUBO(m_vulkanInstanceManager->m_currentFrame, deltaTime);
+
+        //for (auto& model: m_vulkanInstanceManager->m_meshList){
+        //    ModelUBO modelUBO{}; 
+        //    modelUBO.model = glm::mat4(1.0f);
+        //    modelUBO.model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -2));
+        //    for (auto& vertex: m_vertices){
+        //        glm::vec4 clip = m_cameraController->m_cameraUBO.proj * m_cameraController->m_cameraUBO.view * modelUBO.model * glm::vec4(vertex.pos, 1.0f);
+        //        glm::vec3 ndc = glm::vec3(clip) / clip.w;
+        //        std::cout << "NDC: " << ndc.x << ", " << ndc.y << ", " << ndc.z << "\n";
+        //        std::cout << "camPos: " << m_cameraController->m_eyePosition.x << ", "<< m_cameraController->m_eyePosition.y << ", "<< m_cameraController->m_eyePosition.z << "\n";
+        //    }
+
+        //}
         DrawFrame(deltaTime);
     }
     vkDeviceWaitIdle(*m_vulkanInstanceManager->GetRefLogicalDevice());
@@ -96,7 +122,7 @@ void VulkanContext::LoadSceneObjects() {
     int meshCount = 0;
     float xPos = 0.0f;
     for (const auto &obj: m_objectsToRender){
-        LoadMesh(obj.objProperties, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(5.0f,5.0f,5.0f));
+        LoadMesh(obj.objProperties, glm::vec3(xPos, 0.0f, 0.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(5.0f,5.0f,5.0f));
         std::cout << "OBJECT LOADED...\n";
         CreateTextureImage(obj.textureProperties, &m_vulkanInstanceManager->m_meshList[meshCount]);
         CreateTextureImageView(&m_vulkanInstanceManager->m_meshList[meshCount]);
@@ -244,7 +270,7 @@ void VulkanContext::CreateSceneDescriptorSets() {
 
         descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[1].dstSet = m_vulkanInstanceManager->m_sceneDescriptorSets[i];
-        descriptorWrites[1].dstBinding = 0;
+        descriptorWrites[1].dstBinding = 1;
         descriptorWrites[1].dstArrayElement = 0;
         descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptorWrites[1].descriptorCount = 1;
@@ -300,6 +326,7 @@ void VulkanContext::CreatePerMeshDescriptorSets(Mesh3D* mesh) {
         bufferInfo.buffer = mesh->m_uniformBuffers[i];
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(ModelUBO);
+        std::cout << "SIZE OF MODEL UBO: " << sizeof(ModelUBO) << "\n";
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -810,11 +837,6 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t 
             for (auto& descriptorSet: mesh.m_descriptorSets){
                 counter++;
             }
-            descriptorSetsToBind.push_back(mesh.m_descriptorSets[m_vulkanInstanceManager->m_currentFrame]);
-
-            //vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vulkanInstanceManager->m_pipelineLayout, 0, 1,
-            //    &mesh.m_descriptorSets[m_vulkanInstanceManager->m_currentFrame], 0, nullptr);
-
             vkCmdBindDescriptorSets(commandBuffer, 
                                     VK_PIPELINE_BIND_POINT_GRAPHICS, 
                                     m_vulkanInstanceManager->m_pipelineLayout, 

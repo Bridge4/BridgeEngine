@@ -22,7 +22,7 @@ public:
     void RunRenderer();
 private: 
     std::vector<UnloadedObject> m_objectsToLoad = {
-        {"C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.obj", "C:/Source/Engines/BridgeEngine/Models/EngineDefault/DefaultTile.png"},
-        {"C:/Source/Engines/BridgeEngine/Models/Ship/ship.obj", "C:/Source/Engines/BridgeEngine/Models/EngineDefault/DefaultTile.png"}
+        {"C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.obj", "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.png"},
+        {"C:/Source/Engines/BridgeEngine/Models/Ship/ship.obj", "C:/Source/Engines/BridgeEngine/Models/Ship/ship.png"}
     };
 };

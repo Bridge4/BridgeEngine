@@ -143,13 +143,6 @@ void BufferHandler::CreateCameraUBO() {
 }
 
 void BufferHandler::CreateLightUBO() {
-    Light light;
-    light.position = glm::vec3(0.0f, 0.0f, 0.0f);
-    light.color = glm::vec3(1.0f, 1.0f, 1.0f);
-    light.intensity = 1.0f;
-    LightUBO lightUBO;
-    lightUBO.lights[0] = light;
-    lightUBO.numLights = 1;
 
     VkDeviceSize bufferSize = sizeof(LightUBO);
 

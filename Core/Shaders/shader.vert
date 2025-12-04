@@ -3,7 +3,7 @@
 layout(set = 0, binding = 0) uniform CameraUBO {
     mat4 view;
     mat4 proj;
-    vec3 cameraPos;
+    vec4 cameraPos;
 } camera;
 
 layout(set = 1, binding = 0) uniform ModelUBO {
@@ -20,9 +20,13 @@ layout(location = 1) out vec3 fragNormal;
 layout(location = 2) out vec2 fragTexCoord;
 
 void main() {
-    mat4 mvp = camera.proj * camera.view * modelData.model;
-    gl_Position = mvp * vec4(inPosition, 1.0);
-    fragPos = vec3(modelData.model * vec4(inPosition, 1.0));
-    fragNormal = mat3(transpose(inverse(modelData.model))) * inNormal;
+    vec4 worldPos = modelData.model * vec4(inPosition, 1.0);
+    //mat4 mvp = camera.proj * camera.view * worldPos;
+    //mat4 mvp = camera.proj * camera.view * mat4(1);
+    //gl_Position =  vec4(inPosition, 1.0);
+    fragPos = worldPos.xyz;
+    fragNormal = normalize(mat3(modelData.model) * inNormal);
     fragTexCoord = inTexCoord;
+
+    gl_Position = camera.proj * camera.view * worldPos;
 }

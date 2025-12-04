@@ -72,6 +72,8 @@ public:
     const std::vector<const char*> m_validationLayers = { "VK_LAYER_KHRONOS_validation" };
     const std::vector<const char*> m_deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
+    std::vector<Vertex> m_vertices;
+    std::vector<uint32_t> m_indices;
 private:
     DeviceHandler* m_deviceHandler;
     SwapChainHandler* m_swapChainHandler;
@@ -81,8 +83,6 @@ private:
 
     ImageHandler* m_imageHandler;
 
-    std::vector<Vertex> m_vertices;
-    std::vector<uint32_t> m_indices;
 
     uint32_t m_windowWidth = 800;
     uint32_t m_windowHeight = 600;

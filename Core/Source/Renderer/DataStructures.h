@@ -1,5 +1,8 @@
 #pragma once
 #define GLM_ENABLE_EXPERIMENTAL
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <../glm/glm.hpp>
 #include "../glm/gtx/hash.hpp"
 #include "vulkan/vulkan.h"
 #include <array>
@@ -79,26 +82,27 @@ namespace std {
 }
 
 
-struct Light {
-    alignas(16) glm::vec3 position;
-    alignas(16) glm::vec3 color;
-    alignas(16) float intensity;
-};
-
 // Scene-Wide Data
 struct CameraUBO {
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 proj;
-    alignas(16) glm::vec3 cameraPos;
+    alignas(16) glm::mat4 view;       // 64 bytes
+    alignas(16) glm::mat4 proj;       // 64 bytes
+    alignas(16) glm::vec4 cameraPos;  // 16 bytes (use xyz, ignore w)
+};
+
+struct Light {
+    alignas(16) glm::vec4 position;   // xyz used, w ignored
+    alignas(16) glm::vec4 color;      // rgb used, w ignored
+    alignas(16) float intensity;      // pad to 16
+    float pad[3];                     // explicit padding
 };
 
 struct LightUBO {
     alignas(16) Light lights[16];
-    alignas(16) int numLights;
+    alignas(16)  int numLights;
+    int pad[3]; // pad to 16 bytes
 };
 
 // Per-Mesh Data
 struct ModelUBO {
     alignas(16) glm::mat4 model;
-
 };
