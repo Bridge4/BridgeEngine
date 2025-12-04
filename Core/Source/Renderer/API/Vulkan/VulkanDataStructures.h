@@ -22,3 +22,10 @@ enum BufferBuildType {
     STAGED,
     UNSTAGED
 };
+
+enum BeDrawType {
+    MESH_TEXTURED,
+    MESH_UNTEXTURED,
+    GENERATED_TERRAIN_MESH
+};
+

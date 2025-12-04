@@ -1,9 +1,11 @@
 #ifndef VULKANINSTANCEMANAGER_H
 #define VULKANINSTANCEMANAGER_H
 #include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
+#include "Source/Renderer/API/Vulkan/VulkanDataStructures.h"
 #include "Source/Renderer/DataStructures.h"
 #include "vulkan/vulkan.h"
 #include "../ComponentDeclarations.h"
+#include <unordered_map>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
@@ -70,9 +72,9 @@ public:
 
     VkDescriptorSetLayout m_sceneDescriptorSetLayout;
     std::vector<VkDescriptorSet> m_sceneDescriptorSets;
-    VkDescriptorSetLayout m_perMeshDescriptorSetLayout;
+    VkDescriptorSetLayout m_texturedMeshDescriptorSetLayout;
 
-    std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
+    std::vector<VkDescriptorSetLayout> m_texturedMeshDescriptorSetLayouts;
     VkDescriptorPool m_descriptorPool;
     std::vector<VkDescriptorSet> m_descriptorSets;
     std::vector<VkDescriptorSet> m_lightDescriptorSets;
@@ -80,6 +82,22 @@ public:
     VkPipelineLayout m_pipelineLayout;
 
     VkPipeline m_texturedPipeline;
+    // Based on object type, we can draw with a different bound graphics pipeline
+    // if object == drawTypeA
+    // bind pipelines[drawTypeA]
+    // elif object == drawTypeB
+    // bind pipelines[drawTypeB]
+    //
+    //
+    // 1. define drawTypes enum
+    // 2. set drawType on each mesh on load
+    // 3. unordered_map 
+    //      key: DrawType
+    //      value: *pipeline
+    //
+    std::unordered_map<BeDrawType, VkPipeline*> m_graphicsPipelines = {};
+    std::unordered_map<BeDrawType, std::vector<VkDescriptorSetLayout*>> m_descriptorSetLayouts = {};
+
     std::vector<VkFramebuffer> m_swapChainFramebuffers;
     VkCommandPool m_commandPool;
 

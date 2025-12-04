@@ -306,13 +306,13 @@ void VulkanContext::CreatePerMeshDescriptorSetLayout() {
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    if (vkCreateDescriptorSetLayout(*m_vulkanInstanceManager->GetRefLogicalDevice(), &layoutInfo, nullptr, &m_vulkanInstanceManager->m_perMeshDescriptorSetLayout) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(*m_vulkanInstanceManager->GetRefLogicalDevice(), &layoutInfo, nullptr, &m_vulkanInstanceManager->m_texturedMeshDescriptorSetLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
     }
 }
 
 void VulkanContext::CreatePerMeshDescriptorSets(Mesh3D* mesh) {
-    std::vector<VkDescriptorSetLayout> layouts(m_maxFramesInFlight, m_vulkanInstanceManager->m_perMeshDescriptorSetLayout);
+    std::vector<VkDescriptorSetLayout> layouts(m_maxFramesInFlight, m_vulkanInstanceManager->m_texturedMeshDescriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = m_vulkanInstanceManager->m_descriptorPool;
@@ -515,10 +515,11 @@ void VulkanContext::CreateGraphicsPipeline(std::vector<char> vertShaderCode, std
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    m_vulkanInstanceManager->m_descriptorSetLayouts.push_back(m_vulkanInstanceManager->m_sceneDescriptorSetLayout);
-    m_vulkanInstanceManager->m_descriptorSetLayouts.push_back(m_vulkanInstanceManager->m_perMeshDescriptorSetLayout);
-    pipelineLayoutInfo.setLayoutCount = m_vulkanInstanceManager->m_descriptorSetLayouts.size();
-    pipelineLayoutInfo.pSetLayouts = m_vulkanInstanceManager->m_descriptorSetLayouts.data();
+    // Look up descSetLayouts associated with BeDrawType
+    m_vulkanInstanceManager->m_texturedMeshDescriptorSetLayouts.push_back(m_vulkanInstanceManager->m_sceneDescriptorSetLayout);
+    m_vulkanInstanceManager->m_texturedMeshDescriptorSetLayouts.push_back(m_vulkanInstanceManager->m_texturedMeshDescriptorSetLayout);
+    pipelineLayoutInfo.setLayoutCount = m_vulkanInstanceManager->m_texturedMeshDescriptorSetLayouts.size();
+    pipelineLayoutInfo.pSetLayouts = m_vulkanInstanceManager->m_texturedMeshDescriptorSetLayouts.data();
     pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
     pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
