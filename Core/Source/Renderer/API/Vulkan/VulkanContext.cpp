@@ -756,8 +756,7 @@ void VulkanContext::CreateLightDescriptorSet() {
     }
 }
 
-void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
-{
+void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
     /*
         If the command buffer was already recorded once, then a call to vkBeginCommandBuffer will implicitly reset it.
         It's not possible to append commands to a buffer at a later time.
