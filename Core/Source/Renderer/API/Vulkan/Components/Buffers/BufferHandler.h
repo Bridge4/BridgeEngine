@@ -1,14 +1,12 @@
-#ifndef BUFFERBUILDER_H
-#define BUFFERBUILDER_H
+#ifndef BUFFERHANDLER_H
+#define BUFFERHANDLER_H
 #include <vulkan/vulkan.h>
 #include <vector>
 #include "../ComponentDeclarations.h"
-//class VulkanContext;
-//class DeviceHandler;
-//class SwapChainHandler;
+#include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
 
 struct Vertex;
-struct UniformBufferObject;
+struct LightUBO;
 
 
 class BufferHandler
@@ -20,15 +18,21 @@ public:
 
 	void DestroyBuffers();
 
-	void BuildVertexBuffer(std::vector<Vertex> vertices);
+	void CreateVertexBuffer(std::vector<Vertex> vertices);
 
-	void BuildIndexBuffer(std::vector<uint32_t> indices);
+	void CreateIndexBuffer(std::vector<uint32_t> indices);
 
-	void BuildUniformBuffers();
+	void CreateUniformBuffers();
 
-	void BuildCommandBuffers();
+	void CreateCameraUBO();
 
-	void BuildBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	void CreateLightUBO();
+
+	void CreateModelUBO(Mesh3D* mesh);
+
+	void CreateCommandBuffers();
+
+	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 
 	VkBuffer VertexBuffer = 0;
 	VkDeviceMemory VertexBufferMemory = 0;
@@ -49,12 +53,12 @@ private:
 	VulkanInstanceManager* m_vulkanInstanceManager = nullptr;
 
 
-	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 	// COPY BUFFER
 	
 	
 
-	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+	uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 };
 #endif

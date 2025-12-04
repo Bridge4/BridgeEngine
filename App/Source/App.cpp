@@ -10,9 +10,9 @@ int main() {
         Renderer* renderer = new Renderer(window);
         renderer->CreateAPIContext();
 
-        window->SetApiContext(renderer->vulkanContext);
+        window->SetApiContext(renderer->m_vulkanContext);
 
-        renderer->RenderLoop();
+        renderer->RunRenderer();
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;

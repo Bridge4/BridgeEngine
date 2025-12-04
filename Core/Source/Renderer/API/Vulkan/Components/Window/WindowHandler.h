@@ -1,5 +1,4 @@
 #pragma once
-#include <iostream>
 #include "../ComponentDeclarations.h"
 //class VulkanContext;
 #include "vulkan/vulkan.h"
@@ -22,9 +21,9 @@ public:
 
     void Destroy();
 
-    void handleMinimization();
+    void HandleMinimization();
 
-    void getFramebufferSize(int* width, int* height);
+    void GetFramebufferSize(int* width, int* height);
 
     int ShouldClose();
 
@@ -45,5 +44,5 @@ private:
     // HELPERS
 
     // Used by createWindow();
-    static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
+    static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
 };
