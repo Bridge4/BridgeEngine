@@ -133,15 +133,6 @@ void CameraController::HandleInputOrbit(float deltaTime) {
         exit(0);
     }
 
-    if (glfwGetMouseButton(m_windowHandler->m_window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
-        if (!m_lookActive) {
-            glfwSetCursorPos(m_windowHandler->m_window, (m_swapChainHandler->SwapChainExtent.width / 2.0f), (m_swapChainHandler->SwapChainExtent.height / 2.0f));
-            m_lookToggled = true;
-
-        }
-        m_lookActive = true;
-
-    }
     if (glfwGetMouseButton(m_windowHandler->m_window, GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE) {
         m_lookActive = false;
     }
@@ -187,6 +178,15 @@ void CameraController::HandleInputOrbit(float deltaTime) {
 void CameraController::UpdateCameraUBO(uint32_t currentImage, float deltaTime)
 {
     m_viewDirection = glm::normalize(m_viewDirection);
+    if (glfwGetMouseButton(m_windowHandler->m_window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
+        if (!m_lookActive) {
+            glfwSetCursorPos(m_windowHandler->m_window, (m_swapChainHandler->SwapChainExtent.width / 2.0f), (m_swapChainHandler->SwapChainExtent.height / 2.0f));
+            m_lookToggled = true;
+
+        }
+        m_lookActive = true;
+
+    }
 
 
     m_cameraUBO.view = GetViewMatrix();
