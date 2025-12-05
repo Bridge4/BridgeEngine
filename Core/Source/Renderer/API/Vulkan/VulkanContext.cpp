@@ -166,26 +166,6 @@ void VulkanContext::UnloadSceneObjects() {
     }
 }
 
-void VulkanContext::CreateDescriptorSetLayout(BeDescriptorSetLayout dSetLayout) {
-    std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {};
-    for (auto& binding: dSetLayout.Bindings){
-        VkDescriptorSetLayoutBinding dSetLayoutBinding{};
-        dSetLayoutBinding.binding = binding.Index;
-        dSetLayoutBinding.descriptorType = binding.DescriptorType;
-        dSetLayoutBinding.descriptorCount = binding.DescriptorCount;
-        dSetLayoutBinding.stageFlags = binding.ShaderStages;
-        layoutBindings.push_back(dSetLayoutBinding);
-    }
-
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
-    layoutInfo.pBindings = layoutBindings.data();
-
-    if (vkCreateDescriptorSetLayout(*m_vulkanGlobalState->GetRefLogicalDevice(), &layoutInfo, nullptr, &m_vulkanGlobalState->m_meshDescriptorSetLayout) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor set layout!");
-    }
-}
 
 void VulkanContext::CreateGraphicsPipeline(std::vector<char> vertShaderCode, std::vector<char> fragShaderCode, VkPipeline* pipeline) {
 
@@ -558,6 +538,27 @@ void VulkanContext::CreateDescriptorPool() {
 
     if (vkCreateDescriptorPool(*m_vulkanGlobalState->GetRefLogicalDevice(), &poolInfo, nullptr, &m_vulkanGlobalState->m_descriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
+    }
+}
+
+void VulkanContext::CreateDescriptorSetLayout(BeDescriptorSetLayout dSetLayout) {
+    std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {};
+    for (auto& binding: dSetLayout.Bindings){
+        VkDescriptorSetLayoutBinding dSetLayoutBinding{};
+        dSetLayoutBinding.binding = binding.Index;
+        dSetLayoutBinding.descriptorType = binding.DescriptorType;
+        dSetLayoutBinding.descriptorCount = binding.DescriptorCount;
+        dSetLayoutBinding.stageFlags = binding.ShaderStages;
+        layoutBindings.push_back(dSetLayoutBinding);
+    }
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
+    layoutInfo.pBindings = layoutBindings.data();
+
+    if (vkCreateDescriptorSetLayout(*m_vulkanGlobalState->GetRefLogicalDevice(), &layoutInfo, nullptr, &m_vulkanGlobalState->m_meshDescriptorSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
     }
 }
 
