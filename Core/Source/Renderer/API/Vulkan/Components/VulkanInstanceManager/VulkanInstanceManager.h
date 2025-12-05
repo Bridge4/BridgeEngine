@@ -12,7 +12,6 @@
 class VulkanInstanceManager {
 public:
     // The VulkanInstanceManager will hold the resources created by the various handlers 	
-    // The goal is to move instance creation to this class, 
 
     VulkanInstanceManager(VulkanContext* vulkanContext) {
         this->m_vulkanContext = vulkanContext;
@@ -131,7 +130,7 @@ public:
     VkInstance m_instance;
     VkDebugUtilsMessengerEXT m_debugMessenger;
     int MAX_FRAMES_IN_FLIGHT = 2;
-    int m_maxMeshes = 10 * sizeof(Mesh3D);
+    int m_maxMeshes = 10;
 
 private:
 

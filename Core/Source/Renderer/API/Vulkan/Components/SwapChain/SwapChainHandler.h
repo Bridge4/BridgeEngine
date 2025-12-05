@@ -14,7 +14,7 @@ public:
         this->deviceHandler = deviceHandler;
         this->windowHandler = targetWindow;
         this->imageViewBuilder = imgViewBldr;
-        this->m_vulkanInstanceManager = vulkanInstanceManager;
+        this->m_vulkanGlobalState = vulkanInstanceManager;
     };
 
     
@@ -54,7 +54,7 @@ public:
     VkImageView m_depthImageView = 0;
 private:
     VulkanContext* vulkanContext = 0;
-    VulkanInstanceManager* m_vulkanInstanceManager = 0;
+    VulkanInstanceManager* m_vulkanGlobalState = 0;
     DeviceHandler* deviceHandler = 0;
     WindowHandler* windowHandler = 0;
     RenderPassHandler* renderPassHandler = 0;

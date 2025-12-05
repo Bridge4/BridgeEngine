@@ -8,7 +8,7 @@
 
 void RenderPassHandler::Initialize() {
     VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = m_vulkanInstanceManager->GetSwapChainImageFormat();
+    colorAttachment.format = m_vulkanGlobalState->GetSwapChainImageFormat();
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     // Store rendered contents in memory to be read later
@@ -92,7 +92,7 @@ void RenderPassHandler::Initialize() {
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-    if (vkCreateRenderPass(*m_vulkanInstanceManager->GetRefLogicalDevice(), &renderPassInfo, nullptr, m_vulkanInstanceManager->GetRefRenderPass()) != VK_SUCCESS) {
+    if (vkCreateRenderPass(*m_vulkanGlobalState->GetRefLogicalDevice(), &renderPassInfo, nullptr, m_vulkanGlobalState->GetRefRenderPass()) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
     }
 }
@@ -101,7 +101,7 @@ VkFormat RenderPassHandler::findSupportedFormat(const std::vector<VkFormat>& can
 {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(m_vulkanInstanceManager->GetPhysicalDevice(), format, &props);
+        vkGetPhysicalDeviceFormatProperties(m_vulkanGlobalState->GetPhysicalDevice(), format, &props);
         if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
             return format;
         }

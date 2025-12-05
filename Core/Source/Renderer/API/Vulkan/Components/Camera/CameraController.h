@@ -20,7 +20,7 @@ public:
         this->m_bufferHandler = bufferHandler;
         this->m_windowHandler = windowHandler;
         this->m_swapChainHandler = swapChainHandler;
-        this->m_vulkanInstanceManager = vulkanInstanceManager;
+        this->m_vulkanGlobalState = vulkanInstanceManager;
         this->m_cameraType = camType;
         Initialize();
     }
@@ -41,7 +41,7 @@ private:
     WindowHandler* m_windowHandler = 0;
     SwapChainHandler* m_swapChainHandler = 0;
     BufferHandler* m_bufferHandler = 0;
-    VulkanInstanceManager* m_vulkanInstanceManager = 0;
+    VulkanInstanceManager* m_vulkanGlobalState = 0;
 
     glm::mat4 m_cameraViewMatrix = glm::mat4(1.0f);
 

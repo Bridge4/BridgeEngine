@@ -16,7 +16,7 @@ public:
 		this->vulkanContext = vulkanContext;
 		this->swapChainHandler = swapChainHandler;
 		this->deviceHandler = deviceHandler;
-		this->m_vulkanInstanceManager = vulkanInstanceManager;
+		this->m_vulkanGlobalState = vulkanInstanceManager;
 	}
 
 	void Initialize();
@@ -26,7 +26,7 @@ public:
 	VulkanContext* vulkanContext = 0;
 	SwapChainHandler* swapChainHandler = 0;
 	DeviceHandler* deviceHandler = 0;
-	VulkanInstanceManager* m_vulkanInstanceManager = nullptr;
+	VulkanInstanceManager* m_vulkanGlobalState = nullptr;
 };
 #endif
 

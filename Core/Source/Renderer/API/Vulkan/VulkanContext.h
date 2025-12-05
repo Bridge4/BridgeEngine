@@ -5,6 +5,7 @@
 
 // VULKAN PLATFORM DEFINITION
 #include "Source/Renderer/API/Vulkan/Components/Camera/CameraController.h"
+#include "Source/Renderer/API/Vulkan/VulkanAbstractions.h"
 #include "Source/Renderer/FileLoader.h"
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR
@@ -66,7 +67,7 @@ public:
 
     void UnloadSceneObjects();
 
-    VulkanInstanceManager* m_vulkanInstanceManager;
+    VulkanInstanceManager* m_vulkanGlobalState;
     WindowHandler* m_windowHandler;
 
     const std::vector<const char*> m_validationLayers = { "VK_LAYER_KHRONOS_validation" };
@@ -96,9 +97,10 @@ private:
 
     void CreateSceneDescriptorSetLayout();
     void CreateSceneDescriptorSets();
-    void CreatePerMeshDescriptorSetLayout();
-    void CreatePerMeshDescriptorSets(Mesh3D* mesh);
+    void CreateTexturedMeshDescriptorSetLayout();
+    void CreateTexturedMeshDescriptorSets(Mesh3D* mesh);
 
+    void CreateDescriptorSetLayout(BeDescriptorSetLayout dSetLayout);
     void CreateMeshDescriptorSetLayout();
     void CreateLightDescriptorSetLayout();
 
@@ -148,7 +150,6 @@ private:
     // DESCRIPTOR SETS
     void CreateMeshDescriptorSets();
 
-    void CreateLightDescriptorSet();
 
     // beginSingleTimeCommands and endSingleTimeCommands are helpers for copyBuffer
     VkCommandBuffer BeginSingleTimeCommands();

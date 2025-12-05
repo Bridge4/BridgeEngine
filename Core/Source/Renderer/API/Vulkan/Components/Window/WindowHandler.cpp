@@ -6,7 +6,7 @@
 
 VkResult WindowHandler::CreateSurface()
 {
-    return glfwCreateWindowSurface(vulkanContext->m_vulkanInstanceManager->m_instance, m_window, nullptr, &vulkanContext->m_vulkanInstanceManager->m_surface);
+    return glfwCreateWindowSurface(vulkanContext->m_vulkanGlobalState->m_instance, m_window, nullptr, &vulkanContext->m_vulkanGlobalState->m_surface);
 }
 
 //void key_callback(GLFWwindow* m_window, int key, int scancode, int action, int mods)

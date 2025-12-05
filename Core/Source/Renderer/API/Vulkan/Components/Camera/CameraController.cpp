@@ -192,14 +192,14 @@ void CameraController::UpdateCameraUBO(uint32_t currentImage, float deltaTime)
     m_cameraUBO.view = GetViewMatrix();
     //std::cout << "VIEW: " <<glm::to_string(m_cameraUBO.view) << "\n";
     m_cameraUBO.cameraPos = glm::vec4(orbitCam->GetEye(), 0.0f);
-    m_cameraUBO.proj = glm::perspectiveZO(glm::radians(90.0f), m_vulkanInstanceManager->GetSwapChainExtent().width / (float)m_vulkanInstanceManager->GetSwapChainExtent().height, 0.1f, 100000.0f);
+    m_cameraUBO.proj = glm::perspectiveZO(glm::radians(90.0f), m_vulkanGlobalState->GetSwapChainExtent().width / (float)m_vulkanGlobalState->GetSwapChainExtent().height, 0.1f, 100000.0f);
     //std::cout << "PROJ: " <<glm::to_string(m_cameraUBO.proj) << "\n";
     // IMPORTANT: VULKAN HAS INVERTED Y AXIS TO OPENGL AND GLM WAS DESIGNED FOR OPENGL. THIS CONVERTS TO VULKAN.
     m_cameraUBO.proj[1][1] *= -1;
-    memcpy(m_vulkanInstanceManager->m_cameraUBOMapped[m_vulkanInstanceManager->m_currentFrame], &m_cameraUBO, sizeof(m_cameraUBO));
-    if (!m_vulkanInstanceManager->m_meshList.empty()){
+    memcpy(m_vulkanGlobalState->m_cameraUBOMapped[m_vulkanGlobalState->m_currentFrame], &m_cameraUBO, sizeof(m_cameraUBO));
+    if (!m_vulkanGlobalState->m_meshList.empty()){
         int count = 0;
-        for(auto& mesh: m_vulkanInstanceManager->m_meshList) {
+        for(auto& mesh: m_vulkanGlobalState->m_meshList) {
             ModelUBO modelUBO{}; 
             modelUBO.model = glm::mat4(1.0f);
             //modelUBO.model = glm::translate(modelUBO.model, glm::vec3(0.0f, 0.0f, -1.0f));
@@ -218,7 +218,7 @@ void CameraController::UpdateCameraUBO(uint32_t currentImage, float deltaTime)
             //modelUBO.model = glm::scale(modelUBO.model, mesh.m_scale);
 
             //std::cout << "MODEL: " <<glm::to_string(modelUBO.model) << "\n";
-            memcpy(mesh.m_uniformBuffersMapped[m_vulkanInstanceManager->m_currentFrame], &modelUBO, sizeof(modelUBO));
+            memcpy(mesh.m_uniformBuffersMapped[m_vulkanGlobalState->m_currentFrame], &modelUBO, sizeof(modelUBO));
             count++;
         }
     }
