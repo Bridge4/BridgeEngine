@@ -33,6 +33,8 @@ target_sources(Core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Rendere
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Images/ImageHandler.cpp"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/RenderPass/RenderPassHandler.cpp"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/SwapChain/SwapChainHandler.cpp"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.cpp"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/VulkanInstanceManager/VulkanInstanceManager.cpp"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Window/WindowHandler.cpp"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Buffers/BufferHandler.h"

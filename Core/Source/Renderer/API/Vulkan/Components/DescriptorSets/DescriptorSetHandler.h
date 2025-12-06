@@ -1,20 +1,23 @@
 #ifndef DESCRIPTORSETHANDLER_H
 #define DESCRIPTORSETHANDLER_H
 #include <vulkan/vulkan.h>
+
 #include <vector>
+
 #include "../ComponentDeclarations.h"
 #include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
 #include "Source/Renderer/API/Vulkan/VulkanAbstractions.h"
 
 class DescriptorSetHandler {
-public:
+   public:
     DescriptorSetHandler(VulkanInstanceManager* vulkanInstanceManager) {
         this->m_vulkanGlobalState = vulkanInstanceManager;
     }
 
     void CreateDescriptorPool();
 
-    void CreateDescriptorSetLayout(BeDescriptorSetLayout dSetLayout);
+    void CreateDescriptorSetLayout(DsLayoutInfo* dsLayout,
+                                   std::vector<DSBindingInfo> bindings);
 
     void CreateSceneDescriptorSetLayout();
 
@@ -24,7 +27,7 @@ public:
 
     void CreateTexturedMeshDescriptorSets(Mesh3D* mesh);
 
-private:
+   private:
     VulkanInstanceManager* m_vulkanGlobalState = nullptr;
 };
 

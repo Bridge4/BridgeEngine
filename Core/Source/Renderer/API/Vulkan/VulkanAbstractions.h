@@ -1,8 +1,9 @@
 #pragma once
-#include <unordered_map>
-#include <vector>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
+
+#include <unordered_map>
+#include <vector>
 
 enum DescriptorSetLayoutType {
     SCENE,
@@ -11,22 +12,16 @@ enum DescriptorSetLayoutType {
     HEIGHT_MAP
 };
 
-struct BeDescriptorSetBinding {
-    uint32_t Index;
-    VkDescriptorType DescriptorType;
-    uint32_t DescriptorCount;
-    std::vector<VkShaderStageFlagBits> ListOfShaderStages;
-    VkShaderStageFlagBits ShaderStages;
-};
-
-struct BeDescriptorSetLayout {
+struct DsLayoutInfo {
     DescriptorSetLayoutType Type;
-    std::vector<BeDescriptorSetBinding> Bindings;
+    std::vector<VkDescriptorSetLayoutBinding> Bindings;
     std::unordered_map<VkDescriptorType, uint32_t> BindingTypeCount;
-    uint32_t BindingCount;
-    // Add Binding
-    // 1. Create BeDescriptorSetBinding
-    // 2. Push to Bindings
-    // 3. Increment BindingTypeCount[Binding.Type]
+    uint32_t BindingCount = Bindings.size();
 };
 
+struct DSBindingInfo {
+    uint32_t BindingCount;
+    VkDescriptorType DescriptorType;
+    VkShaderStageFlags ShaderStages;
+    uint32_t DescriptorCount;
+};

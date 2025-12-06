@@ -130,11 +130,11 @@ void BufferHandler::CreateCameraUBO() {
     VkDeviceSize bufferSize = sizeof(CameraUBO);
 
     // Create a uniform buffer per frame in flight
-    m_vulkanGlobalState->m_cameraUBO.resize(m_vulkanGlobalState->MAX_FRAMES_IN_FLIGHT);
-    m_vulkanGlobalState->m_cameraUBOMemory.resize(m_vulkanGlobalState->MAX_FRAMES_IN_FLIGHT);
-    m_vulkanGlobalState->m_cameraUBOMapped.resize(m_vulkanGlobalState->MAX_FRAMES_IN_FLIGHT);
+    m_vulkanGlobalState->m_cameraUBO.resize(m_vulkanGlobalState->m_maxFramesInFlight);
+    m_vulkanGlobalState->m_cameraUBOMemory.resize(m_vulkanGlobalState->m_maxFramesInFlight);
+    m_vulkanGlobalState->m_cameraUBOMapped.resize(m_vulkanGlobalState->m_maxFramesInFlight);
 
-    for (size_t i = 0; i < m_vulkanGlobalState->MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < m_vulkanGlobalState->m_maxFramesInFlight; i++) {
         // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i], m_uniformBuffersMemory[i], UNSTAGED)
         // Create then Map to memory
         CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_vulkanGlobalState->m_cameraUBO[i], m_vulkanGlobalState->m_cameraUBOMemory[i]);
@@ -147,11 +147,11 @@ void BufferHandler::CreateLightUBO() {
     VkDeviceSize bufferSize = sizeof(LightUBO);
 
     // Create a uniform buffer per frame in flight
-    m_vulkanGlobalState->m_lightUBO.resize(m_vulkanGlobalState->MAX_FRAMES_IN_FLIGHT);
-    m_vulkanGlobalState->m_lightUBOMemory.resize(m_vulkanGlobalState->MAX_FRAMES_IN_FLIGHT);
-    m_vulkanGlobalState->m_lightUBOMapped.resize(m_vulkanGlobalState->MAX_FRAMES_IN_FLIGHT);
+    m_vulkanGlobalState->m_lightUBO.resize(m_vulkanGlobalState->m_maxFramesInFlight);
+    m_vulkanGlobalState->m_lightUBOMemory.resize(m_vulkanGlobalState->m_maxFramesInFlight);
+    m_vulkanGlobalState->m_lightUBOMapped.resize(m_vulkanGlobalState->m_maxFramesInFlight);
 
-    for (size_t i = 0; i < m_vulkanGlobalState->MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < m_vulkanGlobalState->m_maxFramesInFlight; i++) {
         // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i], m_uniformBuffersMemory[i], UNSTAGED)
         // Create then Map to memory
         CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_vulkanGlobalState->m_lightUBO[i], m_vulkanGlobalState->m_lightUBOMemory[i]);
@@ -162,11 +162,11 @@ void BufferHandler::CreateLightUBO() {
 void BufferHandler::CreateModelUBO(Mesh3D* mesh) {
     VkDeviceSize bufferSize = sizeof(ModelUBO);
 
-    mesh->m_uniformBuffers.resize(m_vulkanGlobalState->MAX_FRAMES_IN_FLIGHT);
-    mesh->m_uniformBuffersMemory.resize(m_vulkanGlobalState->MAX_FRAMES_IN_FLIGHT);
-    mesh->m_uniformBuffersMapped.resize(m_vulkanGlobalState->MAX_FRAMES_IN_FLIGHT);
+    mesh->m_uniformBuffers.resize(m_vulkanGlobalState->m_maxFramesInFlight);
+    mesh->m_uniformBuffersMemory.resize(m_vulkanGlobalState->m_maxFramesInFlight);
+    mesh->m_uniformBuffersMapped.resize(m_vulkanGlobalState->m_maxFramesInFlight);
 
-    for (size_t i = 0; i < m_vulkanGlobalState->MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < m_vulkanGlobalState->m_maxFramesInFlight; i++) {
         // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i], m_uniformBuffersMemory[i], UNSTAGED)
         // Create then Map to memory
         CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, mesh->m_uniformBuffers[i], mesh->m_uniformBuffersMemory[i]);
@@ -176,7 +176,7 @@ void BufferHandler::CreateModelUBO(Mesh3D* mesh) {
 
 
 void BufferHandler::CreateCommandBuffers() {
-    m_vulkanGlobalState->m_commandBuffers.resize(m_vulkanGlobalState->MAX_FRAMES_IN_FLIGHT);
+    m_vulkanGlobalState->m_commandBuffers.resize(m_vulkanGlobalState->m_maxFramesInFlight);
 
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
