@@ -8,6 +8,7 @@
 #include "Source/Renderer/API/Vulkan/VulkanAbstractions.h"
 #include "Source/Renderer/DataStructures.h"
 #include "Source/Renderer/FileLoader.h"
+#include "config.h"
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -91,10 +92,8 @@ void VulkanContext::CreateVulkanContext() {
 
     // Create Per-Mesh Descriptor Set Layout
     CreateTexturedMeshDescriptorSetLayout();
-    std::vector<char> vertScene =
-        ReadFile("C:/Source/Engines/BridgeEngine/Core/Shaders/scene.spv");
-    std::vector<char> fragTextured =
-        ReadFile("C:/Source/Engines/BridgeEngine/Core/Shaders/textured.spv");
+    std::vector<char> vertScene = ReadFile(SHADERS_DIR "scene.spv");
+    std::vector<char> fragTextured = ReadFile(SHADERS_DIR "textured.spv");
     CreateGraphicsPipeline(vertScene, fragTextured,
                            &m_vulkanGlobalState->m_texturedPipeline);
 

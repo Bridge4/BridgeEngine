@@ -1,16 +1,14 @@
 #pragma once
-#include "Source/Renderer/FileLoader.h"
 #include <vector>
+
+#include "Source/Renderer/FileLoader.h"
+#include "config.h"
 class WindowHandler;
 class VulkanContext;
 
-
 class Renderer {
-public:
-
-    Renderer(WindowHandler* window) {
-        m_windowRef = window;
-    }
+   public:
+    Renderer(WindowHandler* window) { m_windowRef = window; }
     // Window Ref
     WindowHandler* m_windowRef = 0;
     // API Context
@@ -20,9 +18,10 @@ public:
     void CreateAPIContext();
     void SetWindowRef(WindowHandler* window);
     void RunRenderer();
-private: 
+
+   private:
     std::vector<UnloadedObject> m_objectsToLoad = {
-        {"C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.obj", "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.png"},
-        {"C:/Source/Engines/BridgeEngine/Models/Ship/ship.obj", "C:/Source/Engines/BridgeEngine/Models/Ship/ship.png"}
-    };
+        {MODELS_DIR "VikingRoom/VikingRoom.obj",
+         MODELS_DIR "VikingRoom/VikingRoom.png"},
+        {MODELS_DIR "Ship/ship.obj", MODELS_DIR "Ship/ship.png"}};
 };

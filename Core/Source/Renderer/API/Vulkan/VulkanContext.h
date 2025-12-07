@@ -2,6 +2,8 @@
 #define VULKANCONTEXT_H
 
 // VULKAN PLATFORM DEFINITION
+#include <iostream>
+
 #include "Source/Renderer/API/Vulkan/Components/Camera/CameraController.h"
 #include "Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
 #include "Source/Renderer/API/Vulkan/VulkanAbstractions.h"
@@ -187,6 +189,7 @@ class VulkanContext {
 
     // Reading in SPIRV shaders
     static std::vector<char> ReadFile(const std::string& fileName) {
+        std::cout << fileName << "\n";
         std::ifstream file(fileName, std::ios::ate | std::ios::binary);
 
         if (!file.is_open()) {
