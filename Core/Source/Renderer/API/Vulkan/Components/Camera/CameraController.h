@@ -29,7 +29,7 @@ class CameraController {
     void HandleInputNoClip(float deltaTime);
     void HandleInputOrbit(float deltaTime);
     void UpdateCameraUBO(uint32_t currentImage, float deltaTime);
-    float m_cameraSpeed = 1.0f;
+    float m_cameraSpeed = 0.004f;
     CameraUBO m_cameraUBO;
     glm::vec3 m_eyePosition = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 m_viewDirection = glm::vec3(0.0f, 0.0f, 2.0f);

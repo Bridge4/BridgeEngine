@@ -2,8 +2,9 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-void OrbitCamera::RotateAzimuth(const float radians, float deltaTime = 1.0f) {
-    m_azimuthAngle += radians * deltaTime;
+void OrbitCamera::RotateAzimuth(const float radians) {
+    float targetAzimuth = radians + m_azimuthAngle;
+    m_azimuthAngle = glm::mix(m_azimuthAngle, targetAzimuth, 0.1f);
 
     // Keep azimuth angle within range <0..2PI) - it's not necessary, just to
     // have it nicely output
@@ -14,12 +15,13 @@ void OrbitCamera::RotateAzimuth(const float radians, float deltaTime = 1.0f) {
     }
 }
 
-void OrbitCamera::RotatePolar(const float radians, float deltaTime = 1.0f) {
-    m_polarAngle += radians * deltaTime;
+void OrbitCamera::RotatePolar(const float radians) {
+    float targetPolar = radians + m_polarAngle;
+    m_polarAngle = glm::mix(m_polarAngle, targetPolar, 0.1f);
 
     // Check if the angle hasn't exceeded quarter of a circle to prevent flip,
     // add a bit of epsilon like 0.001 radians
-    const auto polarCap = M_PI / 2.0f - 0.001f;
+    const auto polarCap = glm::radians(89.0f);
     if (m_polarAngle > polarCap) {
         m_polarAngle = polarCap;
     }

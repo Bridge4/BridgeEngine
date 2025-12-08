@@ -169,24 +169,38 @@ void CameraController::HandleInputOrbit(float deltaTime) {
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_U)) {
         m_vulkanContext->UnloadSceneObjects();
     }
+
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_W)) {
+        m_cameraSpeed += 0.0001f;
+    }
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_S)) {
+        m_cameraSpeed -= 0.0001f;
+    }
     if (m_lookActive) {
         double xPos, yPos;
+        glfwGetCursorPos(m_windowHandler->m_window, &xPos, &yPos);
+
+        float deltaX, deltaY;
         glfwSetInputMode(m_windowHandler->m_window, GLFW_CURSOR,
                          GLFW_CURSOR_HIDDEN);
-        glfwGetCursorPos(m_windowHandler->m_window, &xPos, &yPos);
-        float deltaX, deltaY;
-        deltaX = xPos - m_prevMouseX * m_cameraSpeed;
-        deltaY = yPos - m_prevMouseY * m_cameraSpeed;
+        deltaX = (xPos - m_prevMouseX) * m_cameraSpeed;
+        deltaY = (yPos - m_prevMouseY) * m_cameraSpeed;
         if (!m_lookToggled) {
             if (deltaX != 0 || deltaY != 0) {
-                orbitCam->RotateAzimuth(deltaX, deltaTime);
-                orbitCam->RotatePolar(deltaY, deltaTime);
+                orbitCam->RotateAzimuth(deltaX);
+                orbitCam->RotatePolar(deltaY);
             }
         } else {
             m_lookToggled = false;
         }
-        m_prevMouseX = xPos;
-        m_prevMouseY = yPos;
+        glfwSetCursorPos(m_windowHandler->m_window,
+                         m_windowHandler->m_width / 2.0,
+                         m_windowHandler->m_height / 2.0);
+        m_prevMouseX = m_windowHandler->m_width / 2.0;
+        m_prevMouseY = m_windowHandler->m_height / 2.0;
+    } else {
+        glfwSetInputMode(m_windowHandler->m_window, GLFW_CURSOR,
+                         GLFW_CURSOR_NORMAL);
     }
 }
 
