@@ -6,6 +6,7 @@
 
 #include "Source/Renderer/API/Vulkan/Components/Camera/CameraController.h"
 #include "Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
+#include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
 #include "Source/Renderer/API/Vulkan/VulkanAbstractions.h"
 #include "Source/Renderer/FileLoader.h"
 #ifndef VK_USE_PLATFORM_WIN32_KHR
@@ -103,6 +104,8 @@ class VulkanContext {
     void CreateTexturedMeshDescriptorSetLayout();
     void CreateTexturedMeshDescriptorSets(Mesh3D* mesh);
 
+    void CreateTexturedPBRDescriptorSetLayout();
+    void CreateTexturedPBRDescriptorSets(Mesh3D* mesh);
     void CreateMeshDescriptorSetLayout();
     void CreateLightDescriptorSetLayout();
 
@@ -127,13 +130,14 @@ class VulkanContext {
     // VkImageTiling tiling, VkFormatFeatureFlags features);
 
     // TEXTURE IMAGE
-    void CreateTextureImage(TextureProperties props, Mesh3D* mesh);
+    void CreateTextureImage(TextureProperties props, Mesh3D* mesh,
+                            MaterialEnums materialType);
 
     // TEXTURE IMAGE VIEW
-    void CreateTextureImageView(Mesh3D* mesh);
+    void CreateTextureImageView(Mesh3D* mesh, MaterialEnums materialType);
 
     // TEXTURE SAMPLER
-    void CreateTextureSampler(Mesh3D* mesh);
+    void CreateTextureSampler(Mesh3D* mesh, MaterialEnums materialType);
 
     // helper function used in createTextureImage();
     void CreateImage(uint32_t width, uint32_t height, VkFormat format,

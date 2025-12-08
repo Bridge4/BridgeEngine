@@ -5,14 +5,23 @@
 #include <string>
 
 #include "ObjectData.h"
+#include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
 
 class FileLoader {
    public:
     static LoadedObject LoadObject(UnloadedObject objectToLoad) {
         LoadedObject loadedObject;
         loadedObject.objProperties = LoadObjFile(objectToLoad.objFilePath);
-        loadedObject.textureProperties =
-            LoadTextureFile(objectToLoad.textureFilePath);
+        loadedObject.textureProperties[ALBEDO] =
+            LoadTextureFile(objectToLoad.materialTexFilePaths[ALBEDO]);
+        loadedObject.textureProperties[METALLIC] =
+            LoadTextureFile(objectToLoad.materialTexFilePaths[METALLIC]);
+        loadedObject.textureProperties[ROUGHNESS] =
+            LoadTextureFile(objectToLoad.materialTexFilePaths[ROUGHNESS]);
+        loadedObject.textureProperties[AO] =
+            LoadTextureFile(objectToLoad.materialTexFilePaths[AO]);
+        loadedObject.textureProperties[NORMAL] =
+            LoadTextureFile(objectToLoad.materialTexFilePaths[NORMAL]);
         return loadedObject;
     }
 

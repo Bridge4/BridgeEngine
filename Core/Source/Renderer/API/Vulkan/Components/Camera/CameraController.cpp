@@ -3,7 +3,6 @@
 #include "../VulkanInstanceManager/VulkanInstanceManager.h"
 // GLM INCLUDES
 
-#include "../Buffers/BufferHandler.h"
 #include "../SwapChain/SwapChainHandler.h"
 // #include <glm/glm.hpp>
 #include <../glm/gtc/matrix_transform.hpp>
@@ -12,7 +11,6 @@
 #include <../glm/gtx/string_cast.hpp>
 #include <../glm/gtx/transform.hpp>
 #include <../glm/gtx/vector_angle.hpp>
-#include <iostream>
 
 #include "../../../../DataStructures.h"
 #include "../../VulkanContext.h"
@@ -39,7 +37,7 @@ void CameraController::Initialize() {
         m_viewDirection = glm::vec3(0.0f, 0.0f, -1.0f);
         m_upVector = glm::vec3(0.0f, 1.0f, 0.0f);
         orbitCam = new OrbitCamera(glm::vec3(0.0f, 0.0f, 0.0f), m_upVector,
-                                   3.0f, 2.0f, 45.0f, 45.0f);
+                                   3.0f, 100.0f, 45.0f, 45.0f);
         m_cameraViewMatrix = GetViewMatrix();
         m_lookActive = false;
         m_lookToggled = false;
@@ -160,7 +158,17 @@ void CameraController::HandleInputOrbit(float deltaTime) {
     }
 
     if (glfwGetMouseButton(m_windowHandler->m_window, GLFW_MOUSE_BUTTON_2) ==
-        GLFW_RELEASE) {
+        GLFW_PRESS) {
+        if (!m_lookActive) {
+            glfwSetCursorPos(
+                m_windowHandler->m_window,
+                m_swapChainHandler->m_swapChainExtent.width / 2.0,
+                m_swapChainHandler->m_swapChainExtent.height / 2.0);
+            m_lookToggled = true;
+        }
+        m_lookActive = true;
+    } else if (glfwGetMouseButton(m_windowHandler->m_window,
+                                  GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE) {
         m_lookActive = false;
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_L)) {
@@ -198,10 +206,10 @@ void CameraController::HandleInputOrbit(float deltaTime) {
             m_lookToggled = false;
         }
         glfwSetCursorPos(m_windowHandler->m_window,
-                         m_windowHandler->m_width / 2.0,
-                         m_windowHandler->m_height / 2.0);
-        m_prevMouseX = m_windowHandler->m_width / 2.0;
-        m_prevMouseY = m_windowHandler->m_height / 2.0;
+                         m_vulkanGlobalState->m_swapChainExtent.width / 2.0,
+                         m_vulkanGlobalState->m_swapChainExtent.height / 2.0);
+        m_prevMouseX = m_vulkanGlobalState->m_swapChainExtent.width / 2.0;
+        m_prevMouseY = m_vulkanGlobalState->m_swapChainExtent.height / 2.0;
     } else {
         glfwSetInputMode(m_windowHandler->m_window, GLFW_CURSOR,
                          GLFW_CURSOR_NORMAL);
@@ -210,17 +218,6 @@ void CameraController::HandleInputOrbit(float deltaTime) {
 
 void CameraController::UpdateCameraUBO(uint32_t currentImage, float deltaTime) {
     m_viewDirection = glm::normalize(m_viewDirection);
-    if (glfwGetMouseButton(m_windowHandler->m_window, GLFW_MOUSE_BUTTON_2) ==
-        GLFW_PRESS) {
-        if (!m_lookActive) {
-            glfwSetCursorPos(
-                m_windowHandler->m_window,
-                (m_swapChainHandler->SwapChainExtent.width / 2.0f),
-                (m_swapChainHandler->SwapChainExtent.height / 2.0f));
-            m_lookToggled = true;
-        }
-        m_lookActive = true;
-    }
 
     m_cameraUBO.view = GetViewMatrix();
     m_cameraUBO.cameraPos = glm::vec4(orbitCam->GetEye(), 0.0f);
@@ -229,8 +226,7 @@ void CameraController::UpdateCameraUBO(uint32_t currentImage, float deltaTime) {
         m_vulkanGlobalState->GetSwapChainExtent().width /
             (float)m_vulkanGlobalState->GetSwapChainExtent().height,
         0.5f, 2000.0f);
-    //  IMPORTANT: VULKAN HAS INVERTED Y AXIS TO OPENGL AND GLM WAS DESIGNED FOR
-    //  OPENGL. THIS CONVERTS TO VULKAN.
+    // Invert GLM for Vulkan
     m_cameraUBO.proj[1][1] *= -1;
     memcpy(m_vulkanGlobalState
                ->m_cameraUBOMapped[m_vulkanGlobalState->m_currentFrame],
@@ -240,30 +236,32 @@ void CameraController::UpdateCameraUBO(uint32_t currentImage, float deltaTime) {
         for (auto& mesh : m_vulkanGlobalState->m_meshList) {
             ModelUBO modelUBO{};
             modelUBO.model = glm::mat4(1.0f);
-            // modelUBO.model = glm::translate(modelUBO.model, glm::vec3(0.0f,
-            // 0.0f, -1.0f));
-            if (count == 1) {
-                modelUBO.model = glm::translate(
-                    modelUBO.model,
-                    mesh.m_position + glm::vec3(10.0f, 0.0f, 0.0f));
-                modelUBO.model =
-                    glm::rotate(modelUBO.model, -glm::radians(180.0f),
-                                glm::vec3(0.0f, 1.0f, 0.0f));
-            } else {
-                modelUBO.model =
-                    glm::translate(modelUBO.model, glm::vec3(0.0f, 0.0f, 0.0f));
-                modelUBO.model =
-                    glm::rotate(modelUBO.model, -glm::radians(90.0f),
-                                glm::vec3(1.0f, 0.0f, 0.0f));
-            }
-            // modelUBO.model = glm::rotate(modelUBO.model,
-            // -glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            modelUBO.model =
+                glm::translate(modelUBO.model, glm::vec3(0.0f, 0.0f, 0.0f));
+            modelUBO.model = glm::rotate(modelUBO.model, -glm::radians(90.0f),
+                                         glm::vec3(1.0f, 0.0f, 0.0f));
+            modelUBO.model =
+                glm::scale(modelUBO.model, glm::vec3(0.1f, 0.1f, 0.1f));
+            // if (count == 1) {
+            //     modelUBO.model = glm::translate(
+            //         modelUBO.model,
+            //         mesh.m_position + glm::vec3(10.0f, 0.0f, 0.0f));
+            //     modelUBO.model =
+            //         glm::rotate(modelUBO.model, -glm::radians(180.0f),
+            //                     glm::vec3(0.0f, 1.0f, 0.0f));
+            // } else {
+            //     modelUBO.model =
+            //         glm::translate(modelUBO.model, glm::vec3(0.0f, 0.0f,
+            //         0.0f));
+            //     modelUBO.model =
+            //         glm::rotate(modelUBO.model, -glm::radians(90.0f),
+            //                     glm::vec3(1.0f, 0.0f, 0.0f));
+            //     modelUBO.model =
+            //         glm::scale(modelUBO.model, glm::vec3(0.5f, 0.5f, 0.5f));
+            // }
             if (glfwGetMouseButton(m_windowHandler->m_window,
                                    GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
-                // modelUBO.model = glm::rotate(modelUBO.model,
-                // -glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             }
-            // modelUBO.model = glm::scale(modelUBO.model, mesh.m_scale);
 
             memcpy(mesh.m_uniformBuffersMapped[m_vulkanGlobalState
                                                    ->m_currentFrame],

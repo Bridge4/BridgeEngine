@@ -1,6 +1,7 @@
 #include <vulkan/vulkan_core.h>
 
 #include <cassert>
+#include <complex>
 #include <iterator>
 #include <string>
 
@@ -76,9 +77,9 @@ void VulkanContext::CreateVulkanContext() {
     CreateSceneDescriptorSets();
 
     // Create Per-Mesh Descriptor Set Layout
-    CreateTexturedMeshDescriptorSetLayout();
+    CreateTexturedPBRDescriptorSetLayout();
     std::vector<char> vertScene = ReadFile(SHADERS_DIR "scene.spv");
-    std::vector<char> fragTextured = ReadFile(SHADERS_DIR "textured.spv");
+    std::vector<char> fragTextured = ReadFile(SHADERS_DIR "pbr.spv");
     CreateGraphicsPipeline(vertScene, fragTextured,
                            &m_vulkanGlobalState->m_texturedPipeline);
 
@@ -96,15 +97,20 @@ void VulkanContext::RunVulkanRenderer(
     Light light0;
     light0.position = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
     light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    light0.intensity.x = 0.2f;
+    light0.intensity.x = 10.0f;
     Light light1;
     light1.position = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
     light1.color = glm::vec4(0.408f, 0.765f, 0.831f, 1.0f);
     light1.intensity.x = 1.5f;
+    Light light2;
+    light0.position = glm::vec4(-10.0f, 0.0f, 0.0f, 0.0f);
+    light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    light0.intensity.x = 10.0f;
     LightUBO lightUBO;
     lightUBO.lights[0] = light0;
     lightUBO.lights[1] = light1;
-    lightUBO.numLights.x = 2;
+    lightUBO.lights[2] = light2;
+    lightUBO.numLights.x = 3;
     while (!m_windowHandler->ShouldClose()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
         float deltaTime =
@@ -128,17 +134,25 @@ void VulkanContext::RunVulkanRenderer(
 void VulkanContext::LoadSceneObjects() {
     int meshCount = 0;
     float xPos = 0.0f;
-    for (const auto& obj : m_objectsToRender) {
+    for (auto& obj : m_objectsToRender) {
         LoadMesh(obj.objProperties, glm::vec3(xPos, 0.0f, 0.0f),
                  glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(5.0f, 5.0f, 5.0f));
-        CreateTextureImage(obj.textureProperties,
-                           &m_vulkanGlobalState->m_meshList[meshCount]);
-        CreateTextureImageView(&m_vulkanGlobalState->m_meshList[meshCount]);
-        CreateTextureSampler(&m_vulkanGlobalState->m_meshList[meshCount]);
+        std::vector<MaterialEnums> materialTypes = {ALBEDO, METALLIC, ROUGHNESS,
+                                                    AO, NORMAL};
+        for (auto& matType : materialTypes) {
+            CreateTextureImage(obj.textureProperties[matType],
+                               &m_vulkanGlobalState->m_meshList[meshCount],
+                               matType);
+            CreateTextureImageView(&m_vulkanGlobalState->m_meshList[meshCount],
+                                   matType);
+            CreateTextureSampler(&m_vulkanGlobalState->m_meshList[meshCount],
+                                 matType);
+        }
+
         // Create Mesh Uniform Buffers
         m_bufferHandler->CreateModelUBO(
             &m_vulkanGlobalState->m_meshList[meshCount]);
-        CreateTexturedMeshDescriptorSets(
+        CreateTexturedPBRDescriptorSets(
             &m_vulkanGlobalState->m_meshList[meshCount]);
         meshCount++;
         xPos += 5.0f;
@@ -350,7 +364,7 @@ void VulkanContext::CreateGraphicsPipeline(std::vector<char> vertShaderCode,
     m_vulkanGlobalState->m_texturedMeshDescriptorSetLayouts.push_back(
         m_vulkanGlobalState->m_sceneDescriptorSetLayout);
     m_vulkanGlobalState->m_texturedMeshDescriptorSetLayouts.push_back(
-        m_vulkanGlobalState->m_texturedMeshDescriptorSetLayout);
+        m_vulkanGlobalState->m_texturedPBRDescriptorSetLayout);
     pipelineLayoutInfo.setLayoutCount =
         m_vulkanGlobalState->m_texturedMeshDescriptorSetLayouts.size();
     pipelineLayoutInfo.pSetLayouts =
@@ -416,7 +430,8 @@ void VulkanContext::CreateCommandPool() {
 }
 
 // Pass in the Model3D's texture path
-void VulkanContext::CreateTextureImage(TextureProperties props, Mesh3D* mesh) {
+void VulkanContext::CreateTextureImage(TextureProperties props, Mesh3D* mesh,
+                                       MaterialEnums materialType) {
     auto pixels = props.pixels;
     int texChannels = props.texChannels;
     int texHeight = props.texHeight;
@@ -448,16 +463,18 @@ void VulkanContext::CreateTextureImage(TextureProperties props, Mesh3D* mesh) {
     CreateImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB,
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mesh->m_textureImage,
-                mesh->m_textureImageMemory);
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                mesh->m_materials[materialType].m_textureImage,
+                mesh->m_materials[materialType].m_textureImageMemory);
 
-    TransitionImageLayout(mesh->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB,
-                          VK_IMAGE_LAYOUT_UNDEFINED,
+    TransitionImageLayout(mesh->m_materials[materialType].m_textureImage,
+                          VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    CopyBufferToImage(stagingBuffer, mesh->m_textureImage,
-                      static_cast<uint32_t>(texWidth),
-                      static_cast<uint32_t>(texHeight));
-    TransitionImageLayout(mesh->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB,
+    CopyBufferToImage(
+        stagingBuffer, mesh->m_materials[materialType].m_textureImage,
+        static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+    TransitionImageLayout(mesh->m_materials[materialType].m_textureImage,
+                          VK_FORMAT_R8G8B8A8_SRGB,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
@@ -468,14 +485,18 @@ void VulkanContext::CreateTextureImage(TextureProperties props, Mesh3D* mesh) {
 }
 
 // TEXTURE IMAGE VIEW
-void VulkanContext::CreateTextureImageView(Mesh3D* mesh) {
-    mesh->m_textureImageView = m_imageHandler->CreateImageView(
-        *m_vulkanGlobalState->GetRefLogicalDevice(), mesh->m_textureImage,
-        VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+void VulkanContext::CreateTextureImageView(Mesh3D* mesh,
+                                           MaterialEnums materialType) {
+    mesh->m_materials[materialType].m_textureImageView =
+        m_imageHandler->CreateImageView(
+            *m_vulkanGlobalState->GetRefLogicalDevice(),
+            mesh->m_materials[materialType].m_textureImage,
+            VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 // TEXTURE SAMPLER
-void VulkanContext::CreateTextureSampler(Mesh3D* mesh) {
+void VulkanContext::CreateTextureSampler(Mesh3D* mesh,
+                                         MaterialEnums materialType) {
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -502,9 +523,9 @@ void VulkanContext::CreateTextureSampler(Mesh3D* mesh) {
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    if (vkCreateSampler(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                        &samplerInfo, nullptr,
-                        &mesh->m_textureSampler) != VK_SUCCESS) {
+    if (vkCreateSampler(
+            *m_vulkanGlobalState->GetRefLogicalDevice(), &samplerInfo, nullptr,
+            &mesh->m_materials[materialType].m_textureSampler) != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
 }
@@ -588,7 +609,8 @@ void VulkanContext::CreateDescriptorPool() {
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = m_maxFramesInFlight * m_vulkanGlobalState->m_maxMeshes;
+    poolInfo.maxSets =
+        m_maxFramesInFlight * m_vulkanGlobalState->m_maxMeshes * 50;
 
     if (vkCreateDescriptorPool(
             *m_vulkanGlobalState->GetRefLogicalDevice(), &poolInfo, nullptr,
@@ -769,6 +791,159 @@ void VulkanContext::CreateTexturedMeshDescriptorSets(Mesh3D* mesh) {
     }
 }
 
+void VulkanContext::CreateTexturedPBRDescriptorSetLayout() {
+    // Binding 0 = ModelUBO
+    VkDescriptorSetLayoutBinding modelUBO{};
+    modelUBO.binding = 0;
+    modelUBO.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    modelUBO.descriptorCount = 1;
+    modelUBO.stageFlags =
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    modelUBO.pImmutableSamplers = nullptr;  // Optional
+
+    // Binding 1 = Sampler2D
+    VkDescriptorSetLayoutBinding albedoMap{};
+    albedoMap.binding = 1;
+    albedoMap.descriptorCount = 1;
+    albedoMap.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    albedoMap.pImmutableSamplers = nullptr;
+    albedoMap.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    // Binding 2 = Sampler2D
+    VkDescriptorSetLayoutBinding metallicMap{};
+    metallicMap.binding = 2;
+    metallicMap.descriptorCount = 1;
+    metallicMap.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    metallicMap.pImmutableSamplers = nullptr;
+    metallicMap.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    // Binding 3 = Sampler2D
+    VkDescriptorSetLayoutBinding roughnessMap{};
+    roughnessMap.binding = 3;
+    roughnessMap.descriptorCount = 1;
+    roughnessMap.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    roughnessMap.pImmutableSamplers = nullptr;
+    roughnessMap.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    // Binding 3 = Sampler2D
+    VkDescriptorSetLayoutBinding aoMap{};
+    aoMap.binding = 4;
+    aoMap.descriptorCount = 1;
+    aoMap.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    aoMap.pImmutableSamplers = nullptr;
+    aoMap.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    // Binding 3 = Sampler2D
+    VkDescriptorSetLayoutBinding normalMap{};
+    normalMap.binding = 5;
+    normalMap.descriptorCount = 1;
+    normalMap.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    normalMap.pImmutableSamplers = nullptr;
+    normalMap.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    std::array<VkDescriptorSetLayoutBinding, 6> bindings = {
+        modelUBO, albedoMap, metallicMap, roughnessMap, aoMap, normalMap};
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
+
+    if (vkCreateDescriptorSetLayout(
+            *m_vulkanGlobalState->GetRefLogicalDevice(), &layoutInfo, nullptr,
+            &m_vulkanGlobalState->m_texturedPBRDescriptorSetLayout) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+}
+
+void VulkanContext::CreateTexturedPBRDescriptorSets(Mesh3D* mesh) {
+    std::vector<VkDescriptorSetLayout> layouts(
+        m_maxFramesInFlight,
+        m_vulkanGlobalState->m_texturedPBRDescriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = m_vulkanGlobalState->m_descriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(m_maxFramesInFlight);
+    allocInfo.pSetLayouts = layouts.data();
+
+    mesh->m_descriptorSets.resize(m_maxFramesInFlight);
+    if (vkAllocateDescriptorSets(*m_vulkanGlobalState->GetRefLogicalDevice(),
+                                 &allocInfo,
+                                 mesh->m_descriptorSets.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor sets!");
+    }
+
+    for (size_t i = 0; i < m_maxFramesInFlight; i++) {
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = mesh->m_uniformBuffers[i];
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(ModelUBO);
+
+        VkDescriptorImageInfo albedoImageInfo{};
+        albedoImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        albedoImageInfo.imageView =
+            mesh->m_materials[ALBEDO].m_textureImageView;
+        albedoImageInfo.sampler = mesh->m_materials[ALBEDO].m_textureSampler;
+
+        VkDescriptorImageInfo metallicImageInfo{};
+        metallicImageInfo.imageLayout =
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        metallicImageInfo.imageView =
+            mesh->m_materials[METALLIC].m_textureImageView;
+        metallicImageInfo.sampler =
+            mesh->m_materials[METALLIC].m_textureSampler;
+
+        VkDescriptorImageInfo roughnessImageInfo{};
+        roughnessImageInfo.imageLayout =
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        roughnessImageInfo.imageView =
+            mesh->m_materials[ROUGHNESS].m_textureImageView;
+        roughnessImageInfo.sampler =
+            mesh->m_materials[ROUGHNESS].m_textureSampler;
+
+        VkDescriptorImageInfo aoImageInfo{};
+        aoImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        aoImageInfo.imageView = mesh->m_materials[AO].m_textureImageView;
+        aoImageInfo.sampler = mesh->m_materials[AO].m_textureSampler;
+
+        VkDescriptorImageInfo normalImageInfo{};
+        normalImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        normalImageInfo.imageView =
+            mesh->m_materials[NORMAL].m_textureImageView;
+        normalImageInfo.sampler = mesh->m_materials[NORMAL].m_textureSampler;
+
+        std::vector<VkDescriptorImageInfo> imageInfos = {
+            albedoImageInfo, metallicImageInfo, roughnessImageInfo, aoImageInfo,
+            normalImageInfo};
+        std::array<VkWriteDescriptorSet, 6> descriptorWrites{};
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = mesh->m_descriptorSets[i];
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].dstArrayElement = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+        int j = 1;
+        for (auto& imageInfo : imageInfos) {
+            descriptorWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[j].dstSet = mesh->m_descriptorSets[i];
+            descriptorWrites[j].dstBinding = j;
+            descriptorWrites[j].dstArrayElement = 0;
+            descriptorWrites[j].descriptorType =
+                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrites[j].descriptorCount = 1;
+            descriptorWrites[j].pImageInfo = &imageInfo;
+            j++;
+        }
+
+        uint32_t descriptorCopyCount = 0;
+        vkUpdateDescriptorSets(*m_vulkanGlobalState->GetRefLogicalDevice(),
+                               (uint32_t)descriptorWrites.size(),
+                               descriptorWrites.data(), descriptorCopyCount,
+                               nullptr);
+    }
+}
 void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
                                         uint32_t imageIndex) {
     /*

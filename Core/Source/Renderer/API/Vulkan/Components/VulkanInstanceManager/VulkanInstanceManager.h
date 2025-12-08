@@ -87,6 +87,7 @@ class VulkanInstanceManager {
     VkDescriptorSetLayout m_sceneDescriptorSetLayout;
     std::vector<VkDescriptorSet> m_sceneDescriptorSets;
     VkDescriptorSetLayout m_texturedMeshDescriptorSetLayout;
+    VkDescriptorSetLayout m_texturedPBRDescriptorSetLayout;
 
     std::vector<VkDescriptorSetLayout> m_texturedMeshDescriptorSetLayouts;
     VkDescriptorPool m_descriptorPool;

@@ -8,10 +8,9 @@
 
 #include "Source/Renderer/DataStructures.h"
 
-enum CameraType { NO_CLIP, ORBIT };
-
 class CameraController {
    public:
+    enum CameraType { NO_CLIP, ORBIT };
     CameraController(VulkanContext* vulkanContext, WindowHandler* windowHandler,
                      SwapChainHandler* swapChainHandler,
                      BufferHandler* bufferHandler,
@@ -34,7 +33,7 @@ class CameraController {
     glm::vec3 m_eyePosition = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 m_viewDirection = glm::vec3(0.0f, 0.0f, 2.0f);
     glm::vec3 m_upVector = glm::vec3(0.0f, 0.0f, 1.0f);
-    CameraType m_cameraType = NO_CLIP;
+    CameraType m_cameraType;
     OrbitCamera* orbitCam = nullptr;
     bool m_invertHorizontal = false;
 
