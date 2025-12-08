@@ -3,9 +3,10 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <../glm/glm.hpp>
+#include <array>
+
 #include "../glm/gtx/hash.hpp"
 #include "vulkan/vulkan.h"
-#include <array>
 
 struct Vertex {
     glm::vec3 pos;
@@ -18,16 +19,19 @@ struct Vertex {
         bindingDescription.binding = 0;
         bindingDescription.stride = sizeof(Vertex);
         /*
-            VK_VERTEX_INPUT_RATE_VERTEX: Move to the next data entry after each vertex
-            VK_VERTEX_INPUT_RATE_INSTANCE: Move to the next data entry after each instance
+            VK_VERTEX_INPUT_RATE_VERTEX: Move to the next data entry after each
+           vertex VK_VERTEX_INPUT_RATE_INSTANCE: Move to the next data entry
+           after each instance
         */
         bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 4> GetAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
+    static std::array<VkVertexInputAttributeDescription, 4>
+    GetAttributeDescriptions() {
+        std::array<VkVertexInputAttributeDescription, 4>
+            attributeDescriptions{};
 
         // position description
         attributeDescriptions[0].location = 0;
@@ -44,10 +48,11 @@ struct Vertex {
         attributeDescriptions[1].binding = 0;
         attributeDescriptions[1].location = 1;
         /*
-            Color type (SFLOAT, UINT, SINT) and bit width should match to type of shader input
-            ivec2: VK_FORMAT_R32G32_SINT, a 2-component vector of 32-bit signed integers
-            uvec4: VK_FORMAT_R32G32B32A32_UINT, a 4-component vector of 32-bit unsigned integers
-            double: VK_FORMAT_R64_SFLOAT, a double-precision (64-bit) float
+            Color type (SFLOAT, UINT, SINT) and bit width should match to type
+           of shader input ivec2: VK_FORMAT_R32G32_SINT, a 2-component vector of
+           32-bit signed integers uvec4: VK_FORMAT_R32G32B32A32_UINT, a
+           4-component vector of 32-bit unsigned integers double:
+           VK_FORMAT_R64_SFLOAT, a double-precision (64-bit) float
         */
         attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[1].offset = offsetof(Vertex, color);
@@ -66,21 +71,24 @@ struct Vertex {
     }
 
     bool operator==(const Vertex& other) const {
-        return pos == other.pos && color == other.color && normal == other.normal && texCoord == other.texCoord;
+        return pos == other.pos && color == other.color &&
+               normal == other.normal && texCoord == other.texCoord;
     }
 };
 
-// This is doing some weird stuff I got from the vulkan tutorial I followed. Something about hashing vertex data
+// This is doing some weird stuff I got from the vulkan tutorial I followed.
+// Something about hashing vertex data
 namespace std {
-    template<> struct hash<Vertex> {
-        size_t operator()(Vertex const& vertex) const {
-            return ((hash<glm::vec3>()(vertex.pos) ^
-                (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
-                (hash<glm::vec2>()(vertex.texCoord) << 1);
-        }
-    };
-}
-
+template <>
+struct hash<Vertex> {
+    size_t operator()(Vertex const& vertex) const {
+        return ((hash<glm::vec3>()(vertex.pos) ^
+                 (hash<glm::vec3>()(vertex.color) << 1)) >>
+                1) ^
+               (hash<glm::vec2>()(vertex.texCoord) << 1);
+    }
+};
+}  // namespace std
 
 // Scene-Wide Data
 struct CameraUBO {
@@ -92,14 +100,12 @@ struct CameraUBO {
 struct Light {
     alignas(16) glm::vec4 position;   // xyz used, w ignored
     alignas(16) glm::vec4 color;      // rgb used, w ignored
-    alignas(16) float intensity;      // pad to 16
-    float pad[3];                     // explicit padding
+    alignas(16) glm::vec4 intensity;  // x for intensity
 };
 
 struct LightUBO {
     alignas(16) Light lights[16];
-    alignas(16)  int numLights;
-    int pad[3]; // pad to 16 bytes
+    alignas(16) glm::ivec4 numLights;  // x for numLights
 };
 
 // Per-Mesh Data

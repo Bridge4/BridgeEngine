@@ -3,10 +3,7 @@
 struct Light {
     vec4 position;   // xyz = world-space position
     vec4 color;      // rgb = light color
-    float intensity; // scalar intensity
-    float pad0;
-    float pad1;
-    float pad2;
+    vec4 intensity; //  x = intensity
 };
 
 layout(set = 0, binding = 0) uniform CameraUBO {
@@ -17,10 +14,7 @@ layout(set = 0, binding = 0) uniform CameraUBO {
 
 layout(set = 0, binding = 1) uniform LightUBO {
     Light lights[16];
-    int numLights;
-    float pad0;
-    float pad1;
-    float pad2;
+    ivec4 numLights;
 } lightData;
 
 layout(set = 1, binding = 1) uniform sampler2D texSampler;
@@ -44,7 +38,7 @@ void main() {
 
     vec3 result = ambient;
 
-    for (int i = 0; i < lightData.numLights; ++i) {
+    for (int i = 0; i < lightData.numLights.x; ++i) {
         vec3 Lpos = lightData.lights[i].position.xyz;
         vec3 Ldir = normalize(Lpos - fragPos);
 
@@ -55,7 +49,7 @@ void main() {
         vec3 H = normalize(Ldir + V);
         float spec = pow(max(dot(N, H), 0.0), 64.0); // shininess = 64
 
-        vec3 lightColor = lightData.lights[i].color.rgb * lightData.lights[i].intensity;
+        vec3 lightColor = lightData.lights[i].color.rgb * lightData.lights[i].intensity.x;
 
         vec3 diffuse  = diff * albedo * lightColor;
         vec3 specular = spec * lightColor;

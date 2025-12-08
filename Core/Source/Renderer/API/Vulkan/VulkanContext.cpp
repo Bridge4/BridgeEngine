@@ -76,15 +76,15 @@ void VulkanContext::CreateVulkanContext() {
     Light light0;
     light0.position = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
     light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    light0.intensity = 0.2f;
+    light0.intensity.x = 0.2f;
     Light light1;
     light1.position = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
     light1.color = glm::vec4(0.408f, 0.765f, 0.831f, 1.0f);
-    light1.intensity = 1.5f;
+    light1.intensity.x = 1.5f;
     LightUBO lightUBO;
     lightUBO.lights[0] = light0;
     lightUBO.lights[1] = light1;
-    lightUBO.numLights = 2;
+    lightUBO.numLights.x = 2;
     memcpy(m_vulkanGlobalState
                ->m_lightUBOMapped[m_vulkanGlobalState->m_currentFrame],
            &lightUBO, sizeof(lightUBO));
