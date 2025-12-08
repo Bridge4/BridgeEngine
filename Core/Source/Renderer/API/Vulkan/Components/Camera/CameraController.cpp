@@ -164,15 +164,9 @@ void CameraController::HandleInputOrbit(float deltaTime) {
         m_lookActive = false;
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_L)) {
-        // cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f,
-        // 0.001f, 0.001f)); cameraViewMatrix = glm::lookAt(eyePosition,
-        // viewDirection+eyePosition, upVector);
         m_vulkanContext->LoadSceneObjects();
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_U)) {
-        // cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f,
-        // 0.001f, 0.001f)); cameraViewMatrix = glm::lookAt(eyePosition,
-        // viewDirection+eyePosition, upVector);
         m_vulkanContext->UnloadSceneObjects();
     }
     if (m_lookActive) {

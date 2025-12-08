@@ -5,17 +5,18 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <../glm/glm.hpp>
+
 #include "Source/Renderer/DataStructures.h"
 
-enum CameraType {
-    NO_CLIP,
-    ORBIT
-};
+enum CameraType { NO_CLIP, ORBIT };
 
-class CameraController
-{
-public:
-    CameraController(VulkanContext* vulkanContext, WindowHandler* windowHandler, SwapChainHandler* swapChainHandler, BufferHandler* bufferHandler, VulkanInstanceManager* vulkanInstanceManager, CameraType camType=ORBIT) {
+class CameraController {
+   public:
+    CameraController(VulkanContext* vulkanContext, WindowHandler* windowHandler,
+                     SwapChainHandler* swapChainHandler,
+                     BufferHandler* bufferHandler,
+                     VulkanInstanceManager* vulkanInstanceManager,
+                     CameraType camType = ORBIT) {
         this->m_vulkanContext = vulkanContext;
         this->m_bufferHandler = bufferHandler;
         this->m_windowHandler = windowHandler;
@@ -35,7 +36,8 @@ public:
     glm::vec3 m_upVector = glm::vec3(0.0f, 0.0f, 1.0f);
     CameraType m_cameraType = NO_CLIP;
     OrbitCamera* orbitCam = nullptr;
-private:
+
+   private:
     void Initialize();
     VulkanContext* m_vulkanContext = 0;
     WindowHandler* m_windowHandler = 0;
@@ -50,4 +52,4 @@ private:
     double m_prevMouseX, m_prevMouseY = 0.0;
 };
 
-#endif // !CAMERACONTROLLER_H
+#endif  // !CAMERACONTROLLER_H

@@ -8,10 +8,10 @@ void OrbitCamera::RotateAzimuth(const float radians, float deltaTime) {
     // Keep azimuth angle within range <0..2PI) - it's not necessary, just to
     // have it nicely output
     const auto fullCircle = 2.0f * M_PI;
-    // m_azimuthAngle = fmodf(m_azimuthAngle, fullCircle);
-    //  if (m_azimuthAngle < 0.0f) {
-    //      m_azimuthAngle = fullCircle + m_azimuthAngle;
-    //  }
+    m_azimuthAngle = fmodf(m_azimuthAngle, fullCircle);
+    if (m_azimuthAngle < 0.0f) {
+        m_azimuthAngle = fullCircle + m_azimuthAngle;
+    }
 }
 
 void OrbitCamera::RotatePolar(const float radians, float deltaTime) {
@@ -20,13 +20,13 @@ void OrbitCamera::RotatePolar(const float radians, float deltaTime) {
     // Check if the angle hasn't exceeded quarter of a circle to prevent flip,
     // add a bit of epsilon like 0.001 radians
     const auto polarCap = M_PI / 2.0f - 0.001f;
-    // if (m_polarAngle > polarCap) {
-    //     m_polarAngle = polarCap;
-    // }
+    if (m_polarAngle > polarCap) {
+        m_polarAngle = polarCap;
+    }
 
-    // if (m_polarAngle < -polarCap) {
-    //     m_polarAngle = -polarCap;
-    // }
+    if (m_polarAngle < -polarCap) {
+        m_polarAngle = -polarCap;
+    }
 }
 
 void OrbitCamera::Zoom(const float by) {
