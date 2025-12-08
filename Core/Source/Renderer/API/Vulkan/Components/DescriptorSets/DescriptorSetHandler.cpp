@@ -1,5 +1,7 @@
 #include "DescriptorSetHandler.h"
 
+#include <vulkan/vulkan_core.h>
+
 #include <iostream>
 #include <stdexcept>
 
@@ -125,12 +127,12 @@ void DescriptorSetHandler::CreateSceneDescriptorSets() {
         VkDescriptorBufferInfo cameraUBOInfo{};
         cameraUBOInfo.buffer = m_vulkanGlobalState->m_cameraUBO[i];
         cameraUBOInfo.offset = 0;
-        cameraUBOInfo.range = sizeof(CameraUBO);
+        cameraUBOInfo.range = VK_WHOLE_SIZE;
 
         VkDescriptorBufferInfo lightUBOInfo{};
         lightUBOInfo.buffer = m_vulkanGlobalState->m_lightUBO[i];
         lightUBOInfo.offset = 0;
-        lightUBOInfo.range = sizeof(LightUBO);
+        lightUBOInfo.range = VK_WHOLE_SIZE;
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -214,7 +216,6 @@ void DescriptorSetHandler::CreateTexturedMeshDescriptorSets(Mesh3D* mesh) {
         bufferInfo.buffer = mesh->m_uniformBuffers[i];
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(ModelUBO);
-        std::cout << "SIZE OF MODEL UBO: " << sizeof(ModelUBO) << "\n";
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

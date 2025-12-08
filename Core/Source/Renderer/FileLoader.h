@@ -32,7 +32,6 @@ class FileLoader {
         return props;
     }
     static ObjProperties LoadObjFile(std::string filePath) {
-        std::cout << filePath << "\n";
         tinyobj::attrib_t attrib;
 
         std::vector<tinyobj::shape_t> shapes;

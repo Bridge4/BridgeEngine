@@ -189,7 +189,6 @@ class VulkanContext {
 
     // Reading in SPIRV shaders
     static std::vector<char> ReadFile(const std::string& fileName) {
-        std::cout << fileName << "\n";
         std::ifstream file(fileName, std::ios::ate | std::ios::binary);
 
         if (!file.is_open()) {
@@ -203,8 +202,6 @@ class VulkanContext {
         file.read(buffer.data(), fileSize);
 
         file.close();
-
-        // std::cout << buffer.size() << std::endl;
 
         return buffer;
     }

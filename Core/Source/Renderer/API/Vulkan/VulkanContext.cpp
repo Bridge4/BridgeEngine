@@ -73,21 +73,6 @@ void VulkanContext::CreateVulkanContext() {
     CreateSceneDescriptorSetLayout();
     m_bufferHandler->CreateCameraUBO();
     m_bufferHandler->CreateLightUBO();
-    Light light0;
-    light0.position = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
-    light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    light0.intensity.x = 0.2f;
-    Light light1;
-    light1.position = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-    light1.color = glm::vec4(0.408f, 0.765f, 0.831f, 1.0f);
-    light1.intensity.x = 1.5f;
-    LightUBO lightUBO;
-    lightUBO.lights[0] = light0;
-    lightUBO.lights[1] = light1;
-    lightUBO.numLights.x = 2;
-    memcpy(m_vulkanGlobalState
-               ->m_lightUBOMapped[m_vulkanGlobalState->m_currentFrame],
-           &lightUBO, sizeof(lightUBO));
     CreateSceneDescriptorSets();
 
     // Create Per-Mesh Descriptor Set Layout
@@ -108,6 +93,18 @@ void VulkanContext::RunVulkanRenderer(
 
     m_objectsToRender = objectsToRender;
 
+    Light light0;
+    light0.position = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+    light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    light0.intensity.x = 0.2f;
+    Light light1;
+    light1.position = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+    light1.color = glm::vec4(0.408f, 0.765f, 0.831f, 1.0f);
+    light1.intensity.x = 1.5f;
+    LightUBO lightUBO;
+    lightUBO.lights[0] = light0;
+    lightUBO.lights[1] = light1;
+    lightUBO.numLights.x = 2;
     while (!m_windowHandler->ShouldClose()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
         float deltaTime =
@@ -115,27 +112,13 @@ void VulkanContext::RunVulkanRenderer(
                 .count();
         lastFrameTime = currentFrameTime;
         m_windowHandler->Poll();
-        // m_cameraController->HandleInputNoClip(deltaTime);
         m_cameraController->HandleInputOrbit(deltaTime);
         m_cameraController->UpdateCameraUBO(m_vulkanGlobalState->m_currentFrame,
                                             deltaTime);
 
-        // for (auto& model: m_vulkanInstanceManager->m_meshList){
-        //     ModelUBO modelUBO{};
-        //     modelUBO.model = glm::mat4(1.0f);
-        //     modelUBO.model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0,
-        //     -2)); for (auto& vertex: m_vertices){
-        //         glm::vec4 clip = m_cameraController->m_cameraUBO.proj *
-        //         m_cameraController->m_cameraUBO.view * modelUBO.model *
-        //         glm::vec4(vertex.pos, 1.0f); glm::vec3 ndc = glm::vec3(clip)
-        //         / clip.w; std::cout << "NDC: " << ndc.x << ", " << ndc.y <<
-        //         ", " << ndc.z << "\n"; std::cout << "camPos: " <<
-        //         m_cameraController->m_eyePosition.x << ", "<<
-        //         m_cameraController->m_eyePosition.y << ", "<<
-        //         m_cameraController->m_eyePosition.z << "\n";
-        //     }
-
-        //}
+        memcpy(m_vulkanGlobalState
+                   ->m_lightUBOMapped[m_vulkanGlobalState->m_currentFrame],
+               &lightUBO, sizeof(lightUBO));
         DrawFrame(deltaTime);
     }
     vkDeviceWaitIdle(*m_vulkanGlobalState->GetRefLogicalDevice());
@@ -143,13 +126,11 @@ void VulkanContext::RunVulkanRenderer(
 }
 
 void VulkanContext::LoadSceneObjects() {
-    std::cout << "LOADING SCENE OBJECTS \n";
     int meshCount = 0;
     float xPos = 0.0f;
     for (const auto& obj : m_objectsToRender) {
         LoadMesh(obj.objProperties, glm::vec3(xPos, 0.0f, 0.0f),
                  glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(5.0f, 5.0f, 5.0f));
-        std::cout << "OBJECT LOADED...\n";
         CreateTextureImage(obj.textureProperties,
                            &m_vulkanGlobalState->m_meshList[meshCount]);
         CreateTextureImageView(&m_vulkanGlobalState->m_meshList[meshCount]);
@@ -168,7 +149,6 @@ void VulkanContext::LoadSceneObjects() {
 
 void VulkanContext::UnloadSceneObjects() {
     if (!m_vulkanGlobalState->m_meshList.empty()) {
-        std::cout << "UNLOADING SCENE OBJECTS \n";
         vkQueueWaitIdle(m_vulkanGlobalState->m_presentQueue);
         vkDestroyDescriptorPool(*m_vulkanGlobalState->GetRefLogicalDevice(),
                                 m_vulkanGlobalState->m_descriptorPool, nullptr);
@@ -757,7 +737,6 @@ void VulkanContext::CreateTexturedMeshDescriptorSets(Mesh3D* mesh) {
         bufferInfo.buffer = mesh->m_uniformBuffers[i];
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(ModelUBO);
-        std::cout << "SIZE OF MODEL UBO: " << sizeof(ModelUBO) << "\n";
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
