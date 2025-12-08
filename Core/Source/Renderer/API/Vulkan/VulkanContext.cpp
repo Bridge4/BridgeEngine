@@ -95,7 +95,7 @@ void VulkanContext::RunVulkanRenderer(
     m_objectsToRender = objectsToRender;
 
     Light light0;
-    light0.position = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+    light0.position = glm::vec4(10.0f, 0.0f, 0.0f, 0.0f);
     light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     light0.intensity.x = 10.0f;
     Light light1;

@@ -251,6 +251,7 @@ void CameraController::UpdateCameraUBO(uint32_t currentImage, float deltaTime) {
             //                     glm::vec3(0.0f, 1.0f, 0.0f));
             // } else {
             //     modelUBO.model =
+            //
             //         glm::translate(modelUBO.model, glm::vec3(0.0f, 0.0f,
             //         0.0f));
             //     modelUBO.model =
