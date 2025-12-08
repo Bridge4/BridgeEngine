@@ -176,6 +176,9 @@ void CameraController::HandleInputOrbit(float deltaTime) {
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_S)) {
         m_cameraSpeed -= 0.0001f;
     }
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_I)) {
+        m_invertHorizontal = !m_invertHorizontal;
+    }
     if (m_lookActive) {
         double xPos, yPos;
         glfwGetCursorPos(m_windowHandler->m_window, &xPos, &yPos);
@@ -184,6 +187,7 @@ void CameraController::HandleInputOrbit(float deltaTime) {
         glfwSetInputMode(m_windowHandler->m_window, GLFW_CURSOR,
                          GLFW_CURSOR_HIDDEN);
         deltaX = (xPos - m_prevMouseX) * m_cameraSpeed;
+        if (m_invertHorizontal) deltaX = -deltaX;
         deltaY = (yPos - m_prevMouseY) * m_cameraSpeed;
         if (!m_lookToggled) {
             if (deltaX != 0 || deltaY != 0) {
