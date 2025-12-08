@@ -181,8 +181,8 @@ void CameraController::HandleInputOrbit(float deltaTime) {
                          GLFW_CURSOR_HIDDEN);
         glfwGetCursorPos(m_windowHandler->m_window, &xPos, &yPos);
         float deltaX, deltaY;
-        deltaX = xPos - m_prevMouseX;
-        deltaY = yPos - m_prevMouseY;
+        deltaX = xPos - m_prevMouseX * m_cameraSpeed;
+        deltaY = yPos - m_prevMouseY * m_cameraSpeed;
         if (!m_lookToggled) {
             if (deltaX != 0 || deltaY != 0) {
                 // glm::vec3 newViewDirection = glm::rotate(m_viewDirection,
