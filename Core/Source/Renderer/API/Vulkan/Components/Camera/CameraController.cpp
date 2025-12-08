@@ -179,20 +179,8 @@ void CameraController::HandleInputOrbit(float deltaTime) {
         deltaY = yPos - m_prevMouseY * m_cameraSpeed;
         if (!m_lookToggled) {
             if (deltaX != 0 || deltaY != 0) {
-                // glm::vec3 newViewDirection = glm::rotate(m_viewDirection,
-                // glm::radians(-deltaY),
-                // glm::normalize(glm::cross(m_viewDirection, m_upVector)));
                 orbitCam->RotateAzimuth(deltaX, deltaTime);
                 orbitCam->RotatePolar(deltaY, deltaTime);
-
-                // if (abs(glm::angle(newViewDirection, m_upVector) -
-                // glm::radians(90.0f)) <= glm::radians(85.0f))
-                //{
-                //     m_viewDirection = newViewDirection;
-                // }
-
-                // m_viewDirection = glm::rotate(m_viewDirection,
-                // glm::radians(-deltaX), m_upVector);
             }
         } else {
             m_lookToggled = false;

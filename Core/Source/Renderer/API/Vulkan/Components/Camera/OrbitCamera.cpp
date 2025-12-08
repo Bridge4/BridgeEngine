@@ -2,7 +2,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-void OrbitCamera::RotateAzimuth(const float radians, float deltaTime) {
+void OrbitCamera::RotateAzimuth(const float radians, float deltaTime = 1.0f) {
     m_azimuthAngle += radians * deltaTime;
 
     // Keep azimuth angle within range <0..2PI) - it's not necessary, just to
@@ -14,7 +14,7 @@ void OrbitCamera::RotateAzimuth(const float radians, float deltaTime) {
     }
 }
 
-void OrbitCamera::RotatePolar(const float radians, float deltaTime) {
+void OrbitCamera::RotatePolar(const float radians, float deltaTime = 1.0f) {
     m_polarAngle += radians * deltaTime;
 
     // Check if the angle hasn't exceeded quarter of a circle to prevent flip,
