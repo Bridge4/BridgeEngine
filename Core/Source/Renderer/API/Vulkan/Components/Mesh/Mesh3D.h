@@ -19,7 +19,7 @@ struct TextureData {
     VkSampler m_textureSampler;
 };
 
-enum MaterialEnums { ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL };
+enum MaterialEnums { ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL, EMISSIVE };
 class Mesh3D {
    public:
     Mesh3D() {}

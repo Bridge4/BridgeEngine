@@ -19,6 +19,7 @@ class Renderer {
             MODELS_DIR "axe/roughness.png";
         testObj.materialTexFilePaths[AO] = MODELS_DIR "axe/ao.png";
         testObj.materialTexFilePaths[NORMAL] = MODELS_DIR "axe/normals.png";
+        testObj.materialTexFilePaths[EMISSIVE] = MODELS_DIR "axe/emissive.png";
         m_objectsToLoad.push_back(testObj);
     }
     // Window Ref

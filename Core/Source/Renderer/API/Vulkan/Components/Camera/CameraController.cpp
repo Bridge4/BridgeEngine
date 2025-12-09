@@ -179,18 +179,29 @@ void CameraController::HandleInputOrbit(float deltaTime) {
     }
 
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_P)) {
+        m_vulkanGlobalState->m_lights.lights[0].intensity.x +=
+            100000.0f * deltaTime;
         m_vulkanGlobalState->m_lights.lights[2].intensity.x +=
-            100000000.0f * deltaTime;
-        std::cout << "cam: "
-                  << m_vulkanGlobalState->m_lights.lights[2].intensity.x
-                  << "\n";
+            100000.0f * deltaTime;
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_O)) {
+        m_vulkanGlobalState->m_lights.lights[0].intensity.x -=
+            100000.0f * deltaTime;
         m_vulkanGlobalState->m_lights.lights[2].intensity.x -=
-            10000.0f * deltaTime;
-        std::cout << "cam: "
-                  << m_vulkanGlobalState->m_lights.lights[2].intensity.x
-                  << "\n";
+            100000.0f * deltaTime;
+    }
+
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_R)) {
+        m_vulkanGlobalState->m_lights.lights[0].color.x -= 0.1f * deltaTime;
+        m_vulkanGlobalState->m_lights.lights[2].color.x -= 0.1f * deltaTime;
+    }
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_G)) {
+        m_vulkanGlobalState->m_lights.lights[0].color.y -= 0.1f * deltaTime;
+        m_vulkanGlobalState->m_lights.lights[2].color.y -= 0.1f * deltaTime;
+    }
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_B)) {
+        m_vulkanGlobalState->m_lights.lights[0].color.z -= 0.1f * deltaTime;
+        m_vulkanGlobalState->m_lights.lights[2].color.z -= 0.1f * deltaTime;
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_Q)) {
         orbitCam->Zoom(10.0f * deltaTime);
@@ -274,7 +285,7 @@ void CameraController::UpdateCameraUBO(uint32_t currentImage, float deltaTime) {
                     glm::translate(modelUBO.model, glm::vec3(0.0f, 0.0f, 0.0f));
                 modelUBO.model =
                     glm::rotate(modelUBO.model, -glm::radians(90.0f),
-                                glm::vec3(1.0f, 0.0f, 0.0f));
+                                glm::vec3(0.0f, 1.0f, 0.0f));
                 modelUBO.model =
                     glm::scale(modelUBO.model, glm::vec3(0.05f, 0.05f, 0.05f));
             }

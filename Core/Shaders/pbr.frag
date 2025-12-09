@@ -22,6 +22,7 @@ layout(set = 1, binding = 2) uniform sampler2D metallicMap;
 layout(set = 1, binding = 3) uniform sampler2D roughnessMap;
 layout(set = 1, binding = 4) uniform sampler2D aoMap;
 layout(set = 1, binding = 5) uniform sampler2D normalMap;
+layout(set = 1, binding = 6) uniform sampler2D emissiveMap;
 
 layout(location = 0) in vec3 fragPos;     // world-space position
 layout(location = 1) in vec3 fragNormal;  // world-space normal
@@ -72,6 +73,7 @@ void main() {
     float metallic  = texture(metallicMap, fragTexCoord).r;
     float roughness = texture(roughnessMap, fragTexCoord).r;
     float ao        = texture(aoMap, fragTexCoord).r;
+    vec3 emissive   = texture(emissiveMap, fragTexCoord).rgb;
     // Normalize inputs
     vec3 N = normalize(fragNormal);
     vec3 V = normalize(camera.cameraPos.xyz - fragPos);
@@ -109,7 +111,8 @@ void main() {
     }
 
     vec3 ambient = vec3(0.03) * albedo;
-    vec3 color = ambient + Lo;
+    vec3 emissiveColor = emissive * 20.0;
+    vec3 color = ambient + Lo + emissiveColor;
 
 
     outColor = vec4(color, 1.0);

@@ -22,6 +22,8 @@ class FileLoader {
             LoadTextureFile(objectToLoad.materialTexFilePaths[AO]);
         loadedObject.textureProperties[NORMAL] =
             LoadTextureFile(objectToLoad.materialTexFilePaths[NORMAL]);
+        loadedObject.textureProperties[EMISSIVE] =
+            LoadTextureFile(objectToLoad.materialTexFilePaths[EMISSIVE]);
         return loadedObject;
     }
 

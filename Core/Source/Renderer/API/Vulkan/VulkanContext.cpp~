@@ -938,7 +938,7 @@ void VulkanContext::CreateTexturedPBRDescriptorSets(Mesh3D* mesh) {
         std::vector<VkDescriptorImageInfo> imageInfos = {
             albedoImageInfo, metallicImageInfo, roughnessImageInfo,
             aoImageInfo,     normalImageInfo,   emissiveImageInfo};
-        std::array<VkWriteDescriptorSet, 7> descriptorWrites{};
+        std::array<VkWriteDescriptorSet, 6> descriptorWrites{};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[0].dstSet = mesh->m_descriptorSets[i];
         descriptorWrites[0].dstBinding = 0;
