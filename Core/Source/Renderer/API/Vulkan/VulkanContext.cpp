@@ -99,18 +99,24 @@ void VulkanContext::RunVulkanRenderer(
     light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     light0.intensity.x = 10.0f;
     Light light1;
-    light1.position = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-    light1.color = glm::vec4(0.408f, 0.765f, 0.831f, 1.0f);
+    light1.position = glm::vec4(0.0f, 10.0f, 0.0f, 0.0f);
+    light1.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     light1.intensity.x = 1.5f;
     Light light2;
-    light0.position = glm::vec4(-10.0f, 0.0f, 0.0f, 0.0f);
+    light0.position = glm::vec4(-100.0f, 0.0f, 0.0f, 0.0f);
     light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    light0.intensity.x = 10.0f;
+    light0.intensity.x = 10000.0f;
+    Light light3;
+    light3.position = glm::vec4(0.0f, 0.0f, 10.0f, 0.0f);
+    light3.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    light3.intensity.x = 10.0f;
     LightUBO lightUBO;
     lightUBO.lights[0] = light0;
     lightUBO.lights[1] = light1;
     lightUBO.lights[2] = light2;
-    lightUBO.numLights.x = 3;
+    lightUBO.lights[3] = light3;
+    lightUBO.numLights.x = 4;
+    m_vulkanGlobalState->m_lights = lightUBO;
     while (!m_windowHandler->ShouldClose()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
         float deltaTime =
@@ -119,12 +125,13 @@ void VulkanContext::RunVulkanRenderer(
         lastFrameTime = currentFrameTime;
         m_windowHandler->Poll();
         m_cameraController->HandleInputOrbit(deltaTime);
+        memcpy(m_vulkanGlobalState
+                   ->m_lightUBOMapped[m_vulkanGlobalState->m_currentFrame],
+               &m_vulkanGlobalState->m_lights,
+               sizeof(m_vulkanGlobalState->m_lights));
         m_cameraController->UpdateCameraUBO(m_vulkanGlobalState->m_currentFrame,
                                             deltaTime);
 
-        memcpy(m_vulkanGlobalState
-                   ->m_lightUBOMapped[m_vulkanGlobalState->m_currentFrame],
-               &lightUBO, sizeof(lightUBO));
         DrawFrame(deltaTime);
     }
     vkDeviceWaitIdle(*m_vulkanGlobalState->GetRefLogicalDevice());

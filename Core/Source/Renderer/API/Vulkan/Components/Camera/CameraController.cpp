@@ -37,7 +37,7 @@ void CameraController::Initialize() {
         m_viewDirection = glm::vec3(0.0f, 0.0f, -1.0f);
         m_upVector = glm::vec3(0.0f, 1.0f, 0.0f);
         orbitCam = new OrbitCamera(glm::vec3(0.0f, 0.0f, 0.0f), m_upVector,
-                                   3.0f, 100.0f, 45.0f, 45.0f);
+                                   10.0f, 2.0f, 45.0f, 45.0f);
         m_cameraViewMatrix = GetViewMatrix();
         m_lookActive = false;
         m_lookToggled = false;
@@ -178,11 +178,37 @@ void CameraController::HandleInputOrbit(float deltaTime) {
         m_vulkanContext->UnloadSceneObjects();
     }
 
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_P)) {
+        m_vulkanGlobalState->m_lights.lights[2].intensity.x +=
+            100000000.0f * deltaTime;
+        std::cout << "cam: "
+                  << m_vulkanGlobalState->m_lights.lights[2].intensity.x
+                  << "\n";
+    }
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_O)) {
+        m_vulkanGlobalState->m_lights.lights[2].intensity.x -=
+            10000.0f * deltaTime;
+        std::cout << "cam: "
+                  << m_vulkanGlobalState->m_lights.lights[2].intensity.x
+                  << "\n";
+    }
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_Q)) {
+        orbitCam->Zoom(10.0f * deltaTime);
+    }
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_E)) {
+        orbitCam->Zoom(-10.0f * deltaTime);
+    }
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_A)) {
+        orbitCam->RotateAzimuth(10.0f * deltaTime);
+    }
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_D)) {
+        orbitCam->RotateAzimuth(-10.0f * deltaTime);
+    }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_W)) {
-        m_cameraSpeed += 0.0001f;
+        orbitCam->RotatePolar(10.0f * deltaTime);
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_S)) {
-        m_cameraSpeed -= 0.0001f;
+        orbitCam->RotatePolar(-10.0f * deltaTime);
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_I)) {
         m_invertHorizontal = !m_invertHorizontal;
@@ -236,30 +262,22 @@ void CameraController::UpdateCameraUBO(uint32_t currentImage, float deltaTime) {
         for (auto& mesh : m_vulkanGlobalState->m_meshList) {
             ModelUBO modelUBO{};
             modelUBO.model = glm::mat4(1.0f);
-            modelUBO.model =
-                glm::translate(modelUBO.model, glm::vec3(0.0f, 0.0f, 0.0f));
-            modelUBO.model = glm::rotate(modelUBO.model, -glm::radians(90.0f),
-                                         glm::vec3(1.0f, 0.0f, 0.0f));
-            modelUBO.model =
-                glm::scale(modelUBO.model, glm::vec3(0.1f, 0.1f, 0.1f));
-            // if (count == 1) {
-            //     modelUBO.model = glm::translate(
-            //         modelUBO.model,
-            //         mesh.m_position + glm::vec3(10.0f, 0.0f, 0.0f));
-            //     modelUBO.model =
-            //         glm::rotate(modelUBO.model, -glm::radians(180.0f),
-            //                     glm::vec3(0.0f, 1.0f, 0.0f));
-            // } else {
-            //     modelUBO.model =
-            //
-            //         glm::translate(modelUBO.model, glm::vec3(0.0f, 0.0f,
-            //         0.0f));
-            //     modelUBO.model =
-            //         glm::rotate(modelUBO.model, -glm::radians(90.0f),
-            //                     glm::vec3(1.0f, 0.0f, 0.0f));
-            //     modelUBO.model =
-            //         glm::scale(modelUBO.model, glm::vec3(0.5f, 0.5f, 0.5f));
-            // }
+            if (count == 1) {
+                modelUBO.model = glm::translate(
+                    modelUBO.model,
+                    mesh.m_position + glm::vec3(10.0f, 0.0f, 0.0f));
+                modelUBO.model =
+                    glm::rotate(modelUBO.model, -glm::radians(180.0f),
+                                glm::vec3(0.0f, 1.0f, 0.0f));
+            } else {
+                modelUBO.model =
+                    glm::translate(modelUBO.model, glm::vec3(0.0f, 0.0f, 0.0f));
+                modelUBO.model =
+                    glm::rotate(modelUBO.model, -glm::radians(90.0f),
+                                glm::vec3(1.0f, 0.0f, 0.0f));
+                modelUBO.model =
+                    glm::scale(modelUBO.model, glm::vec3(0.05f, 0.05f, 0.05f));
+            }
             if (glfwGetMouseButton(m_windowHandler->m_window,
                                    GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
             }

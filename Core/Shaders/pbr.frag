@@ -34,6 +34,7 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0){
 }
 
 
+const float PI = 3.14159265359;
 float DistributionGGX(vec3 N, vec3 H, float roughness){
     float a = roughness * roughness;
     float a2 = a*a;
@@ -41,9 +42,8 @@ float DistributionGGX(vec3 N, vec3 H, float roughness){
     float NdotH2 = NdotH * NdotH;
 
     float numerator = a2;
-    float denom = (NdotH2 * (a2 -1));
+    float denom = (NdotH2 * (a2 -1.0) + 1);
 
-    const float PI = 3.14159265359;
     denom = PI * denom * denom;
 
     return numerator/denom;
@@ -53,7 +53,7 @@ float GeometrySchlickGGX(float NdotV, float roughness){
     float a1 = roughness + 1.0;
     float k = (a1*a1)/8.0;
 
-    return NdotV/( (NdotV * (1.0f-k)) + k );
+    return NdotV/( NdotV * (1.0-k) + k );
 }
 
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness){
@@ -76,20 +76,22 @@ void main() {
     vec3 N = normalize(fragNormal);
     vec3 V = normalize(camera.cameraPos.xyz - fragPos);
 
+    vec3 F0 = vec3(0.04);
+    F0 = mix(F0, albedo, metallic);
     vec3 Lo = vec3(0.0);
     for (int i = 0; i < lightData.numLights.x; ++i){
         vec3 L = normalize(lightData.lights[i].position.xyz - fragPos);
         vec3 H = normalize(V + L);
 
         float distance = length(lightData.lights[i].position.xyz - fragPos);
-        float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = lightData.lights[i].color.rgb;
-        vec3 F0 = vec3(0.04);
-        F0 = mix(F0, albedo, metallic);
-        vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+        float attenuation = 1.0 / (distance * distance );
+
+        vec3 radiance = lightData.lights[i].color.rgb * attenuation * lightData.lights[i].intensity.x;
 
         float NDF = DistributionGGX(N, H, roughness);
         float G = GeometrySmith(N, N, L, roughness);
+        vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
         vec3 numerator = NDF * G * F;
         float denom = 4.0 * max(dot(N, V), 0.0) * max(dot(N,L), 0.0) + 0.0001;
         vec3 specular = numerator/denom;

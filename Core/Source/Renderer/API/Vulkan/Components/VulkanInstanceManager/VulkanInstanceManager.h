@@ -131,6 +131,8 @@ class VulkanInstanceManager {
     std::vector<VkDeviceMemory> m_lightUBOMemory = {};
     std::vector<void*> m_lightUBOMapped = {};
 
+    LightUBO m_lights = {};
+
     std::vector<VkBuffer> m_uniformBuffers = {};
     std::vector<VkDeviceMemory> m_uniformBuffersMemory = {};
     std::vector<void*> m_uniformBuffersMapped = {};
