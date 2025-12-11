@@ -50,8 +50,9 @@ void VulkanContext::CreateVulkanContext() {
         new SwapChainHandler(this, m_deviceHandler, m_windowHandler,
                              m_imageHandler, m_vulkanGlobalState);
     m_bufferHandler = new BufferHandler(m_vulkanGlobalState);
-    m_renderPassHandler = new RenderPassHandler(
-        this, m_swapChainHandler, m_deviceHandler, m_vulkanGlobalState);
+    m_renderPassHandler =
+        new RenderPassHandler(this, m_swapChainHandler, m_deviceHandler,
+                              m_imageHandler, m_vulkanGlobalState);
     m_cameraController =
         new CameraController(this, m_windowHandler, m_swapChainHandler,
                              m_bufferHandler, m_vulkanGlobalState);
@@ -62,11 +63,14 @@ void VulkanContext::CreateVulkanContext() {
         throw std::runtime_error("Failed to create window surface");
     m_deviceHandler->Initialize();
     m_swapChainHandler->Initialize();
-    m_renderPassHandler->Initialize();
 
-    m_swapChainHandler->AttachRenderPassHandler(m_renderPassHandler);
+    m_renderPassHandler->CreateRenderPass();
+    m_renderPassHandler->CreateShadowPass();
+    // *********************
+    // WAS GOING TO LOOP THROUGH LIGHTS TO CREATE SHADOWMAP FRAMEBUFFERS
+    // *********************
     CreateCommandPool();
-    m_swapChainHandler->CreateFramebuffers();
+    m_renderPassHandler->CreateRenderPassFrameBuffers();
 
     m_descriptorSetHandler->CreateDescriptorPool();
     // SceneDescriptorSets
@@ -367,7 +371,6 @@ void VulkanContext::CreateGraphicsPipeline(std::vector<char> vertShaderCode,
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    // Look up descSetLayouts associated with BeDrawType
     m_vulkanGlobalState->m_texturedMeshDescriptorSetLayouts.push_back(
         m_vulkanGlobalState->m_sceneDescriptorSetLayout);
     m_vulkanGlobalState->m_texturedMeshDescriptorSetLayouts.push_back(
@@ -400,8 +403,10 @@ void VulkanContext::CreateGraphicsPipeline(std::vector<char> vertShaderCode,
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = m_vulkanGlobalState->m_pipelineLayout;
+    // TODO: ADD SHADOW PASS
     pipelineInfo.renderPass = m_vulkanGlobalState->m_renderPass;
-    // Subpass INDEX
+    // pipelineInfo.renderPass = m_vulkanGlobalState->m_shadowPass;
+    //  Subpass INDEX
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
@@ -988,28 +993,6 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
     if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
         throw std::runtime_error("failed to begin recording command buffer!");
     }
-
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = m_vulkanGlobalState->m_renderPass;
-    // DEBUG
-    // printf("imageIndex DEBUG: %d\n", imageIndex);
-    renderPassInfo.framebuffer =
-        m_vulkanGlobalState->m_swapChainFramebuffers[imageIndex];
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent =
-        m_vulkanGlobalState->GetSwapChainExtent();
-
-    // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
-    std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-    clearValues[1].depthStencil = {1.0f, 0};
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
-
-    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
-                         VK_SUBPASS_CONTENTS_INLINE);
-
     // We set the viewport and scissor state as dynamic in the pipeline
     // We need to set those up in the command buffer now
     VkViewport viewport{};
@@ -1027,6 +1010,82 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
     scissor.offset = {0, 0};
     scissor.extent = m_vulkanGlobalState->GetSwapChainExtent();
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+    VkRenderPassBeginInfo shadowPassInfo{};
+    shadowPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    shadowPassInfo.renderPass = m_vulkanGlobalState->m_renderPass;
+    // DEBUG
+    // printf("imageIndex DEBUG: %d\n", imageIndex);
+    shadowPassInfo.framebuffer =
+        m_vulkanGlobalState->m_renderPassFrameBuffers[imageIndex];
+    shadowPassInfo.renderArea = {m_vulkanGlobalState->m_shadowMapWidth,
+                                 m_vulkanGlobalState->m_shadowMapHeight};
+
+    // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
+    std::array<VkClearValue, 1> shadowPassClearValues{};
+    shadowPassClearValues[1].depthStencil = {1.0f, 0};
+    shadowPassInfo.clearValueCount = 1;
+    shadowPassInfo.pClearValues = shadowPassClearValues.data();
+    // TODO: Shadow Pass
+    for (auto& light : m_vulkanGlobalState->m_lights.lights) {
+        vkCmdBeginRenderPass(commandBuffer, &shadowPassInfo,
+                             VK_SUBPASS_CONTENTS_INLINE);
+        // TODO: Write this function
+        // m_cameraController->SetCameraPosition(light.position);
+
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          m_vulkanGlobalState->m_texturedPipeline);
+
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                m_vulkanGlobalState->m_shadowPipelineLayout, 1,
+                                1, &m_vulkanGlobalState->m_shadowDescriptorSet,
+                                0, nullptr);
+        if (!m_vulkanGlobalState->m_meshList.empty()) {
+            VkBuffer vertexBuffers[] = {m_bufferHandler->VertexBuffer};
+            VkDeviceSize offsets[] = {0};
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+            vkCmdBindIndexBuffer(commandBuffer, m_bufferHandler->IndexBuffer, 0,
+                                 VK_INDEX_TYPE_UINT32);
+            for (auto& mesh : m_vulkanGlobalState->m_meshList) {
+                // TODO: Bind correct descriptor sets
+                // Binding the graphics pipeline
+                if (mesh.MeshType == TEXTURED) {
+                    vkCmdBindDescriptorSets(
+                        commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        m_vulkanGlobalState->m_pipelineLayout, 1, 1,
+                        &mesh.m_descriptorSets[m_vulkanGlobalState
+                                                   ->m_currentFrame],
+                        0, nullptr);
+                }
+                vkCmdDrawIndexed(commandBuffer,
+                                 static_cast<uint32_t>(mesh.m_indexCount), 1,
+                                 mesh.m_indexBufferStartIndex, 0, 0);
+            }
+        }
+        vkCmdEndRenderPass(commandBuffer);
+    }
+
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = m_vulkanGlobalState->m_renderPass;
+    // DEBUG
+    // printf("imageIndex DEBUG: %d\n", imageIndex);
+    renderPassInfo.framebuffer =
+        m_vulkanGlobalState->m_renderPassFrameBuffers[imageIndex];
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent =
+        m_vulkanGlobalState->GetSwapChainExtent();
+
+    // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
+    std::array<VkClearValue, 2> clearValues{};
+    clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+    clearValues[1].depthStencil = {1.0f, 0};
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
+
+    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
+                         VK_SUBPASS_CONTENTS_INLINE);
 
     //    vkCmdBindDescriptorSets(commandBuffer,
     //                            VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1316,7 +1375,7 @@ void VulkanContext::Destroy() {
                             m_vulkanGlobalState->m_pipelineLayout, nullptr);
 
     vkDestroyRenderPass(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                        m_renderPassHandler->renderPass, nullptr);
+                        m_renderPassHandler->m_renderPass, nullptr);
 
     for (size_t i = 0; i < m_maxFramesInFlight; i++) {
         vkDestroySemaphore(*m_vulkanGlobalState->GetRefLogicalDevice(),

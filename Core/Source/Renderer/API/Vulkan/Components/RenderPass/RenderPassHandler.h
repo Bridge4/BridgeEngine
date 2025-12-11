@@ -1,32 +1,53 @@
 #ifndef RENDERPASSHANDLER_H
 #define RENDERPASSHANDLER_H
 #include <vulkan/vulkan.h>
+
 #include <vector>
+
 #include "../ComponentDeclarations.h"
-//class VulkanContext;
-//class SwapChainHandler;
-//class DeviceHandler;
+// class VulkanContext;
+// class SwapChainHandler;
+// class DeviceHandler;
 
-//enum VkFormat;
+// enum VkFormat;
 
-class RenderPassHandler
-{
-public:
-	RenderPassHandler(VulkanContext* vulkanContext, SwapChainHandler* swapChainHandler, DeviceHandler* deviceHandler, VulkanInstanceManager* vulkanInstanceManager) {
-		this->vulkanContext = vulkanContext;
-		this->swapChainHandler = swapChainHandler;
-		this->deviceHandler = deviceHandler;
-		this->m_vulkanGlobalState = vulkanInstanceManager;
-	}
+class RenderPassHandler {
+   public:
+    RenderPassHandler(VulkanContext* vulkanContext,
+                      SwapChainHandler* swapChainHandler,
+                      DeviceHandler* deviceHandler, ImageHandler* imageHandler,
+                      VulkanInstanceManager* vulkanInstanceManager) {
+        this->m_vulkanContext = vulkanContext;
+        this->m_swapChainHandler = swapChainHandler;
+        this->m_deviceHandler = deviceHandler;
+        this->m_imageHandler = imageHandler;
+        this->m_vulkanGlobalState = vulkanInstanceManager;
+    }
 
-	void Initialize();
-	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-	
-	VkRenderPass renderPass = 0;
-	VulkanContext* vulkanContext = 0;
-	SwapChainHandler* swapChainHandler = 0;
-	DeviceHandler* deviceHandler = 0;
-	VulkanInstanceManager* m_vulkanGlobalState = nullptr;
+    void CreateRenderPass();
+    void CreateRenderPassDepthResources();
+    void CreateRenderPassFrameBuffers();
+
+    void CreateShadowPass();
+    void CreateShadowPassDepthResources();
+    void CreateShadowPassFrameBuffers();
+
+    VkCommandBuffer BeginSingleTimeCommands();
+
+    void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+    VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates,
+                                 VkImageTiling tiling,
+                                 VkFormatFeatureFlags features);
+
+    void TransitionImageLayout(VkImage image, VkFormat format,
+                               VkImageLayout oldLayout,
+                               VkImageLayout newLayout);
+
+    VkRenderPass m_renderPass = 0;
+    VulkanContext* m_vulkanContext = 0;
+    SwapChainHandler* m_swapChainHandler = 0;
+    DeviceHandler* m_deviceHandler = 0;
+    VulkanInstanceManager* m_vulkanGlobalState = nullptr;
+    ImageHandler* m_imageHandler = 0;
 };
 #endif
-

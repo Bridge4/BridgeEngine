@@ -1,11 +1,12 @@
 #include <iostream>
-#include "Renderer.h"
+
 #include "API/Vulkan/Components/Window/WindowHandler.h"
+#include "Renderer.h"
 
 int main() {
     try {
         WindowHandler* window = new WindowHandler();
-        window->Create(600, 600);
+        window->Create(1920, 1080);
 
         Renderer* renderer = new Renderer(window);
         renderer->CreateAPIContext();
@@ -13,8 +14,7 @@ int main() {
         window->SetApiContext(renderer->m_vulkanContext);
 
         renderer->RunRenderer();
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }

@@ -38,7 +38,7 @@ class VulkanInstanceManager {
     VkRenderPass* GetRefRenderPass() { return &m_renderPass; }
     VkExtent2D GetSwapChainExtent() { return m_swapChainExtent; }
     VkSurfaceKHR GetSurface() { return m_surface; }
-    VkImageView GetDepthImageView() { return m_depthImageView; }
+    VkImageView GetDepthImageView() { return m_renderPassDepthImageView; }
 
     std::vector<Mesh3D> GetMeshList() { return m_meshList; }
 
@@ -70,12 +70,17 @@ class VulkanInstanceManager {
     VkFormat m_swapChainImageFormat = VK_FORMAT_UNDEFINED;
     VkExtent2D m_swapChainExtent;
 
-    VkImage m_depthImage = 0;
-    VkDeviceMemory m_depthImageMemory = 0;
-    VkImageView m_depthImageView = 0;
+    VkImage m_renderPassDepthImage = 0;
+    VkDeviceMemory m_renderPassDepthImageMemory = 0;
+    VkImageView m_renderPassDepthImageView = 0;
+
+    VkImage m_shadowPassDepthImage = 0;
+    VkDeviceMemory m_shadowPassDepthImageMemory = 0;
+    VkImageView m_shadowPassDepthImageView = 0;
     std::vector<VkImageView> m_swapChainImageViews = {};
 
     VkRenderPass m_renderPass;
+    VkRenderPass m_shadowPass;
 
     VkSurfaceKHR m_surface;
     VkQueue m_graphicsQueue;
@@ -94,7 +99,10 @@ class VulkanInstanceManager {
     std::vector<VkDescriptorSet> m_descriptorSets;
     std::vector<VkDescriptorSet> m_lightDescriptorSets;
 
+    VkDescriptorSet m_shadowDescriptorSet;
+
     VkPipelineLayout m_pipelineLayout;
+    VkPipelineLayout m_shadowPipelineLayout;
 
     VkPipeline m_texturedPipeline;
     // Based on object type, we can draw with a different bound graphics
@@ -120,7 +128,8 @@ class VulkanInstanceManager {
         m_dsLayoutInfoScene, m_dsLayoutInfoTexturedMesh,
         m_dsLayoutInfoUntexturedMesh, m_dsLayoutInfoHeightMap};
 
-    std::vector<VkFramebuffer> m_swapChainFramebuffers;
+    std::vector<VkFramebuffer> m_renderPassFrameBuffers;
+    std::vector<VkFramebuffer> m_shadowPassFrameBuffers;
     VkCommandPool m_commandPool;
 
     std::vector<VkBuffer> m_cameraUBO = {};
@@ -148,6 +157,8 @@ class VulkanInstanceManager {
     // Window window;
     uint32_t WIDTH = 800;
     uint32_t HEIGHT = 600;
+    int m_shadowMapWidth = 1024;
+    int m_shadowMapHeight = 1024;
     const std::vector<const char*> validationLayers = {
         "VK_LAYER_KHRONOS_validation"};
     const std::vector<const char*> deviceExtensions = {
