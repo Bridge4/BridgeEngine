@@ -17,6 +17,10 @@ To run the exe, go into Binaries/App/Debug/App.exe
 - Event System to further separate concerns
 - Multithreading
 
+# 09-12-2025 - PBR V0
+First implementation of PBR. Primitive material system that I'm going to be moving to bindless soon. Next big plays are descriptor indexing and shadow maps. Hoping to learn a lot more about render passes and framebuffers with shadow maps. 
+<img width="897" height="721" alt="image" src="https://github.com/user-attachments/assets/f1a59906-35c7-4d18-9add-cf5e0ec78406" />
+
 # 04-12-2025
 After a year of typescript and C# it feels good to get some real work done in C++ and Vulkan. Bridge Engine now supports loading and texturing multiple models, and up to 16 lights in the scene. The codebase is very scrappy but that's a symptom of my Vulkan learning journey. The architecture will improve as time passes and my understanding of how the different parts of Vulkan work together to produce the effects of more complex modern computer graphics applications. 
 
