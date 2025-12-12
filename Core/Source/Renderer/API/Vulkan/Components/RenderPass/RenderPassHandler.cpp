@@ -239,7 +239,6 @@ void RenderPassHandler::CreateShadowPassFrameBuffers() {
     m_vulkanGlobalState->m_shadowPassFrameBuffers.resize(
         m_vulkanGlobalState->m_swapChainImageViews.size());
 
-    // Loop through swap chain image views
     for (size_t i = 0; i < m_vulkanGlobalState->m_lights.numLights.x; i++) {
         std::array<VkImageView, 1> attachments = {
             m_vulkanGlobalState->m_shadowPassDepthImageView};

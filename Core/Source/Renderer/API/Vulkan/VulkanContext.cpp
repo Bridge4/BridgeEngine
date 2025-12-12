@@ -66,38 +66,7 @@ void VulkanContext::CreateVulkanContext() {
 
     m_renderPassHandler->CreateRenderPass();
     m_renderPassHandler->CreateShadowPass();
-    // *********************
-    // WAS GOING TO LOOP THROUGH LIGHTS TO CREATE SHADOWMAP FRAMEBUFFERS
-    // *********************
-    CreateCommandPool();
-    m_renderPassHandler->CreateRenderPassFrameBuffers();
-
-    m_descriptorSetHandler->CreateDescriptorPool();
-    // SceneDescriptorSets
-
-    CreateSceneDescriptorSetLayout();
-    m_bufferHandler->CreateCameraUBO();
     m_bufferHandler->CreateLightUBO();
-    CreateSceneDescriptorSets();
-
-    // Create Per-Mesh Descriptor Set Layout
-    CreateTexturedPBRDescriptorSetLayout();
-    std::vector<char> vertScene = ReadFile(SHADERS_DIR "scene.spv");
-    std::vector<char> fragTextured = ReadFile(SHADERS_DIR "pbr.spv");
-    CreateGraphicsPipeline(vertScene, fragTextured,
-                           &m_vulkanGlobalState->m_texturedPipeline);
-
-    m_bufferHandler->CreateCommandBuffers();
-    CreateSyncObjects();
-}
-
-void VulkanContext::RunVulkanRenderer(
-    std::vector<LoadedObject> objectsToRender) {
-    std::chrono::high_resolution_clock::time_point lastFrameTime;
-    lastFrameTime = std::chrono::high_resolution_clock::now();
-
-    m_objectsToRender = objectsToRender;
-
     Light light0;
     light0.position = glm::vec4(100.0f, 0.0f, 0.0f, 0.0f);
     light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -121,6 +90,35 @@ void VulkanContext::RunVulkanRenderer(
     lightUBO.lights[3] = light3;
     lightUBO.numLights.x = 4;
     m_vulkanGlobalState->m_lights = lightUBO;
+    m_renderPassHandler->CreateShadowPassFrameBuffers();
+    CreateCommandPool();
+    m_renderPassHandler->CreateRenderPassFrameBuffers();
+
+    m_descriptorSetHandler->CreateDescriptorPool();
+    // SceneDescriptorSets
+
+    CreateSceneDescriptorSetLayout();
+    m_bufferHandler->CreateCameraUBO();
+    CreateSceneDescriptorSets();
+
+    // Create Per-Mesh Descriptor Set Layout
+    CreateTexturedPBRDescriptorSetLayout();
+    std::vector<char> vertScene = ReadFile(SHADERS_DIR "scene.spv");
+    std::vector<char> fragTextured = ReadFile(SHADERS_DIR "pbr.spv");
+    CreateGraphicsPipeline(vertScene, fragTextured,
+                           &m_vulkanGlobalState->m_texturedPipeline);
+
+    m_bufferHandler->CreateCommandBuffers();
+    CreateSyncObjects();
+}
+
+void VulkanContext::RunVulkanRenderer(
+    std::vector<LoadedObject> objectsToRender) {
+    std::chrono::high_resolution_clock::time_point lastFrameTime;
+    lastFrameTime = std::chrono::high_resolution_clock::now();
+
+    m_objectsToRender = objectsToRender;
+
     while (!m_windowHandler->ShouldClose()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
         float deltaTime =
