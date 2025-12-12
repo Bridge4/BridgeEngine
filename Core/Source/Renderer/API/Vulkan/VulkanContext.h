@@ -79,6 +79,9 @@ class VulkanContext {
     std::vector<Vertex> m_vertices;
     std::vector<uint32_t> m_indices;
 
+    uint32_t FindMemoryType(uint32_t typeFilter,
+                            VkMemoryPropertyFlags properties);
+
    private:
     DeviceHandler* m_deviceHandler;
     SwapChainHandler* m_swapChainHandler;
@@ -172,9 +175,6 @@ class VulkanContext {
 
     // COPY BUFFER
     void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-
-    uint32_t FindMemoryType(uint32_t typeFilter,
-                            VkMemoryPropertyFlags properties);
 
     void RecordCommandBuffer(VkCommandBuffer commandBuffer,
                              uint32_t imageIndex);

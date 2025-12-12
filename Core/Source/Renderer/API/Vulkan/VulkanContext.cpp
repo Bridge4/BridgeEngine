@@ -45,7 +45,7 @@ void VulkanContext::CreateVulkanContext() {
     m_descriptorSetHandler = new DescriptorSetHandler(m_vulkanGlobalState);
 
     m_deviceHandler = new DeviceHandler(m_vulkanGlobalState);
-    m_imageHandler = new ImageHandler(this);
+    m_imageHandler = new ImageHandler(this, m_vulkanGlobalState);
     m_swapChainHandler =
         new SwapChainHandler(this, m_deviceHandler, m_windowHandler,
                              m_imageHandler, m_vulkanGlobalState);
