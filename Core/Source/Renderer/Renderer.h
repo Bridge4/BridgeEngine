@@ -1,15 +1,26 @@
 #pragma once
-#include "Source/Renderer/FileLoader.h"
 #include <vector>
+
+#include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
+#include "Source/Renderer/FileLoader.h"
+#include "config.h"
 class WindowHandler;
 class VulkanContext;
 
-
 class Renderer {
-public:
-
+   public:
     Renderer(WindowHandler* window) {
         m_windowRef = window;
+        UnloadedObject testObj;
+        testObj.objFilePath = MODELS_DIR "axe/axe.obj";
+        testObj.materialTexFilePaths[ALBEDO] = MODELS_DIR "axe/albedo.png";
+        testObj.materialTexFilePaths[METALLIC] = MODELS_DIR "axe/metallic.png";
+        testObj.materialTexFilePaths[ROUGHNESS] =
+            MODELS_DIR "axe/roughness.png";
+        testObj.materialTexFilePaths[AO] = MODELS_DIR "axe/ao.png";
+        testObj.materialTexFilePaths[NORMAL] = MODELS_DIR "axe/normals.png";
+        testObj.materialTexFilePaths[EMISSIVE] = MODELS_DIR "axe/emissive.png";
+        m_objectsToLoad.push_back(testObj);
     }
     // Window Ref
     WindowHandler* m_windowRef = 0;
@@ -20,9 +31,7 @@ public:
     void CreateAPIContext();
     void SetWindowRef(WindowHandler* window);
     void RunRenderer();
-private: 
-    std::vector<UnloadedObject> m_objectsToLoad = {
-        {"C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.obj", "C:/Source/Engines/BridgeEngine/Models/VikingRoom/VikingRoom.png"},
-        {"C:/Source/Engines/BridgeEngine/Models/Ship/ship.obj", "C:/Source/Engines/BridgeEngine/Models/Ship/ship.png"}
-    };
+
+   private:
+    std::vector<UnloadedObject> m_objectsToLoad;
 };

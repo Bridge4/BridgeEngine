@@ -26,14 +26,14 @@ void DeviceHandler::InitializeDebugMessenger() {
     createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     createInfo.pfnUserCallback = DebugCallback;
 
-    if (CreateDebugUtilsMessengerEXT(&createInfo, nullptr, &m_vulkanInstanceManager->m_debugMessenger) != VK_SUCCESS) {
+    if (CreateDebugUtilsMessengerEXT(&createInfo, nullptr, &m_vulkanGlobalState->m_debugMessenger) != VK_SUCCESS) {
         throw std::runtime_error("failed to set up debug messenger!");
     }
 }
 
 void DeviceHandler::InitializePhysicalDevice() {
     uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(m_vulkanInstanceManager->GetVulkanInstance(), &deviceCount, nullptr);
+    vkEnumeratePhysicalDevices(m_vulkanGlobalState->GetVulkanInstance(), &deviceCount, nullptr);
     // check if there are no compatible devices (GPUs)
     if (deviceCount == 0) {
         throw std::runtime_error("failed to find GPUs with Vulkan support.");
@@ -41,25 +41,25 @@ void DeviceHandler::InitializePhysicalDevice() {
 
     // Allocate array to hold all VKPhysicalDevice handles
     std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(m_vulkanInstanceManager->GetVulkanInstance(), &deviceCount, devices.data());
+    vkEnumeratePhysicalDevices(m_vulkanGlobalState->GetVulkanInstance(), &deviceCount, devices.data());
     // check if there are no compatible devices (GPUs), &deviceCount, devices.data());
 
 
     for (const auto& device : devices) {
         if (IsDeviceSuitable(device)) {
-            m_vulkanInstanceManager->SetPhysicalDevice(device);
+            m_vulkanGlobalState->SetPhysicalDevice(device);
             break;
         }
     }
 
-    if (m_vulkanInstanceManager->GetPhysicalDevice() == VK_NULL_HANDLE) {
+    if (m_vulkanGlobalState->GetPhysicalDevice() == VK_NULL_HANDLE) {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
 }
 
 void DeviceHandler::InitializeLogicalDevice() {
     // Specifying queues to be created
-    QueueFamilyIndices indices = FindQueueFamilies(m_vulkanInstanceManager->GetPhysicalDevice());
+    QueueFamilyIndices indices = FindQueueFamilies(m_vulkanGlobalState->GetPhysicalDevice());
     VkDeviceQueueCreateInfo queueCreateInfo{};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
@@ -98,12 +98,12 @@ void DeviceHandler::InitializeLogicalDevice() {
         createInfo.enabledLayerCount = 0;
     }
 
-    if (vkCreateDevice(m_vulkanInstanceManager->GetPhysicalDevice(), &createInfo, nullptr, m_vulkanInstanceManager->GetRefLogicalDevice()) != VK_SUCCESS) {
+    if (vkCreateDevice(m_vulkanGlobalState->GetPhysicalDevice(), &createInfo, nullptr, m_vulkanGlobalState->GetRefLogicalDevice()) != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device!");
     }
 
-    vkGetDeviceQueue(*m_vulkanInstanceManager->GetRefLogicalDevice(), indices.graphicsFamily.value(), 0, &m_vulkanInstanceManager->m_graphicsQueue);
-    vkGetDeviceQueue(*m_vulkanInstanceManager->GetRefLogicalDevice(), indices.presentFamily.value(), 0, &m_vulkanInstanceManager->m_presentQueue);
+    vkGetDeviceQueue(*m_vulkanGlobalState->GetRefLogicalDevice(), indices.graphicsFamily.value(), 0, &m_vulkanGlobalState->m_graphicsQueue);
+    vkGetDeviceQueue(*m_vulkanGlobalState->GetRefLogicalDevice(), indices.presentFamily.value(), 0, &m_vulkanGlobalState->m_presentQueue);
 
 }
 
@@ -112,8 +112,8 @@ void DeviceHandler::Destroy() {
     if (enableValidationLayers) {
         DestroyDebugUtilsMessengerEXT(nullptr);
     }
-    vkDestroySurfaceKHR(m_vulkanInstanceManager->GetVulkanInstance(), m_vulkanInstanceManager->GetSurface(), nullptr);
-    vkDestroyInstance(m_vulkanInstanceManager->GetVulkanInstance(), nullptr);
+    vkDestroySurfaceKHR(m_vulkanGlobalState->GetVulkanInstance(), m_vulkanGlobalState->GetSurface(), nullptr);
+    vkDestroyInstance(m_vulkanGlobalState->GetVulkanInstance(), nullptr);
 }
 // HELPERS
 
@@ -126,7 +126,7 @@ bool DeviceHandler::CheckValidationLayerSupport() {
     std::vector<VkLayerProperties> availableLayers(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-    for (const char* layerName : m_vulkanInstanceManager->validationLayers) {
+    for (const char* layerName : m_vulkanGlobalState->validationLayers) {
         bool layerFound = false;
 
         for (const auto& layerProperties : availableLayers) {
@@ -197,23 +197,23 @@ SwapChainSupportDetails DeviceHandler::QuerySwapChainSupport(VkPhysicalDevice ph
 
     // Getting supported surface formats
     SwapChainSupportDetails details;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, m_vulkanInstanceManager->GetSurface(), &details.capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, m_vulkanGlobalState->GetSurface(), &details.capabilities);
 
     uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, m_vulkanInstanceManager->GetSurface(), &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, m_vulkanGlobalState->GetSurface(), &formatCount, nullptr);
 
     if (formatCount != 0) {
         details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, m_vulkanInstanceManager->GetSurface(), &formatCount, details.formats.data());
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, m_vulkanGlobalState->GetSurface(), &formatCount, details.formats.data());
     }
 
     // Getting supported present modes
     uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_vulkanInstanceManager->GetSurface(), &presentModeCount, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_vulkanGlobalState->GetSurface(), &presentModeCount, nullptr);
 
     if (presentModeCount != 0) {
         details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_vulkanInstanceManager->GetSurface(), &presentModeCount, details.presentModes.data());
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_vulkanGlobalState->GetSurface(), &presentModeCount, details.presentModes.data());
     }
 
     return details;
@@ -235,7 +235,7 @@ QueueFamilyIndices DeviceHandler::FindQueueFamilies(VkPhysicalDevice physicalDev
             indices.graphicsFamily = i;
         }
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, m_vulkanInstanceManager->GetSurface(), &presentSupport);
+        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, m_vulkanGlobalState->GetSurface(), &presentSupport);
 
         if (presentSupport) {
             indices.presentFamily = i;
@@ -256,9 +256,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DeviceHandler::DebugCallback(VkDebugUtilsMessageS
 
 // setupDebugMessenger()
 VkResult DeviceHandler::CreateDebugUtilsMessengerEXT(const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_vulkanInstanceManager->GetVulkanInstance(), "vkCreateDebugUtilsMessengerEXT");
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_vulkanGlobalState->GetVulkanInstance(), "vkCreateDebugUtilsMessengerEXT");
     if (func != nullptr) {
-        return func(m_vulkanInstanceManager->GetVulkanInstance(), pCreateInfo, pAllocator, pDebugMessenger);
+        return func(m_vulkanGlobalState->GetVulkanInstance(), pCreateInfo, pAllocator, pDebugMessenger);
     }
     else {
         return VK_ERROR_EXTENSION_NOT_PRESENT;
@@ -266,8 +266,8 @@ VkResult DeviceHandler::CreateDebugUtilsMessengerEXT(const VkDebugUtilsMessenger
 }
 
 void DeviceHandler::DestroyDebugUtilsMessengerEXT(const VkAllocationCallbacks* pAllocator) {
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_vulkanInstanceManager->GetVulkanInstance(), "vkDestroyDebugUtilsMessengerEXT");
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_vulkanGlobalState->GetVulkanInstance(), "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr) {
-        func(m_vulkanInstanceManager->GetVulkanInstance(), m_vulkanInstanceManager->m_debugMessenger, pAllocator);
+        func(m_vulkanGlobalState->GetVulkanInstance(), m_vulkanGlobalState->m_debugMessenger, pAllocator);
     }
 }

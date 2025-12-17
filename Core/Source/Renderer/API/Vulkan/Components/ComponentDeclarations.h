@@ -10,4 +10,5 @@ class ImageHandler;
 class RenderPassHandler;
 class VulkanInstanceManager;
 class Mesh3D;
+class DescriptorSetHandler;
 #endif

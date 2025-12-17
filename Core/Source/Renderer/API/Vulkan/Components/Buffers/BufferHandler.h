@@ -9,11 +9,10 @@ struct Vertex;
 struct LightUBO;
 
 
-class BufferHandler
-{
+class BufferHandler {
 public:
 	BufferHandler(VulkanInstanceManager* vulkanInstanceManager) {
-		this->m_vulkanInstanceManager = vulkanInstanceManager;
+		this->m_vulkanGlobalState = vulkanInstanceManager;
 	}
 
 	void DestroyBuffers();
@@ -50,7 +49,7 @@ public:
 
 	void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 private:
-	VulkanInstanceManager* m_vulkanInstanceManager = nullptr;
+	VulkanInstanceManager* m_vulkanGlobalState = nullptr;
 
 
 	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);

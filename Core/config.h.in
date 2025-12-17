@@ -1,0 +1,2 @@
+#define SHADERS_DIR "@SHADERS_DIR@"
+#define MODELS_DIR "@MODELS_DIR@"

@@ -1,7 +1,10 @@
 #include <stb_image.h>
-#include <string>
 #include <tiny_obj_loader.h>
 
+#include <string>
+#include <unordered_map>
+
+#include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
 
 struct ObjProperties {
     tinyobj::attrib_t attrib;
@@ -17,10 +20,10 @@ struct TextureProperties {
 
 struct UnloadedObject {
     std::string objFilePath;
-    std::string textureFilePath;
+    std::unordered_map<MaterialEnums, std::string> materialTexFilePaths;
 };
 
 struct LoadedObject {
     ObjProperties objProperties;
-    TextureProperties textureProperties;
+    std::unordered_map<MaterialEnums, TextureProperties> textureProperties;
 };
