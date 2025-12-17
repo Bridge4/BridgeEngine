@@ -12,6 +12,11 @@
 #include "Source/Renderer/DataStructures.h"
 #include "vulkan/vulkan.h"
 
+struct ShadowPassPushConstants {
+    glm::mat4 lightViewProj;
+    glm::mat4 model;
+};
+
 class VulkanInstanceManager {
    public:
     // The VulkanInstanceManager will hold the resources created by the various
@@ -81,6 +86,7 @@ class VulkanInstanceManager {
 
     VkRenderPass m_renderPass;
     VkRenderPass m_shadowPass;
+    ShadowPassPushConstants m_shadowPassPushConstants;
 
     VkSurfaceKHR m_surface;
     VkQueue m_graphicsQueue;
@@ -95,16 +101,20 @@ class VulkanInstanceManager {
     VkDescriptorSetLayout m_texturedPBRDescriptorSetLayout;
 
     std::vector<VkDescriptorSetLayout> m_texturedMeshDescriptorSetLayouts;
+    std::vector<VkDescriptorSetLayout> m_shadowPassDescriptorSetLayouts;
+    ;
     VkDescriptorPool m_descriptorPool;
     std::vector<VkDescriptorSet> m_descriptorSets;
     std::vector<VkDescriptorSet> m_lightDescriptorSets;
 
-    VkDescriptorSet m_shadowDescriptorSet;
+    std::vector<VkDescriptorSet> m_shadowPassDescriptorSets;
+    VkDescriptorSetLayout m_shadowPassDescriptorSetLayout;
 
     VkPipelineLayout m_pipelineLayout;
-    VkPipelineLayout m_shadowPipelineLayout;
+    VkPipelineLayout m_shadowPassPipelineLayout;
 
     VkPipeline m_texturedPipeline;
+    VkPipeline m_shadowPassPipeline;
     // Based on object type, we can draw with a different bound graphics
     // pipeline if object == drawTypeA bind pipelines[drawTypeA] elif object ==
     // drawTypeB bind pipelines[drawTypeB]

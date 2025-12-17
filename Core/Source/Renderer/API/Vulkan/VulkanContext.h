@@ -78,6 +78,16 @@ class VulkanContext {
 
     std::vector<Vertex> m_vertices;
     std::vector<uint32_t> m_indices;
+    // TODO: Figure out what the fuck this does
+    void TransitionImageLayout(VkImage image, VkFormat format,
+                               VkImageLayout oldLayout,
+                               VkImageLayout newLayout);
+
+    // beginSingleTimeCommands and endSingleTimeCommands are helpers for
+    // copyBuffer
+    VkCommandBuffer BeginSingleTimeCommands();
+
+    void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 
    private:
     DeviceHandler* m_deviceHandler;
@@ -118,6 +128,9 @@ class VulkanContext {
                                 std::vector<char> fragShaderCode,
                                 VkPipeline* pipeline);
 
+    void CreateShadowPassPipeline(std::vector<char> vertShaderCode,
+                                  std::vector<char> fragShaderCode,
+                                  VkPipeline* pipeline);
     // COMMAND POOL
     /*
         Command pools manage the memory used to store command buffers
@@ -145,11 +158,6 @@ class VulkanContext {
                      VkMemoryPropertyFlags properties, VkImage& image,
                      VkDeviceMemory& imageMemory);
 
-    // TODO: Figure out what the fuck this does
-    void TransitionImageLayout(VkImage image, VkFormat format,
-                               VkImageLayout oldLayout,
-                               VkImageLayout newLayout);
-
     void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
                            uint32_t height);
 
@@ -163,12 +171,6 @@ class VulkanContext {
 
     // DESCRIPTOR SETS
     void CreateMeshDescriptorSets();
-
-    // beginSingleTimeCommands and endSingleTimeCommands are helpers for
-    // copyBuffer
-    VkCommandBuffer BeginSingleTimeCommands();
-
-    void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 
     // COPY BUFFER
     void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);

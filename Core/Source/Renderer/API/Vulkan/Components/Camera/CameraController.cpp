@@ -96,8 +96,8 @@ void CameraController::HandleInputNoClip(float deltaTime) {
         if (!m_lookActive) {
             glfwSetCursorPos(
                 m_windowHandler->m_window,
-                (m_swapChainHandler->SwapChainExtent.width / 2.0f),
-                (m_swapChainHandler->SwapChainExtent.height / 2.0f));
+                (m_swapChainHandler->m_swapChainExtent.width / 2.0f),
+                (m_swapChainHandler->m_swapChainExtent.height / 2.0f));
             m_lookToggled = true;
         }
         m_lookActive = true;

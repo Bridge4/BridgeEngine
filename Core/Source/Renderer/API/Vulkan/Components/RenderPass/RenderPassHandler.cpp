@@ -119,16 +119,17 @@ void RenderPassHandler::CreateShadowPass() {
                              VK_FORMAT_D24_UNORM_S8_UINT},
                             VK_IMAGE_TILING_OPTIMAL,
                             VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     depthAttachment.finalLayout =
-        VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
     VkAttachmentReference depthAttachmentRef{};
     depthAttachmentRef.attachment = 0;
     depthAttachmentRef.layout =
-        VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -136,12 +137,23 @@ void RenderPassHandler::CreateShadowPass() {
     // fragment shader with the layout(location = 0) out vec4 outColor directive
     subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependency.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                              VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
     VkRenderPassCreateInfo shadowPassInfo{};
     shadowPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     shadowPassInfo.attachmentCount = 1;
     shadowPassInfo.pAttachments = &depthAttachment;
     shadowPassInfo.subpassCount = 1;
     shadowPassInfo.pSubpasses = &subpass;
+    shadowPassInfo.dependencyCount = 1;
+    shadowPassInfo.pDependencies = &dependency;
 
     if (vkCreateRenderPass(*m_vulkanGlobalState->GetRefLogicalDevice(),
                            &shadowPassInfo, nullptr,
@@ -237,9 +249,8 @@ void RenderPassHandler::CreateShadowPassDepthResources() {
 void RenderPassHandler::CreateShadowPassFrameBuffers() {
     CreateShadowPassDepthResources();
     m_vulkanGlobalState->m_shadowPassFrameBuffers.resize(
-        m_vulkanGlobalState->m_swapChainImageViews.size());
+        m_vulkanGlobalState->m_lights.numLights.x);
 
-    // Loop through swap chain image views
     for (size_t i = 0; i < m_vulkanGlobalState->m_lights.numLights.x; i++) {
         std::array<VkImageView, 1> attachments = {
             m_vulkanGlobalState->m_shadowPassDepthImageView};

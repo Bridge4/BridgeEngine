@@ -15,16 +15,13 @@ class DescriptorSetHandler {
     }
 
     void CreateDescriptorPool();
-
     void CreateDescriptorSetLayout(DsLayoutInfo* dsLayout,
                                    std::vector<DSBindingInfo> bindings);
-
     void CreateSceneDescriptorSetLayout();
-
     void CreateSceneDescriptorSets();
-
+    void CreateShadowPassDescriptorSetLayout();
+    void CreateShadowPassDescriptorSet();
     void CreateTexturedMeshDescriptorSetLayout();
-
     void CreateTexturedMeshDescriptorSets(Mesh3D* mesh);
 
    private:

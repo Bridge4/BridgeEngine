@@ -51,5 +51,6 @@ class Mesh3D {
     glm::vec3 m_position = glm::vec3(1.0f, 1.0f, 1.0f);
     glm::vec3 m_rotation = glm::vec3(1.0f, 1.0f, 1.0f);
     glm::vec3 m_scale = glm::vec3(1.0f, 1.0f, 1.0f);
+    glm::mat4 modelMatrix = glm::mat4(1);
 };
 #endif
