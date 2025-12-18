@@ -1222,8 +1222,8 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
     VkRenderPassBeginInfo shadowPassInfo{};
     shadowPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     shadowPassInfo.renderPass = m_vulkanGlobalState->m_shadowPass;
-    // DEBUG
-    // printf("imageIndex DEBUG: %d\n", imageIndex);
+    shadowPassInfo.renderArea.offset = {0, 0};
+    shadowPassInfo.renderArea.extent = shadowMapExtent;
 
     // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
     std::array<VkClearValue, 1> shadowPassClearValues{};
