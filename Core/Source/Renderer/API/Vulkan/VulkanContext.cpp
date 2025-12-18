@@ -371,6 +371,11 @@ void VulkanContext::CreateGraphicsPipeline(std::vector<char> vertShaderCode,
     colorBlending.blendConstants[2] = 0.0f;  // Optional
     colorBlending.blendConstants[3] = 0.0f;  // Optional
 
+    VkPushConstantRange pushConstantRange{};
+    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    pushConstantRange.offset = 0;
+    pushConstantRange.size = sizeof(glm::mat4);
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     m_vulkanGlobalState->m_texturedMeshDescriptorSetLayouts.push_back(
@@ -381,8 +386,8 @@ void VulkanContext::CreateGraphicsPipeline(std::vector<char> vertShaderCode,
         m_vulkanGlobalState->m_texturedMeshDescriptorSetLayouts.size();
     pipelineLayoutInfo.pSetLayouts =
         m_vulkanGlobalState->m_texturedMeshDescriptorSetLayouts.data();
-    pipelineLayoutInfo.pushConstantRangeCount = 0;     // Optional
-    pipelineLayoutInfo.pPushConstantRanges = nullptr;  // Optional
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
     if (vkCreatePipelineLayout(
             *m_vulkanGlobalState->GetRefLogicalDevice(), &pipelineLayoutInfo,
@@ -1010,7 +1015,6 @@ void VulkanContext::CreateTexturedMeshDescriptorSets(Mesh3D* mesh) {
 }
 
 void VulkanContext::CreateTexturedPBRDescriptorSetLayout() {
-    // Binding 0 = ModelUBO
     VkDescriptorSetLayoutBinding modelUBO{};
     modelUBO.binding = 0;
     modelUBO.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1019,7 +1023,6 @@ void VulkanContext::CreateTexturedPBRDescriptorSetLayout() {
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     modelUBO.pImmutableSamplers = nullptr;  // Optional
 
-    // Binding 1 = Sampler2D
     VkDescriptorSetLayoutBinding albedoMap{};
     albedoMap.binding = 1;
     albedoMap.descriptorCount = 1;
@@ -1027,7 +1030,6 @@ void VulkanContext::CreateTexturedPBRDescriptorSetLayout() {
     albedoMap.pImmutableSamplers = nullptr;
     albedoMap.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    // Binding 2 = Sampler2D
     VkDescriptorSetLayoutBinding metallicMap{};
     metallicMap.binding = 2;
     metallicMap.descriptorCount = 1;
@@ -1035,7 +1037,6 @@ void VulkanContext::CreateTexturedPBRDescriptorSetLayout() {
     metallicMap.pImmutableSamplers = nullptr;
     metallicMap.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    // Binding 3 = Sampler2D
     VkDescriptorSetLayoutBinding roughnessMap{};
     roughnessMap.binding = 3;
     roughnessMap.descriptorCount = 1;
@@ -1043,7 +1044,6 @@ void VulkanContext::CreateTexturedPBRDescriptorSetLayout() {
     roughnessMap.pImmutableSamplers = nullptr;
     roughnessMap.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    // Binding 3 = Sampler2D
     VkDescriptorSetLayoutBinding aoMap{};
     aoMap.binding = 4;
     aoMap.descriptorCount = 1;
@@ -1051,7 +1051,6 @@ void VulkanContext::CreateTexturedPBRDescriptorSetLayout() {
     aoMap.pImmutableSamplers = nullptr;
     aoMap.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    // Binding 3 = Sampler2D
     VkDescriptorSetLayoutBinding normalMap{};
     normalMap.binding = 5;
     normalMap.descriptorCount = 1;
@@ -1059,7 +1058,6 @@ void VulkanContext::CreateTexturedPBRDescriptorSetLayout() {
     normalMap.pImmutableSamplers = nullptr;
     normalMap.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    // Binding 3 = Sampler2D
     VkDescriptorSetLayoutBinding emissiveMap{};
     emissiveMap.binding = 6;
     emissiveMap.descriptorCount = 1;
@@ -1067,9 +1065,16 @@ void VulkanContext::CreateTexturedPBRDescriptorSetLayout() {
     emissiveMap.pImmutableSamplers = nullptr;
     emissiveMap.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    std::array<VkDescriptorSetLayoutBinding, 7> bindings = {
+    VkDescriptorSetLayoutBinding shadowMap{};
+    shadowMap.binding = 7;
+    shadowMap.descriptorCount = 1;
+    shadowMap.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    shadowMap.pImmutableSamplers = nullptr;
+    shadowMap.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    std::array<VkDescriptorSetLayoutBinding, 8> bindings = {
         modelUBO, albedoMap, metallicMap, roughnessMap,
-        aoMap,    normalMap, emissiveMap};
+        aoMap,    normalMap, emissiveMap, shadowMap};
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -1146,10 +1151,19 @@ void VulkanContext::CreateTexturedPBRDescriptorSets(Mesh3D* mesh) {
             mesh->m_materials[EMISSIVE].m_textureImageView;
         emissiveImageInfo.sampler =
             mesh->m_materials[EMISSIVE].m_textureSampler;
+
+        VkDescriptorImageInfo shadowImageInfo{};
+        shadowImageInfo.imageLayout =
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        shadowImageInfo.imageView =
+            m_vulkanGlobalState->m_shadowPassDepthImageView;
+        shadowImageInfo.sampler =
+            m_vulkanGlobalState->m_shadowPassTextureSampler;
+
         std::vector<VkDescriptorImageInfo> imageInfos = {
-            albedoImageInfo, metallicImageInfo, roughnessImageInfo,
-            aoImageInfo,     normalImageInfo,   emissiveImageInfo};
-        std::array<VkWriteDescriptorSet, 7> descriptorWrites{};
+            albedoImageInfo, metallicImageInfo, roughnessImageInfo, aoImageInfo,
+            normalImageInfo, emissiveImageInfo, shadowImageInfo};
+        std::array<VkWriteDescriptorSet, 8> descriptorWrites{};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[0].dstSet = mesh->m_descriptorSets[i];
         descriptorWrites[0].dstBinding = 0;
@@ -1241,6 +1255,21 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                       m_vulkanGlobalState->m_shadowPassPipeline);
 
+    glm::vec4 lightPos = glm::vec4(10.0f, 20.0f, 10.0f, 1.0f);
+
+    glm::mat4 lightView =
+        glm::lookAt(glm::vec3(lightPos),
+                    glm::vec3(0.0f, 0.0f, 0.0f),  // target scene center
+                    glm::vec3(0.0f, 1.0f, 0.0f)   // up vector
+        );
+
+    glm::mat4 lightProj =
+        glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 1.0f, 100.0f);
+
+    glm::mat4 lightViewProj = lightProj * lightView;
+
+    m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj =
+        lightViewProj;
     if (!m_vulkanGlobalState->m_meshList.empty()) {
         VkBuffer vertexBuffers[] = {m_bufferHandler->VertexBuffer};
         VkDeviceSize offsets[] = {0};
@@ -1249,22 +1278,6 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
         vkCmdBindIndexBuffer(commandBuffer, m_bufferHandler->IndexBuffer, 0,
                              VK_INDEX_TYPE_UINT32);
         for (auto& mesh : m_vulkanGlobalState->m_meshList) {
-            glm::vec4 lightPos = glm::vec4(10.0f, 20.0f, 10.0f, 1.0f);
-
-            glm::mat4 lightView =
-                glm::lookAt(glm::vec3(lightPos),
-                            glm::vec3(0.0f, 0.0f, 0.0f),  // target scene center
-                            glm::vec3(0.0f, 1.0f, 0.0f)   // up vector
-                );
-
-            glm::mat4 lightProj =
-                glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 1.0f, 100.0f);
-
-            glm::mat4 lightViewProj = lightProj * lightView;
-
-            m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj =
-                lightViewProj;
-
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
             model = glm::rotate(model, -glm::radians(90.0f),
@@ -1284,8 +1297,23 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
     }
     vkCmdEndRenderPass(commandBuffer);
     //}
-    // We set the viewport and scissor state as dynamic in the pipeline
-    // We need to set those up in the command buffer now
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    barrier.image = m_vulkanGlobalState->m_shadowPassDepthImage;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+
+    vkCmdPipelineBarrier(commandBuffer,
+                         VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
+                         0, nullptr, 1, &barrier);
 
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -1321,13 +1349,6 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
                          VK_SUBPASS_CONTENTS_INLINE);
-
-    //    vkCmdBindDescriptorSets(commandBuffer,
-    //                            VK_PIPELINE_BIND_POINT_GRAPHICS,
-    //                            m_vulkanInstanceManager->m_pipelineLayout,
-    //                            0, 1,
-    //                            &m_vulkanInstanceManager->m_lightDescriptorSets[m_vulkanInstanceManager->m_currentFrame],
-    //                            0, nullptr);
 
     vkCmdBindDescriptorSets(
         commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1367,6 +1388,10 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
             */
             // vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()),
             // 1, 0, 0);
+            vkCmdPushConstants(
+                commandBuffer, m_vulkanGlobalState->m_pipelineLayout,
+                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                sizeof(glm::mat4), &lightViewProj);
             vkCmdDrawIndexed(commandBuffer,
                              static_cast<uint32_t>(mesh.m_indexCount), 1,
                              mesh.m_indexBufferStartIndex, 0, 0);

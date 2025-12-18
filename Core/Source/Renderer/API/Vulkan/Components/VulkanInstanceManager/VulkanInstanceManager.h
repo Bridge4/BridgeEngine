@@ -83,6 +83,7 @@ class VulkanInstanceManager {
     VkDeviceMemory m_shadowPassDepthImageMemory = 0;
     VkImageView m_shadowPassDepthImageView = 0;
     std::vector<VkImageView> m_swapChainImageViews = {};
+    VkSampler m_shadowPassTextureSampler;
 
     VkRenderPass m_renderPass;
     VkRenderPass m_shadowPass;

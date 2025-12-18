@@ -122,7 +122,8 @@ void RenderPassHandler::CreateShadowPass() {
     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachment.initialLayout =
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depthAttachment.finalLayout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
@@ -220,11 +221,7 @@ void RenderPassHandler::CreateRenderPassFrameBuffers() {
 }
 
 void RenderPassHandler::CreateShadowPassDepthResources() {
-    VkFormat depthFormat =
-        FindSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
-                             VK_FORMAT_D24_UNORM_S8_UINT},
-                            VK_IMAGE_TILING_OPTIMAL,
-                            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
     m_imageHandler->CreateImage(
         m_vulkanGlobalState->m_shadowMapWidth,
         m_vulkanGlobalState->m_shadowMapHeight, depthFormat,

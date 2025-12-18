@@ -1,0 +1,4 @@
+
+error: VkLayer_khronos_validation.dll :: Class 'spirv::TypeStructInfo::Member' has a member 'type_struct_info' of type 'std::shared_ptr<spirv::TypeStructInfo const >' which does not have a complete definition.
+error: VkLayer_khronos_validation.dll :: Class 'spirv::StatelessData' has a member 'pipeline_pnext_module' of type 'std::shared_ptr<spirv::Module>' which does not have a complete definition.
+error: VkLayer_khronos_validation.dll :: Class 'vvl::AcquireFenceSync' has a member 'swapchain' of type 'std::shared_ptr<vvl::Swapchain>' which does not have a complete definition.

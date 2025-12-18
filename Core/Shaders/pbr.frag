@@ -23,10 +23,16 @@ layout(set = 1, binding = 3) uniform sampler2D roughnessMap;
 layout(set = 1, binding = 4) uniform sampler2D aoMap;
 layout(set = 1, binding = 5) uniform sampler2D normalMap;
 layout(set = 1, binding = 6) uniform sampler2D emissiveMap;
+layout(set = 1, binding = 7) uniform sampler2D shadowMap;
+
+layout(push_constant) uniform PushConstants {
+    mat4 lightViewProj;
+} pc;
 
 layout(location = 0) in vec3 fragPos;     // world-space position
 layout(location = 1) in vec3 fragNormal;  // world-space normal
 layout(location = 2) in vec2 fragTexCoord;
+layout(location = 3) in vec4 fragPosLightSpace;
 
 layout(location = 0) out vec4 outColor;
 
@@ -64,6 +70,22 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness){
     float geometryShadow = GeometrySchlickGGX(NdotL, roughness);
 
     return geometryObstruction * geometryShadow;
+}
+
+float ShadowCalculation(vec4 fragPosLightSpace)
+{
+    // perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(shadowMap, projCoords.xy).r; 
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+    // check whether current frag pos is in shadow
+    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
+
+    return shadow;
 }
 
 
@@ -107,7 +129,8 @@ void main() {
 
         float NdotL = max(dot(N, L), 0.0);
 
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+        float shadow = ShadowCalculation(fragPosLightSpace);
+        Lo += (kD * (albedo + (1.0 - shadow)) / PI + specular) * radiance * NdotL;
     }
 
     vec3 ambient = vec3(0.03) * albedo;
