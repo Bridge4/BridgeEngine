@@ -78,6 +78,7 @@ void VulkanContext::CreateVulkanContext() {
     std::vector<char> fragShadow = ReadFile(SHADERS_DIR "shadowFrag.spv");
     CreateShadowPassPipeline(vertShadow, fragShadow,
                              &m_vulkanGlobalState->m_shadowPassPipeline);
+    CreateTextureSamplerShadowPass();
 
     // Create Per-Mesh Descriptor Set Layout
     CreateTexturedPBRDescriptorSetLayout();
@@ -123,6 +124,7 @@ void VulkanContext::RunVulkanRenderer(
     m_vulkanGlobalState->m_lights = lightUBO;
     // need create a shadowpass framebuffer per shadow casting light
     m_renderPassHandler->CreateShadowPassFrameBuffers();
+    LoadSceneObjects();
     while (!m_windowHandler->ShouldClose()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
         float deltaTime =
@@ -753,6 +755,39 @@ void VulkanContext::CreateTextureSampler(Mesh3D* mesh,
     }
 }
 
+void VulkanContext::CreateTextureSamplerShadowPass() {
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+    samplerInfo.anisotropyEnable = VK_TRUE;
+
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(m_vulkanGlobalState->GetPhysicalDevice(),
+                                  &properties);
+    samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+
+    if (vkCreateSampler(
+            *m_vulkanGlobalState->GetRefLogicalDevice(), &samplerInfo, nullptr,
+            &m_vulkanGlobalState->m_shadowPassTextureSampler) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create texture sampler!");
+    }
+}
 void VulkanContext::LoadMesh(ObjProperties props, glm::vec3 scenePosition,
                              glm::vec3 objectRotation, glm::vec3 objectScale) {
     std::unordered_map<Vertex, uint32_t> uniqueVertices{};
@@ -1192,6 +1227,7 @@ void VulkanContext::CreateTexturedPBRDescriptorSets(Mesh3D* mesh) {
                                nullptr);
     }
 }
+
 void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
                                         uint32_t imageIndex) {
     /*
@@ -1264,7 +1300,7 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
         );
 
     glm::mat4 lightProj =
-        glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 1.0f, 100.0f);
+        glm::ortho(-2000.0f, 2000.0f, -2000.0f, 2000.0f, 1.0f, 10000.0f);
 
     glm::mat4 lightViewProj = lightProj * lightView;
 
@@ -1297,23 +1333,23 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
     }
     vkCmdEndRenderPass(commandBuffer);
     //}
-    VkImageMemoryBarrier barrier{};
-    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    barrier.image = m_vulkanGlobalState->m_shadowPassDepthImage;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = 1;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
+    // VkImageMemoryBarrier barrier{};
+    // barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    // barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    // barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    // barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    // barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    // barrier.image = m_vulkanGlobalState->m_shadowPassDepthImage;
+    // barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    // barrier.subresourceRange.baseMipLevel = 0;
+    // barrier.subresourceRange.levelCount = 1;
+    // barrier.subresourceRange.baseArrayLayer = 0;
+    // barrier.subresourceRange.layerCount = 1;
 
-    vkCmdPipelineBarrier(commandBuffer,
-                         VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
-                         0, nullptr, 1, &barrier);
+    // vkCmdPipelineBarrier(commandBuffer,
+    //                      VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+    //                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,
+    //                      nullptr, 0, nullptr, 1, &barrier);
 
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -1388,10 +1424,10 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
             */
             // vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()),
             // 1, 0, 0);
-            vkCmdPushConstants(
-                commandBuffer, m_vulkanGlobalState->m_pipelineLayout,
-                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                sizeof(glm::mat4), &lightViewProj);
+            vkCmdPushConstants(commandBuffer,
+                               m_vulkanGlobalState->m_pipelineLayout,
+                               VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4),
+                               &lightViewProj);
             vkCmdDrawIndexed(commandBuffer,
                              static_cast<uint32_t>(mesh.m_indexCount), 1,
                              mesh.m_indexBufferStartIndex, 0, 0);

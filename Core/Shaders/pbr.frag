@@ -130,7 +130,7 @@ void main() {
         float NdotL = max(dot(N, L), 0.0);
 
         float shadow = ShadowCalculation(fragPosLightSpace);
-        Lo += (kD * (albedo + (1.0 - shadow)) / PI + specular) * radiance * NdotL;
+        Lo += (kD * albedo / PI + specular) * radiance * NdotL * (1.0 - shadow);
     }
 
     vec3 ambient = vec3(0.03) * albedo;

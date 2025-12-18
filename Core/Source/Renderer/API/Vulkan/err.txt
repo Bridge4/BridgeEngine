@@ -1,4 +1,18 @@
+validation layer: Validation Error: [ VUID-VkWriteDescriptorSet-descripto rType-04150 ] Object 0: handle = 0xea7170000000031, type = VK_OBJECT_TYPE _IMAGE_VIEW; Object 1: handle = 0x4b7df1000000002f, type = VK_OBJECT_TYPE _IMAGE; | MessageID = 0xf72a82b8 | vkUpdateDescriptorSets(): pDescriptorW rites[7].pImageInfo[0] Descriptor update with descriptorType VK_DESCRIPTO R_TYPE_COMBINED_IMAGE_SAMPLER is being updated with invalid imageLayout V K_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL for image VkImage 0x4b7df 1000000002f[] in imageView VkImageView 0xea7170000000031[]. Allowed layou ts are: VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_ SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_DEPTH_ READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_ST ENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_IMAGE_LAYO UT_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_ LAYOUT_STENCIL_READ_ONLY_OPTIMAL. The Vulkan spec states: If descriptorType is VK_DESCRIPTOR_TYPE_COMBINED_ IMAGE_SAMPLER the imageLayout member of each element of pImageInfo must b e a member of the list given in Combined Image Sampler (https://vulkan.lu narg.com/doc/view/1.3.296.0/windows/1.3-extensions/vkspec.html#VUID-VkWri teDescriptorSet-descriptorType-04150)
 
-error: VkLayer_khronos_validation.dll :: Class 'spirv::TypeStructInfo::Member' has a member 'type_struct_info' of type 'std::shared_ptr<spirv::TypeStructInfo const >' which does not have a complete definition.
-error: VkLayer_khronos_validation.dll :: Class 'spirv::StatelessData' has a member 'pipeline_pnext_module' of type 'std::shared_ptr<spirv::Module>' which does not have a complete definition.
-error: VkLayer_khronos_validation.dll :: Class 'vvl::AcquireFenceSync' has a member 'swapchain' of type 'std::shared_ptr<vvl::Swapchain>' which does not have a complete definition.
+
+validation layer: Validation Error: [ VUID-VkWriteDescriptorSet-descripto
+rType-04150 ] Object 0: handle = 0xea7170000000031, type = VK_OBJECT_TYPE
+_IMAGE_VIEW; Object 1: handle = 0x4b7df1000000002f, type = VK_OBJECT_TYPE
+_IMAGE; | MessageID = 0xf72a82b8 | vkUpdateDescriptorSets(): pDescriptorW
+rites[7].pImageInfo[0] Descriptor update with descriptorType VK_DESCRIPTO
+R_TYPE_COMBINED_IMAGE_SAMPLER is being updated with invalid imageLayout V
+K_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL for image VkImage 0x4b7df
+1000000002f[] in imageView VkImageView 0xea7170000000031[]. Allowed layou
+ts are: VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, VK_I
+MAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_STEN
+CIL_READ_ONLY_OPTIMAL.
+The Vulkan spec states: If descriptorType is VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER the imageLayout member of each element of pImageInfo must be a member of the list given in Combined I
+mage Sampler (https://vulkan.lunarg.com/doc/view/1.3.296.0/windows/1.3-extensions/vkspec.html#VUID-VkWriteDescriptorSet-descriptorType-04150)
+
+[Process exited 0]

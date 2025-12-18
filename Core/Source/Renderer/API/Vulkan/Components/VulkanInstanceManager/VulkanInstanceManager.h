@@ -103,7 +103,6 @@ class VulkanInstanceManager {
 
     std::vector<VkDescriptorSetLayout> m_texturedMeshDescriptorSetLayouts;
     std::vector<VkDescriptorSetLayout> m_shadowPassDescriptorSetLayouts;
-    ;
     VkDescriptorPool m_descriptorPool;
     std::vector<VkDescriptorSet> m_descriptorSets;
     std::vector<VkDescriptorSet> m_lightDescriptorSets;

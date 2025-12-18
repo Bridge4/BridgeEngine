@@ -110,13 +110,13 @@ void CameraController::HandleInputNoClip(float deltaTime) {
         // cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f,
         // 0.001f, 0.001f)); cameraViewMatrix = glm::lookAt(eyePosition,
         // viewDirection+eyePosition, upVector);
-        m_vulkanContext->LoadSceneObjects();
+        // m_vulkanContext->LoadSceneObjects();
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_U)) {
         // cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f,
         // 0.001f, 0.001f)); cameraViewMatrix = glm::lookAt(eyePosition,
         // viewDirection+eyePosition, upVector);
-        m_vulkanContext->UnloadSceneObjects();
+        // m_vulkanContext->UnloadSceneObjects();
     }
     if (m_lookActive) {
         double xPos, yPos;
@@ -171,12 +171,6 @@ void CameraController::HandleInputOrbit(float deltaTime) {
                                   GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE) {
         m_lookActive = false;
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_L)) {
-        m_vulkanContext->LoadSceneObjects();
-    }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_U)) {
-        m_vulkanContext->UnloadSceneObjects();
-    }
 
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_P)) {
         m_vulkanGlobalState->m_lights.lights[0].intensity.x +=
@@ -224,6 +218,10 @@ void CameraController::HandleInputOrbit(float deltaTime) {
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_I)) {
         m_invertHorizontal = !m_invertHorizontal;
     }
+    glm::vec3 camPos = orbitCam->GetEye();
+    m_vulkanGlobalState->m_lights.lights[0].position =
+        glm::vec4(camPos.x + 5, camPos.y + 5, camPos.z + 5, 0);
+
     if (m_lookActive) {
         double xPos, yPos;
         glfwGetCursorPos(m_windowHandler->m_window, &xPos, &yPos);
