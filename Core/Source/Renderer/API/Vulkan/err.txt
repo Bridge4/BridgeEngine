@@ -1,18 +1,6 @@
-validation layer: Validation Error: [ VUID-VkWriteDescriptorSet-descripto rType-04150 ] Object 0: handle = 0xea7170000000031, type = VK_OBJECT_TYPE _IMAGE_VIEW; Object 1: handle = 0x4b7df1000000002f, type = VK_OBJECT_TYPE _IMAGE; | MessageID = 0xf72a82b8 | vkUpdateDescriptorSets(): pDescriptorW rites[7].pImageInfo[0] Descriptor update with descriptorType VK_DESCRIPTO R_TYPE_COMBINED_IMAGE_SAMPLER is being updated with invalid imageLayout V K_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL for image VkImage 0x4b7df 1000000002f[] in imageView VkImageView 0xea7170000000031[]. Allowed layou ts are: VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_ SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_DEPTH_ READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_ST ENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_IMAGE_LAYO UT_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_ LAYOUT_STENCIL_READ_ONLY_OPTIMAL. The Vulkan spec states: If descriptorType is VK_DESCRIPTOR_TYPE_COMBINED_ IMAGE_SAMPLER the imageLayout member of each element of pImageInfo must b e a member of the list given in Combined Image Sampler (https://vulkan.lu narg.com/doc/view/1.3.296.0/windows/1.3-extensions/vkspec.html#VUID-VkWri teDescriptorSet-descriptorType-04150)
+validation layer: Validation Error: [ VUID-VkSubpassDependency-srcAccessM ask-00868 ] | MessageID = 0x2ef6351e | vkCreateRenderPass(): pDependencie s[0].srcAccessMask (VK_ACCESS_SHADER_READ_BIT) is not supported by stage mask (VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT|VK_PIPELINE_STAGE_LATE_F RAGMENT_TESTS_BIT). The Vulkan spec states: Any access flag included in srcAccessMask must be supported by one of the pipeline stages in srcStageMask, as specified in the table of supported access types (https://vulkan.lunarg.com/doc/view/ 1.3.296.0/windows/1.3-extensions/vkspec.html#VUID-VkSubpassDependency-src AccessMask-00868) validation layer: Validation Performance Warning: [ WARNING-Shader-Output NotConsumed ] Object 0: handle = 0x2e2941000000001f, type = VK_OBJECT_TYP E_SHADER_MODULE; | MessageID = 0xc81ad50e | vkCreateGraphicsPipelines(): umed by vertex shader.
 
-
-validation layer: Validation Error: [ VUID-VkWriteDescriptorSet-descripto
-rType-04150 ] Object 0: handle = 0xea7170000000031, type = VK_OBJECT_TYPE
-_IMAGE_VIEW; Object 1: handle = 0x4b7df1000000002f, type = VK_OBJECT_TYPE
-_IMAGE; | MessageID = 0xf72a82b8 | vkUpdateDescriptorSets(): pDescriptorW
-rites[7].pImageInfo[0] Descriptor update with descriptorType VK_DESCRIPTO
-R_TYPE_COMBINED_IMAGE_SAMPLER is being updated with invalid imageLayout V
-K_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL for image VkImage 0x4b7df
-1000000002f[] in imageView VkImageView 0xea7170000000031[]. Allowed layou
-ts are: VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, VK_I
-MAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_STEN
-CIL_READ_ONLY_OPTIMAL.
-The Vulkan spec states: If descriptorType is VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER the imageLayout member of each element of pImageInfo must be a member of the list given in Combined I
-mage Sampler (https://vulkan.lunarg.com/doc/view/1.3.296.0/windows/1.3-extensions/vkspec.html#VUID-VkWriteDescriptorSet-descriptorType-04150)
-
-[Process exited 0]
+validation layer: Validation Performance Warning: [ WARNING-Shader-OutputNotConsumed ] Object 0: handle = 0x2e2941000000001f, type = VK_OBJECT_TYPE_SHADER_MODULE; | MessageID = 0xc81ad50e 
+| vkCreateGraphicsPipelines(): pCreateInfos[0].pVertexInputState Vertex attribute at location 3 not consumed by vertex shader.
+validation layer: Validation Warning: [ Undefined-Value-ShaderOutputNotConsumed ] Object 0: handle = 0xab64de0000000020, type = VK_OBJECT_TYPE_SHADER_MODULE; | MessageID = 0x9805298c | vkC
+reateGraphicsPipelines(): pCreateInfos[0] fragment shader writes to output location 0 with no matching attachment

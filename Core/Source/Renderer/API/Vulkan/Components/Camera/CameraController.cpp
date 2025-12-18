@@ -218,9 +218,22 @@ void CameraController::HandleInputOrbit(float deltaTime) {
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_I)) {
         m_invertHorizontal = !m_invertHorizontal;
     }
+
     glm::vec3 camPos = orbitCam->GetEye();
     m_vulkanGlobalState->m_lights.lights[0].position =
-        glm::vec4(camPos.x + 5, camPos.y + 5, camPos.z + 5, 0);
+        glm::vec4(-camPos.x + 5.0f, -camPos.y + 5.0f, -camPos.z + 5.0f, 1.0f);
+
+    glm::mat4 lightView =
+        glm::lookAt(glm::vec3(m_vulkanGlobalState->m_lights.lights[0].position),
+                    m_viewDirection, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    glm::mat4 lightProj =
+        glm::orthoRH_ZO(-200.0f, 200.0f, -200.0f, 200.0f, 1.0f, 100.0f);
+
+    glm::mat4 lightViewProj = lightProj * lightView;
+
+    m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj =
+        lightViewProj;
 
     if (m_lookActive) {
         double xPos, yPos;

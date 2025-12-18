@@ -1291,21 +1291,6 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                       m_vulkanGlobalState->m_shadowPassPipeline);
 
-    glm::vec4 lightPos = glm::vec4(10.0f, 20.0f, 10.0f, 1.0f);
-
-    glm::mat4 lightView =
-        glm::lookAt(glm::vec3(lightPos),
-                    glm::vec3(0.0f, 0.0f, 0.0f),  // target scene center
-                    glm::vec3(0.0f, 1.0f, 0.0f)   // up vector
-        );
-
-    glm::mat4 lightProj =
-        glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 1.0f, 100.0f);
-
-    glm::mat4 lightViewProj = lightProj * lightView;
-
-    m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj =
-        lightViewProj;
     if (!m_vulkanGlobalState->m_meshList.empty()) {
         VkBuffer vertexBuffers[] = {m_bufferHandler->VertexBuffer};
         VkDeviceSize offsets[] = {0};
@@ -1424,10 +1409,10 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
             */
             // vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()),
             // 1, 0, 0);
-            vkCmdPushConstants(commandBuffer,
-                               m_vulkanGlobalState->m_pipelineLayout,
-                               VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4),
-                               &lightViewProj);
+            vkCmdPushConstants(
+                commandBuffer, m_vulkanGlobalState->m_pipelineLayout,
+                VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4),
+                &m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj);
             vkCmdDrawIndexed(commandBuffer,
                              static_cast<uint32_t>(mesh.m_indexCount), 1,
                              mesh.m_indexBufferStartIndex, 0, 0);
