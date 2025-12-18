@@ -544,12 +544,12 @@ void VulkanContext::CreateShadowPassPipeline(std::vector<char> vertShaderCode,
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     // Backface culling enabled here
-    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizer.cullMode = VK_CULL_MODE_NONE;
     // Determines draw order of a "front" face
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     // !! Will learn about this in the future !!
     // NOTE: --- December 2025: Depth Bias is used to remove Shadow Acne
-    rasterizer.depthBiasEnable = VK_TRUE;
+    rasterizer.depthBiasEnable = VK_FALSE;
     rasterizer.depthBiasConstantFactor = 1.25f;  // Optional
     rasterizer.depthBiasClamp = 0.0f;            // Optional
     rasterizer.depthBiasSlopeFactor = 1.75f;     // Optional
@@ -1300,7 +1300,7 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
         );
 
     glm::mat4 lightProj =
-        glm::ortho(-2000.0f, 2000.0f, -2000.0f, 2000.0f, 1.0f, 10000.0f);
+        glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 1.0f, 100.0f);
 
     glm::mat4 lightViewProj = lightProj * lightView;
 
