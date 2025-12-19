@@ -1,4 +1,3 @@
-#pragma once
 #include "BufferHandler.h"
 
 #include <vulkan/vulkan.h>
@@ -6,12 +5,10 @@
 #include <chrono>
 
 #include "../../VulkanContext.h"
-#include "../../VulkanDataStructures.h"
 #include "../Devices/DeviceHandler.h"
 #include "../SwapChain/SwapChainHandler.h"
-#include "../VulkanInstanceManager/VulkanInstanceManager.h"
+#include "../VulkanGlobalState/VulkanGlobalState.h"
 #include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
-#include "Source/Renderer/DataStructures.h"
 
 /*
     *   STAGED BUFFER CREATION

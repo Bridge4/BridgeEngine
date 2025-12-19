@@ -1,8 +1,7 @@
 #pragma once
 #include <vector>
 
-#include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
-#include "Source/Renderer/FileLoader.h"
+#include "RendererTypes.h"
 #include "config.h"
 class WindowHandler;
 class VulkanContext;

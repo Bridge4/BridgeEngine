@@ -1,4 +1,6 @@
-#pragma once
+#ifndef VKTYPES_H
+#define VKTYPES_H
+#include <optional>
 #define GLM_ENABLE_EXPERIMENTAL
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -113,3 +115,42 @@ struct LightUBO {
 struct ModelUBO {
     alignas(16) glm::mat4 model;
 };
+
+enum DescriptorSetLayoutType {
+    SCENE,
+    TEXTURED_MESH,
+    UNTEXTURED_MESH,
+    HEIGHT_MAP
+};
+
+struct DsLayoutInfo {
+    DescriptorSetLayoutType Type;
+    std::vector<VkDescriptorSetLayoutBinding> Bindings;
+    std::unordered_map<VkDescriptorType, uint32_t> BindingTypeCount;
+    uint32_t BindingCount = Bindings.size();
+};
+
+struct DSBindingInfo {
+    uint32_t BindingCount;
+    VkDescriptorType DescriptorType;
+    VkShaderStageFlags ShaderStages;
+    uint32_t DescriptorCount;
+};
+
+struct QueueFamilyIndices {
+    std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
+
+    bool isComplete() { return graphicsFamily.has_value(); }
+};
+
+struct SwapChainSupportDetails {
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> presentModes;
+};
+
+enum BufferBuildType { STAGED, UNSTAGED };
+
+enum BeDrawType { MESH_TEXTURED, MESH_UNTEXTURED, GENERATED_TERRAIN_MESH };
+#endif

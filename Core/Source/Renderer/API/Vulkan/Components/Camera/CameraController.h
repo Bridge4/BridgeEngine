@@ -2,11 +2,10 @@
 #define CAMERACONTROLLER_H
 #include "../ComponentDeclarations.h"
 #include "Source/Renderer/API/Vulkan/Components/Camera/OrbitCamera.h"
+#include "Source/Renderer/API/Vulkan/VkTypes.h"
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <../glm/glm.hpp>
-
-#include "Source/Renderer/DataStructures.h"
 
 class CameraController {
    public:
@@ -14,13 +13,13 @@ class CameraController {
     CameraController(VulkanContext* vulkanContext, WindowHandler* windowHandler,
                      SwapChainHandler* swapChainHandler,
                      BufferHandler* bufferHandler,
-                     VulkanInstanceManager* vulkanInstanceManager,
+                     VulkanGlobalState* VulkanGlobalState,
                      CameraType camType = ORBIT) {
         this->m_vulkanContext = vulkanContext;
         this->m_bufferHandler = bufferHandler;
         this->m_windowHandler = windowHandler;
         this->m_swapChainHandler = swapChainHandler;
-        this->m_vulkanGlobalState = vulkanInstanceManager;
+        this->m_vulkanGlobalState = VulkanGlobalState;
         this->m_cameraType = camType;
         Initialize();
     }
@@ -43,7 +42,7 @@ class CameraController {
     WindowHandler* m_windowHandler = 0;
     SwapChainHandler* m_swapChainHandler = 0;
     BufferHandler* m_bufferHandler = 0;
-    VulkanInstanceManager* m_vulkanGlobalState = 0;
+    VulkanGlobalState* m_vulkanGlobalState = 0;
 
     glm::mat4 m_cameraViewMatrix = glm::mat4(1.0f);
 

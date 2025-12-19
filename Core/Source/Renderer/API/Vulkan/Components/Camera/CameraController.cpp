@@ -1,6 +1,6 @@
 #include "CameraController.h"
 
-#include "../VulkanInstanceManager/VulkanInstanceManager.h"
+#include "../VulkanGlobalState/VulkanGlobalState.h"
 // GLM INCLUDES
 
 #include "../SwapChain/SwapChainHandler.h"
@@ -12,7 +12,6 @@
 #include <../glm/gtx/transform.hpp>
 #include <../glm/gtx/vector_angle.hpp>
 
-#include "../../../../DataStructures.h"
 #include "../../VulkanContext.h"
 #include "../Window/WindowHandler.h"
 #include "GLFW/glfw3.h"

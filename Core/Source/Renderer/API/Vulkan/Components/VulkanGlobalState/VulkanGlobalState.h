@@ -1,5 +1,5 @@
-#ifndef VULKANINSTANCEMANAGER_H
-#define VULKANINSTANCEMANAGER_H
+#ifndef VULKANGLOBALSTATE_H
+#define VULKANGLOBALSTATE_H
 #include <vulkan/vulkan_core.h>
 
 #include <unordered_map>
@@ -7,9 +7,7 @@
 
 #include "../ComponentDeclarations.h"
 #include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
-#include "Source/Renderer/API/Vulkan/VulkanAbstractions.h"
-#include "Source/Renderer/API/Vulkan/VulkanDataStructures.h"
-#include "Source/Renderer/DataStructures.h"
+#include "Source/Renderer/API/Vulkan/VkTypes.h"
 #include "vulkan/vulkan.h"
 
 struct ShadowPassPushConstants {
@@ -21,12 +19,12 @@ struct PBRPushConstants {
     glm::mat4 lightViewProj;
     glm::vec4 bias;
 };
-class VulkanInstanceManager {
+class VulkanGlobalState {
    public:
-    // The VulkanInstanceManager will hold the resources created by the various
+    // The VulkanGlobalState will hold the resources created by the various
     // handlers
 
-    VulkanInstanceManager(VulkanContext* vulkanContext) {
+    VulkanGlobalState(VulkanContext* vulkanContext) {
         this->m_vulkanContext = vulkanContext;
     }
 

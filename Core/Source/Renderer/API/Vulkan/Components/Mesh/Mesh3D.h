@@ -10,6 +10,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "Source/Renderer/RendererTypes.h"
+
 enum Mesh3DTypes { TEXTURED, UNTEXTURED };
 
 struct TextureData {
@@ -19,7 +21,6 @@ struct TextureData {
     VkSampler m_textureSampler;
 };
 
-enum MaterialEnums { ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL, EMISSIVE };
 class Mesh3D {
    public:
     Mesh3D() {}

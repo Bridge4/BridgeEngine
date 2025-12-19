@@ -4,8 +4,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "ObjectData.h"
-#include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
+#include "RendererTypes.h"
 
 class FileLoader {
    public:

@@ -1,12 +1,12 @@
 #pragma once
 #include "../ComponentDeclarations.h"
-#include "Source/Renderer/API/Vulkan/Components/VulkanInstanceManager/VulkanInstanceManager.h"
+#include "Source/Renderer/API/Vulkan/Components/VulkanGlobalState/VulkanGlobalState.h"
 #include "vulkan/vulkan.h"
 // class VulkanContext;
 class ImageHandler {
    public:
     ImageHandler(VulkanContext* vulkanContext,
-                 VulkanInstanceManager* vulkanGlobalState) {
+                 VulkanGlobalState* vulkanGlobalState) {
         this->m_vulkanContext = vulkanContext;
         this->m_vulkanGlobalState = vulkanGlobalState;
     }
@@ -29,5 +29,5 @@ class ImageHandler {
 
    private:
     VulkanContext* m_vulkanContext;
-    VulkanInstanceManager* m_vulkanGlobalState;
+    VulkanGlobalState* m_vulkanGlobalState;
 };

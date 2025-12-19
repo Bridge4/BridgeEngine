@@ -11,7 +11,7 @@
 #include "../../VulkanContext.h"
 #include "../Devices/DeviceHandler.h"
 #include "../Images/ImageHandler.h"
-#include "../VulkanInstanceManager/VulkanInstanceManager.h"
+#include "../VulkanGlobalState/VulkanGlobalState.h"
 #include "../Window/WindowHandler.h"
 
 void SwapChainHandler::Initialize() {
