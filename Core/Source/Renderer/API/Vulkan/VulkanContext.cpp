@@ -125,6 +125,9 @@ void VulkanContext::RunVulkanRenderer(
     // need create a shadowpass framebuffer per shadow casting light
     m_renderPassHandler->CreateShadowPassFrameBuffers();
     LoadSceneObjects();
+    m_vulkanGlobalState->m_shadowBias = glm::vec4(0.0005f, 0.0f, 0.0f, 0.0f);
+    m_vulkanGlobalState->m_pbrPushConstants = {
+        glm::mat4(1.0f), m_vulkanGlobalState->m_shadowBias};
     while (!m_windowHandler->ShouldClose()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
         float deltaTime =
@@ -374,9 +377,10 @@ void VulkanContext::CreateGraphicsPipeline(std::vector<char> vertShaderCode,
     colorBlending.blendConstants[3] = 0.0f;  // Optional
 
     VkPushConstantRange pushConstantRange{};
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    pushConstantRange.stageFlags =
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(glm::mat4);
+    pushConstantRange.size = sizeof(PBRPushConstants);
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -412,10 +416,7 @@ void VulkanContext::CreateGraphicsPipeline(std::vector<char> vertShaderCode,
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = m_vulkanGlobalState->m_pipelineLayout;
-    // TODO: ADD SHADOW PASS
     pipelineInfo.renderPass = m_vulkanGlobalState->m_renderPass;
-    // pipelineInfo.renderPass = m_vulkanGlobalState->m_shadowPass;
-    //  Subpass INDEX
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
@@ -544,15 +545,15 @@ void VulkanContext::CreateShadowPassPipeline(std::vector<char> vertShaderCode,
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     // Backface culling enabled here
-    rasterizer.cullMode = VK_CULL_MODE_NONE;
+    rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
     // Determines draw order of a "front" face
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     // !! Will learn about this in the future !!
     // NOTE: --- December 2025: Depth Bias is used to remove Shadow Acne
-    rasterizer.depthBiasEnable = VK_FALSE;
-    rasterizer.depthBiasConstantFactor = 1.25f;  // Optional
-    rasterizer.depthBiasClamp = 0.0f;            // Optional
-    rasterizer.depthBiasSlopeFactor = 1.75f;     // Optional
+    rasterizer.depthBiasEnable = VK_TRUE;
+    rasterizer.depthBiasConstantFactor = 0.0005f;
+    rasterizer.depthBiasSlopeFactor = 1.0f;
+    rasterizer.depthBiasClamp = 0.0f;  // Optional
 
     VkPipelineMultisampleStateCreateInfo multisampling{};
     multisampling.sType =
@@ -760,9 +761,9 @@ void VulkanContext::CreateTextureSamplerShadowPass() {
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter = VK_FILTER_LINEAR;
     samplerInfo.minFilter = VK_FILTER_LINEAR;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
 
     samplerInfo.anisotropyEnable = VK_FALSE;
 
@@ -771,7 +772,7 @@ void VulkanContext::CreateTextureSamplerShadowPass() {
                                   &properties);
     samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 
-    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
 
     samplerInfo.compareEnable = VK_TRUE;
@@ -1409,9 +1410,14 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
             */
             // vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()),
             // 1, 0, 0);
+            m_vulkanGlobalState->m_pbrPushConstants = {
+                m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj,
+                m_vulkanGlobalState->m_shadowBias};
+
             vkCmdPushConstants(
                 commandBuffer, m_vulkanGlobalState->m_pipelineLayout,
-                VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4),
+                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                sizeof(PBRPushConstants),
                 &m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj);
             vkCmdDrawIndexed(commandBuffer,
                              static_cast<uint32_t>(mesh.m_indexCount), 1,

@@ -174,28 +174,15 @@ void CameraController::HandleInputOrbit(float deltaTime) {
 
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_P)) {
         m_vulkanGlobalState->m_lights.lights[0].intensity.x +=
-            100000.0f * deltaTime;
+            6000.0f * deltaTime;
         m_vulkanGlobalState->m_lights.lights[2].intensity.x +=
-            100000.0f * deltaTime;
+            60000.0f * deltaTime;
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_O)) {
         m_vulkanGlobalState->m_lights.lights[0].intensity.x -=
-            100000.0f * deltaTime;
+            6000.0f * deltaTime;
         m_vulkanGlobalState->m_lights.lights[2].intensity.x -=
             100000.0f * deltaTime;
-    }
-
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_R)) {
-        m_vulkanGlobalState->m_lights.lights[0].color.x -= 0.1f * deltaTime;
-        m_vulkanGlobalState->m_lights.lights[2].color.x -= 0.1f * deltaTime;
-    }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_G)) {
-        m_vulkanGlobalState->m_lights.lights[0].color.y -= 0.1f * deltaTime;
-        m_vulkanGlobalState->m_lights.lights[2].color.y -= 0.1f * deltaTime;
-    }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_B)) {
-        m_vulkanGlobalState->m_lights.lights[0].color.z -= 0.1f * deltaTime;
-        m_vulkanGlobalState->m_lights.lights[2].color.z -= 0.1f * deltaTime;
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_Q)) {
         orbitCam->Zoom(10.0f * deltaTime);
@@ -219,16 +206,25 @@ void CameraController::HandleInputOrbit(float deltaTime) {
         m_invertHorizontal = !m_invertHorizontal;
     }
 
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_B)) {
+        m_vulkanGlobalState->m_pbrPushConstants.bias.x += 0.001;
+    }
+
     glm::vec3 camPos = orbitCam->GetEye();
     m_vulkanGlobalState->m_lights.lights[0].position =
-        glm::vec4(-camPos.x + 5.0f, -camPos.y + 5.0f, -camPos.z + 5.0f, 1.0f);
+        glm::vec4(25.0f, -25.0f, -25.0f, 1.0f);
+
+    glm::vec3 lightPos = m_vulkanGlobalState->m_lights.lights[0].position;
+    m_vulkanGlobalState->m_lights.lights[0].lightDir =
+        glm::vec4(glm::normalize(-lightPos), 1.0f);
 
     glm::mat4 lightView =
         glm::lookAt(glm::vec3(m_vulkanGlobalState->m_lights.lights[0].position),
-                    m_viewDirection, glm::vec3(0.0f, 1.0f, 0.0f));
+                    glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    glm::mat4 lightProj =
-        glm::orthoRH_ZO(-200.0f, 200.0f, -200.0f, 200.0f, 1.0f, 100.0f);
+    float orthoSize = 500.0f;
+    glm::mat4 lightProj = glm::orthoRH_ZO(-orthoSize, orthoSize, -orthoSize,
+                                          orthoSize, 1.0f, 1000.0f);
 
     glm::mat4 lightViewProj = lightProj * lightView;
 

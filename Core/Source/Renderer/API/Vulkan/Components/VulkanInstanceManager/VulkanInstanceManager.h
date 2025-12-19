@@ -17,6 +17,10 @@ struct ShadowPassPushConstants {
     glm::mat4 model;
 };
 
+struct PBRPushConstants {
+    glm::mat4 lightViewProj;
+    glm::vec4 bias;
+};
 class VulkanInstanceManager {
    public:
     // The VulkanInstanceManager will hold the resources created by the various
@@ -88,7 +92,9 @@ class VulkanInstanceManager {
     VkRenderPass m_renderPass;
     VkRenderPass m_shadowPass;
     ShadowPassPushConstants m_shadowPassPushConstants;
+    PBRPushConstants m_pbrPushConstants;
 
+    glm::vec4 m_shadowBias;
     VkSurfaceKHR m_surface;
     VkQueue m_graphicsQueue;
     VkQueue m_presentQueue;
@@ -167,8 +173,8 @@ class VulkanInstanceManager {
     // Window window;
     uint32_t WIDTH = 800;
     uint32_t HEIGHT = 600;
-    int m_shadowMapWidth = 1024;
-    int m_shadowMapHeight = 1024;
+    int m_shadowMapWidth = 4096;
+    int m_shadowMapHeight = 4096;
     const std::vector<const char*> validationLayers = {
         "VK_LAYER_KHRONOS_validation"};
     const std::vector<const char*> deviceExtensions = {
