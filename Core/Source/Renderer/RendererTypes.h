@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 enum MaterialEnums { ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL, EMISSIVE };
+enum Mesh3DTypes { TEXTURED, UNTEXTURED };
 
 struct ObjProperties {
     tinyobj::attrib_t attrib;

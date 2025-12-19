@@ -12,8 +12,6 @@
 
 #include "Source/Renderer/RendererTypes.h"
 
-enum Mesh3DTypes { TEXTURED, UNTEXTURED };
-
 struct TextureData {
     VkImage m_textureImage;
     VkDeviceMemory m_textureImageMemory;
