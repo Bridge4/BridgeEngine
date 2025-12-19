@@ -151,6 +151,7 @@ class VulkanContext {
 
     // TEXTURE SAMPLER
     void CreateTextureSampler(Mesh3D* mesh, MaterialEnums materialType);
+    void CreateTextureSamplerShadowPass();
 
     // helper function used in createTextureImage();
     void CreateImage(uint32_t width, uint32_t height, VkFormat format,

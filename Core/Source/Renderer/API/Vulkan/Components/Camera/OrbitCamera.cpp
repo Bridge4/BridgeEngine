@@ -40,15 +40,15 @@ void OrbitCamera::Zoom(const float by) {
 
 glm::vec3 OrbitCamera::GetEye() const {
     // Calculate sines / cosines of angles
-    const auto sineAzimuth = sin(m_azimuthAngle);
-    const auto cosineAzimuth = cos(m_azimuthAngle);
-    const auto sinePolar = sin(m_polarAngle);
-    const auto cosinePolar = cos(m_polarAngle);
+    auto sineAzimuth = sin(m_azimuthAngle);
+    auto cosineAzimuth = cos(m_azimuthAngle);
+    auto sinePolar = sin(m_polarAngle);
+    auto cosinePolar = cos(m_polarAngle);
 
     // Calculate eye position out of them
-    const auto x = m_radius * cosinePolar * cosineAzimuth;
-    const auto y = m_radius * sinePolar;
-    const auto z = m_radius * cosinePolar * sineAzimuth;
+    auto x = m_radius * cosinePolar * cosineAzimuth;
+    auto y = m_radius * sinePolar;
+    auto z = m_radius * cosinePolar * sineAzimuth;
 
     return glm::vec3(x, y, z);
 }

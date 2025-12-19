@@ -4,6 +4,7 @@ struct Light {
     vec4 position;   // xyz = world-space position
     vec4 color;      // rgb = light color
     vec4 intensity; //  x = intensity
+    vec4 lightDir; //  x = intensity
 };
 
 layout(set = 0, binding = 0) uniform CameraUBO {
@@ -23,10 +24,17 @@ layout(set = 1, binding = 3) uniform sampler2D roughnessMap;
 layout(set = 1, binding = 4) uniform sampler2D aoMap;
 layout(set = 1, binding = 5) uniform sampler2D normalMap;
 layout(set = 1, binding = 6) uniform sampler2D emissiveMap;
+layout(set = 1, binding = 7) uniform sampler2D shadowMap;
+
+layout(push_constant) uniform PushConstants {
+    mat4 lightViewProj;
+    vec4 bias; // x as bias
+} pc;
 
 layout(location = 0) in vec3 fragPos;     // world-space position
 layout(location = 1) in vec3 fragNormal;  // world-space normal
 layout(location = 2) in vec2 fragTexCoord;
+layout(location = 3) in vec4 fragPosLightSpace;
 
 layout(location = 0) out vec4 outColor;
 
@@ -66,6 +74,32 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness){
     return geometryObstruction * geometryShadow;
 }
 
+float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal)
+{
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+    if (projCoords.z > 1.0 || projCoords.x < 0.0 || projCoords.x > 1.0 ||
+        projCoords.y < 0.0 || projCoords.y > 1.0)
+        return 0.0;
+    float closestDepth = texture(shadowMap, projCoords.xy).r; 
+    float currentDepth = projCoords.z;
+    vec3 lightDir = normalize(-camera.cameraPos.xyz); // uniform
+    float bias = max(0.49, 0.05 * (1.0 - dot(normal, lightData.lights[0].lightDir.xyz)));
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    for(int x=-1; x<=1; ++x) {
+        for(int y=-1; y<=1; ++y) {
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x,y) * texelSize).r;
+            if (currentDepth - bias> pcfDepth) {
+                shadow += 1;
+            }
+        }
+    }
+    shadow /= 9.0;
+
+    return shadow;
+}
+
 
 void main() {
     vec3 albedo     = pow(texture(albedoMap, fragTexCoord).rgb, vec3(2.2));
@@ -88,7 +122,7 @@ void main() {
         float distance = length(lightData.lights[i].position.xyz - fragPos);
         float attenuation = 1.0 / (distance * distance );
 
-        vec3 radiance = lightData.lights[i].color.rgb * attenuation * lightData.lights[i].intensity.x;
+        vec3 radiance = lightData.lights[i].color.rgb * 1.0 * lightData.lights[i].intensity.x;
 
         float NDF = DistributionGGX(N, H, roughness);
         float G = GeometrySmith(N, N, L, roughness);
@@ -107,7 +141,8 @@ void main() {
 
         float NdotL = max(dot(N, L), 0.0);
 
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+        float shadow = ShadowCalculation(fragPosLightSpace, N);
+        Lo += (kD * albedo / PI + specular) * radiance * NdotL * (1.0 - shadow);
     }
 
     vec3 ambient = vec3(0.03) * albedo;

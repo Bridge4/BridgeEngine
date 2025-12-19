@@ -101,6 +101,7 @@ struct Light {
     alignas(16) glm::vec4 position;   // xyz used, w ignored
     alignas(16) glm::vec4 color;      // rgb used, w ignored
     alignas(16) glm::vec4 intensity;  // x for intensity
+    alignas(16) glm::vec4 lightDir;
 };
 
 struct LightUBO {

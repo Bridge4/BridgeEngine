@@ -114,11 +114,7 @@ void RenderPassHandler::CreateRenderPass() {
 void RenderPassHandler::CreateShadowPass() {
     VkAttachmentDescription depthAttachment{};
 
-    depthAttachment.format =
-        FindSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
-                             VK_FORMAT_D24_UNORM_S8_UINT},
-                            VK_IMAGE_TILING_OPTIMAL,
-                            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    depthAttachment.format = VK_FORMAT_D32_SFLOAT;
     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -133,18 +129,30 @@ void RenderPassHandler::CreateShadowPass() {
 
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    // The index of the attachment in this array is directly referenced from the
-    // fragment shader with the layout(location = 0) out vec4 outColor directive
     subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
-    VkSubpassDependency dependency{};
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.dstSubpass = 0;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    dependency.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                              VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    dependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    // Two dependencies: begin and end
+    std::array<VkSubpassDependency, 2> dependencies{};
+
+    // External -> Subpass 0 (begin)
+    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[0].dstSubpass = 0;
+    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                                   VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependencies[0].srcAccessMask = 0;
+    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                                   VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependencies[0].dstAccessMask =
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    // Subpass 0 -> External (end)
+    dependencies[1].srcSubpass = 0;
+    dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependencies[1].srcAccessMask =
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
     VkRenderPassCreateInfo shadowPassInfo{};
     shadowPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -153,7 +161,7 @@ void RenderPassHandler::CreateShadowPass() {
     shadowPassInfo.subpassCount = 1;
     shadowPassInfo.pSubpasses = &subpass;
     shadowPassInfo.dependencyCount = 1;
-    shadowPassInfo.pDependencies = &dependency;
+    shadowPassInfo.pDependencies = dependencies.data();
 
     if (vkCreateRenderPass(*m_vulkanGlobalState->GetRefLogicalDevice(),
                            &shadowPassInfo, nullptr,
@@ -220,11 +228,7 @@ void RenderPassHandler::CreateRenderPassFrameBuffers() {
 }
 
 void RenderPassHandler::CreateShadowPassDepthResources() {
-    VkFormat depthFormat =
-        FindSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
-                             VK_FORMAT_D24_UNORM_S8_UINT},
-                            VK_IMAGE_TILING_OPTIMAL,
-                            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
     m_imageHandler->CreateImage(
         m_vulkanGlobalState->m_shadowMapWidth,
         m_vulkanGlobalState->m_shadowMapHeight, depthFormat,
