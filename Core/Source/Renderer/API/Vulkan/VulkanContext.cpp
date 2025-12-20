@@ -48,6 +48,7 @@ void VulkanContext::CreateVulkanContext() {
     m_renderPassHandler =
         new RenderPassHandler(this, m_swapChainHandler, m_deviceHandler,
                               m_imageHandler, m_vulkanGlobalState);
+    m_swapChainHandler->m_renderPassHandler = m_renderPassHandler;
     m_cameraController =
         new CameraController(this, m_windowHandler, m_swapChainHandler,
                              m_bufferHandler, m_vulkanGlobalState);
@@ -1486,6 +1487,11 @@ void VulkanContext::DrawFrame(float deltaTime) {
         VK_NULL_HANDLE, &imageIndex);
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         m_swapChainHandler->Rebuild();
+        // TODO: MUST NOT FORGET THIS
+        m_renderPassHandler->CreateRenderPass();
+        m_renderPassHandler->CreateRenderPassFrameBuffers();
+        m_renderPassHandler->CreateShadowPass();
+        m_renderPassHandler->CreateShadowPassFrameBuffers();
         return;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("failed to acquire swap chain image!");
@@ -1560,6 +1566,11 @@ void VulkanContext::DrawFrame(float deltaTime) {
         m_windowHandler->framebufferResized) {
         m_windowHandler->framebufferResized = false;
         m_swapChainHandler->Rebuild();
+        // TODO: MUST NOT FORGET THIS
+        m_renderPassHandler->CreateRenderPass();
+        m_renderPassHandler->CreateRenderPassFrameBuffers();
+        m_renderPassHandler->CreateShadowPass();
+        m_renderPassHandler->CreateShadowPassFrameBuffers();
     } else if (result != VK_SUCCESS) {
         throw std::runtime_error("Failed to present swap chain image");
     }

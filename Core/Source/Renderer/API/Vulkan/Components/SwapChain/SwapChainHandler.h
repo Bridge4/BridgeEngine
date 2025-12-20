@@ -29,13 +29,13 @@ class SwapChainHandler {
     VkFormat m_swapChainImageFormat = VK_FORMAT_UNDEFINED;
     VkExtent2D m_swapChainExtent = {};
     std::vector<VkImageView> m_swapChainImageViews = {};
+    RenderPassHandler* m_renderPassHandler = 0;
 
    private:
     VulkanContext* m_vulkanContext = 0;
     VulkanGlobalState* m_vulkanGlobalState = 0;
     DeviceHandler* m_deviceHandler = 0;
     WindowHandler* m_windowHandler = 0;
-    RenderPassHandler* m_renderPassHandler = 0;
     ImageHandler* m_imageViewHandler = 0;
 
     // HELPERS

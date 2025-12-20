@@ -282,7 +282,7 @@ void CameraController::UpdateCameraUBO(uint32_t currentImage, float deltaTime) {
             if (count == 1) {
                 modelUBO.model = glm::translate(
                     modelUBO.model,
-                    mesh.m_position + glm::vec3(10.0f, 0.0f, 0.0f));
+                    mesh.m_position + glm::vec3(-20.0f, 0.0f, 0.0f));
                 modelUBO.model =
                     glm::rotate(modelUBO.model, -glm::radians(180.0f),
                                 glm::vec3(0.0f, 1.0f, 0.0f));
