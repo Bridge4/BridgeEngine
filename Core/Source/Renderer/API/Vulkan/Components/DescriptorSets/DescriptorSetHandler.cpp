@@ -5,7 +5,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "Source/Renderer/API/Vulkan/Components/VulkanInstanceManager/VulkanInstanceManager.h"
+#include "Source/Renderer/API/Vulkan/Components/VulkanGlobalState/VulkanGlobalState.h"
 
 void DescriptorSetHandler::CreateDescriptorPool() {
     // Get number of descriptor sets

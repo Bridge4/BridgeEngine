@@ -6,7 +6,7 @@
 #include <iostream>
 
 #include "../../VulkanContext.h"
-#include "../VulkanInstanceManager/VulkanInstanceManager.h"
+#include "../VulkanGlobalState/VulkanGlobalState.h"
 VkResult WindowHandler::CreateSurface() {
     return glfwCreateWindowSurface(
         vulkanContext->m_vulkanGlobalState->m_instance, m_window, nullptr,

@@ -3,7 +3,7 @@
 #include <vulkan/vulkan_core.h>
 
 #include "../../VulkanContext.h"
-#include "../VulkanInstanceManager/VulkanInstanceManager.h"
+#include "../VulkanGlobalState/VulkanGlobalState.h"
 #include "Source/Renderer/API/Vulkan/Components/Images/ImageHandler.h"
 
 void RenderPassHandler::CreateRenderPass() {

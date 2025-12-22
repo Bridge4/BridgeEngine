@@ -7,8 +7,7 @@
 #include "Source/Renderer/API/Vulkan/Components/Camera/CameraController.h"
 #include "Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
 #include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
-#include "Source/Renderer/API/Vulkan/VulkanAbstractions.h"
-#include "Source/Renderer/FileLoader.h"
+#include "VkTypes.h"
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif  // !VK_USE_PLATFORM_WIN32_KHR
@@ -40,8 +39,6 @@
 #include <fstream>
 #include <vector>
 
-#include "../../DataStructures.h"
-
 // Forward Declarations
 class DeviceHandler;
 class SwapChainHandler;
@@ -50,7 +47,7 @@ class BufferHandler;
 class WindowHandler;
 class RenderPassHandler;
 class CameraController;
-class VulkanInstanceManager;
+class VulkanGlobalState;
 class Mesh3D;
 
 class VulkanContext {
@@ -68,7 +65,7 @@ class VulkanContext {
 
     void UnloadSceneObjects();
 
-    VulkanInstanceManager* m_vulkanGlobalState;
+    VulkanGlobalState* m_vulkanGlobalState;
     WindowHandler* m_windowHandler;
 
     const std::vector<const char*> m_validationLayers = {

@@ -11,7 +11,8 @@
 #include "../../VulkanContext.h"
 #include "../Devices/DeviceHandler.h"
 #include "../Images/ImageHandler.h"
-#include "../VulkanInstanceManager/VulkanInstanceManager.h"
+#include "../RenderPass/RenderPassHandler.h"
+#include "../VulkanGlobalState/VulkanGlobalState.h"
 #include "../Window/WindowHandler.h"
 
 void SwapChainHandler::Initialize() {
@@ -108,29 +109,26 @@ void SwapChainHandler::Rebuild() {
     vkDeviceWaitIdle(*m_vulkanGlobalState->GetRefLogicalDevice());
     Destroy();
     Initialize();
-
-    // TODO: MUST NOT FORGET THIS
-    // m_renderPassHandler->RebuildPasses();
 }
 
 void SwapChainHandler::Destroy() {
-    // vkDestroyImageView(*m_vulkanGlobalState->GetRefLogicalDevice(),
-    //                    m_vulkanGlobalState->m_renderPassDepthImageView,
-    //                    nullptr);
-    // vkDestroyImage(*m_vulkanGlobalState->GetRefLogicalDevice(),
-    //                m_vulkanGlobalState->m_renderPassDepthImage, nullptr);
-    // vkFreeMemory(*m_vulkanGlobalState->GetRefLogicalDevice(),
-    //              m_vulkanGlobalState->m_renderPassDepthImageMemory, nullptr);
+    vkDestroyImageView(*m_vulkanGlobalState->GetRefLogicalDevice(),
+                       m_vulkanGlobalState->m_renderPassDepthImageView,
+                       nullptr);
+    vkDestroyImage(*m_vulkanGlobalState->GetRefLogicalDevice(),
+                   m_vulkanGlobalState->m_renderPassDepthImage, nullptr);
+    vkFreeMemory(*m_vulkanGlobalState->GetRefLogicalDevice(),
+                 m_vulkanGlobalState->m_renderPassDepthImageMemory, nullptr);
 
-    // for (auto framebuffer : m_vulkanGlobalState->m_renderPassFrameBuffers) {
-    //     vkDestroyFramebuffer(*m_vulkanGlobalState->GetRefLogicalDevice(),
-    //                          framebuffer, nullptr);
-    // }
+    for (auto framebuffer : m_vulkanGlobalState->m_renderPassFrameBuffers) {
+        vkDestroyFramebuffer(*m_vulkanGlobalState->GetRefLogicalDevice(),
+                             framebuffer, nullptr);
+    }
 
-    // for (auto imageView : m_vulkanGlobalState->m_swapChainImageViews) {
-    //     vkDestroyImageView(*m_vulkanGlobalState->GetRefLogicalDevice(),
-    //                        imageView, nullptr);
-    // }
+    for (auto imageView : m_vulkanGlobalState->m_swapChainImageViews) {
+        vkDestroyImageView(*m_vulkanGlobalState->GetRefLogicalDevice(),
+                           imageView, nullptr);
+    }
 
     vkDestroySwapchainKHR(*m_vulkanGlobalState->GetRefLogicalDevice(),
                           m_vulkanGlobalState->m_swapChain, nullptr);

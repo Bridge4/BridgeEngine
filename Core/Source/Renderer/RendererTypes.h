@@ -1,10 +1,13 @@
+#ifndef RENDERERTYPES_H
+#define RENDERERTYPES_H
 #include <stb_image.h>
 #include <tiny_obj_loader.h>
 
 #include <string>
 #include <unordered_map>
 
-#include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
+enum MaterialEnums { ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL, EMISSIVE };
+enum Mesh3DTypes { TEXTURED, UNTEXTURED };
 
 struct ObjProperties {
     tinyobj::attrib_t attrib;
@@ -27,3 +30,4 @@ struct LoadedObject {
     ObjProperties objProperties;
     std::unordered_map<MaterialEnums, TextureProperties> textureProperties;
 };
+#endif

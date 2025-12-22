@@ -7,10 +7,9 @@
 #include <../glm/glm.hpp>
 #include <../glm/gtc/matrix_transform.hpp>
 #include <../glm/gtx/hash.hpp>
-#include <string>
 #include <unordered_map>
 
-enum Mesh3DTypes { TEXTURED, UNTEXTURED };
+#include "Source/Renderer/RendererTypes.h"
 
 struct TextureData {
     VkImage m_textureImage;
@@ -19,7 +18,6 @@ struct TextureData {
     VkSampler m_textureSampler;
 };
 
-enum MaterialEnums { ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL, EMISSIVE };
 class Mesh3D {
    public:
     Mesh3D() {}

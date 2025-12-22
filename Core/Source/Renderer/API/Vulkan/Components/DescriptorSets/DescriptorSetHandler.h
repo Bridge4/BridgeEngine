@@ -6,12 +6,12 @@
 
 #include "../ComponentDeclarations.h"
 #include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
-#include "Source/Renderer/API/Vulkan/VulkanAbstractions.h"
+#include "Source/Renderer/API/Vulkan/VkTypes.h"
 
 class DescriptorSetHandler {
    public:
-    DescriptorSetHandler(VulkanInstanceManager* vulkanInstanceManager) {
-        this->m_vulkanGlobalState = vulkanInstanceManager;
+    DescriptorSetHandler(VulkanGlobalState* VulkanGlobalState) {
+        this->m_vulkanGlobalState = VulkanGlobalState;
     }
 
     void CreateDescriptorPool();
@@ -25,7 +25,7 @@ class DescriptorSetHandler {
     void CreateTexturedMeshDescriptorSets(Mesh3D* mesh);
 
    private:
-    VulkanInstanceManager* m_vulkanGlobalState = nullptr;
+    VulkanGlobalState* m_vulkanGlobalState = nullptr;
 };
 
 #endif

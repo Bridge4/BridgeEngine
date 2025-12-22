@@ -11,12 +11,12 @@ class SwapChainHandler {
    public:
     SwapChainHandler(VulkanContext* context, DeviceHandler* deviceHandler,
                      WindowHandler* targetWindow, ImageHandler* imgViewHandler,
-                     VulkanInstanceManager* vulkanInstanceManager) {
+                     VulkanGlobalState* VulkanGlobalState) {
         this->m_vulkanContext = context;
         this->m_deviceHandler = deviceHandler;
         this->m_windowHandler = targetWindow;
         this->m_imageViewHandler = imgViewHandler;
-        this->m_vulkanGlobalState = vulkanInstanceManager;
+        this->m_vulkanGlobalState = VulkanGlobalState;
     };
 
     void Initialize();
@@ -29,13 +29,13 @@ class SwapChainHandler {
     VkFormat m_swapChainImageFormat = VK_FORMAT_UNDEFINED;
     VkExtent2D m_swapChainExtent = {};
     std::vector<VkImageView> m_swapChainImageViews = {};
+    RenderPassHandler* m_renderPassHandler = 0;
 
    private:
     VulkanContext* m_vulkanContext = 0;
-    VulkanInstanceManager* m_vulkanGlobalState = 0;
+    VulkanGlobalState* m_vulkanGlobalState = 0;
     DeviceHandler* m_deviceHandler = 0;
     WindowHandler* m_windowHandler = 0;
-    RenderPassHandler* m_renderPassHandler = 0;
     ImageHandler* m_imageViewHandler = 0;
 
     // HELPERS

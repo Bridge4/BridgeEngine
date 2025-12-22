@@ -8,7 +8,7 @@ class CameraHandler;
 class DeviceHandler;
 class ImageHandler;
 class RenderPassHandler;
-class VulkanInstanceManager;
+class VulkanGlobalState;
 class Mesh3D;
 class DescriptorSetHandler;
 #endif
