@@ -4,9 +4,9 @@
 // VULKAN PLATFORM DEFINITION
 #include <iostream>
 
-#include "Source/Renderer/API/Vulkan/Components/Camera/CameraController.h"
 #include "Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
-#include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
+#include "Source/Renderer/Camera/CameraController.h"
+#include "Source/Renderer/Mesh/Mesh3D.h"
 #include "VkTypes.h"
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR
@@ -57,7 +57,7 @@ class VulkanContext {
 #else
     const bool enableValidationLayers = true;
 #endif
-    void CreateVulkanContext();
+    void InitVulkan();
 
     void RunVulkanRenderer(std::vector<LoadedObject> objectsToRender);
 

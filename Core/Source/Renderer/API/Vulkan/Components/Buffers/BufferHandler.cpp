@@ -8,7 +8,7 @@
 #include "../Devices/DeviceHandler.h"
 #include "../SwapChain/SwapChainHandler.h"
 #include "../VulkanGlobalState/VulkanGlobalState.h"
-#include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
+#include "Source/Renderer/Mesh/Mesh3D.h"
 
 /*
     *   STAGED BUFFER CREATION

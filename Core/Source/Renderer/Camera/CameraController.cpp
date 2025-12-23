@@ -1,9 +1,9 @@
 #include "CameraController.h"
 
-#include "../VulkanGlobalState/VulkanGlobalState.h"
+#include "Source/Renderer/API/Vulkan/Components/VulkanGlobalState/VulkanGlobalState.h"
 // GLM INCLUDES
 
-#include "../SwapChain/SwapChainHandler.h"
+#include "Source/Renderer/API/Vulkan/Components/SwapChain/SwapChainHandler.h"
 // #include <glm/glm.hpp>
 #include <../glm/gtc/matrix_transform.hpp>
 #include <../glm/gtx/hash.hpp>
@@ -12,10 +12,9 @@
 #include <../glm/gtx/transform.hpp>
 #include <../glm/gtx/vector_angle.hpp>
 
-#include "../../VulkanContext.h"
-#include "../Window/WindowHandler.h"
 #include "GLFW/glfw3.h"
-#include "Source/Renderer/API/Vulkan/Components/Camera/OrbitCamera.h"
+#include "Source/Renderer/API/Vulkan/Components/Window/WindowHandler.h"
+#include "Source/Renderer/Camera/OrbitCamera.h"
 
 glm::mat4 CameraController::GetViewMatrix() {
     m_viewDirection = glm::normalize(m_viewDirection);
@@ -109,13 +108,11 @@ void CameraController::HandleInputNoClip(float deltaTime) {
         // cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f,
         // 0.001f, 0.001f)); cameraViewMatrix = glm::lookAt(eyePosition,
         // viewDirection+eyePosition, upVector);
-        // m_vulkanContext->LoadSceneObjects();
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_U)) {
         // cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f,
         // 0.001f, 0.001f)); cameraViewMatrix = glm::lookAt(eyePosition,
         // viewDirection+eyePosition, upVector);
-        // m_vulkanContext->UnloadSceneObjects();
     }
     if (m_lookActive) {
         double xPos, yPos;

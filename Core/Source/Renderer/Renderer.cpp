@@ -9,7 +9,7 @@ void Renderer::CreateAPIContext() {
 
     m_windowRef->vulkanContext = m_vulkanContext;
     m_vulkanContext->m_windowHandler = m_windowRef;
-    m_vulkanContext->CreateVulkanContext();
+    m_vulkanContext->InitVulkan();
 }
 
 void Renderer::SetWindowRef(WindowHandler* window) {

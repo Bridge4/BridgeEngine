@@ -25,17 +25,17 @@
 #include <vector>
 
 #include "Components/Buffers/BufferHandler.h"
-#include "Components/Camera/CameraController.h"
 #include "Components/Devices/DeviceHandler.h"
 #include "Components/Images/ImageHandler.h"
-#include "Components/Mesh/Mesh3D.h"
 #include "Components/RenderPass/RenderPassHandler.h"
 #include "Components/SwapChain/SwapChainHandler.h"
 #include "Components/VulkanGlobalState/VulkanGlobalState.h"
 #include "Components/Window/WindowHandler.h"
+#include "Source/Renderer/Camera/CameraController.h"
+#include "Source/Renderer/Mesh/Mesh3D.h"
 #include "VkTypes.h"
 
-void VulkanContext::CreateVulkanContext() {
+void VulkanContext::InitVulkan() {
     m_vulkanGlobalState = new VulkanGlobalState(this);
     m_descriptorSetHandler = new DescriptorSetHandler(m_vulkanGlobalState);
 

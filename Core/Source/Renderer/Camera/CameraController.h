@@ -1,8 +1,8 @@
 #ifndef CAMERACONTROLLER_H
 #define CAMERACONTROLLER_H
-#include "../ComponentDeclarations.h"
-#include "Source/Renderer/API/Vulkan/Components/Camera/OrbitCamera.h"
+#include "Source/Renderer/API/Vulkan/Components/ComponentDeclarations.h"
 #include "Source/Renderer/API/Vulkan/VkTypes.h"
+#include "Source/Renderer/Camera/OrbitCamera.h"
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <../glm/glm.hpp>

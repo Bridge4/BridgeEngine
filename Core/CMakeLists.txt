@@ -21,6 +21,13 @@ target_sources(Core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Rendere
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Renderer.h"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/FileLoader.h"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/RendererTypes.h"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Camera/CameraController.h"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Camera/CameraController.cpp"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Camera/OrbitCamera.h"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Camera/OrbitCamera.cpp"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Camera/NoClipCamera.h"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Camera/NoClipCamera.cpp"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Mesh/Mesh3D.h"
 
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/VkTypes.h"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/VulkanContext.h"
@@ -29,13 +36,7 @@ target_sources(Core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Rendere
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Buffers/BufferHandler.h"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Buffers/BufferHandler.cpp"
 
-                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Camera/CameraController.h"
-                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Camera/CameraController.cpp"
 
-                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Camera/OrbitCamera.h"
-                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Camera/OrbitCamera.cpp"
-                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Camera/NoClipCamera.h"
-                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Camera/NoClipCamera.cpp"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.cpp"
 
@@ -45,7 +46,6 @@ target_sources(Core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Rendere
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Images/ImageHandler.h"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Images/ImageHandler.cpp"
 
-                            "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
 
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/RenderPass/RenderPassHandler.h"
                             "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/RenderPass/RenderPassHandler.cpp"
