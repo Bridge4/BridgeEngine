@@ -1,61 +1,64 @@
-#ifndef BUFFERBUILDER_H
-#define BUFFERBUILDER_H
+#ifndef BUFFERHANDLER_H
+#define BUFFERHANDLER_H
 #include <vulkan/vulkan.h>
+
 #include <vector>
+
 #include "../ComponentDeclarations.h"
-//class VulkanContext;
-//class DeviceHandler;
-//class SwapChainHandler;
+#include "Source/Renderer/Mesh/Mesh3D.h"
 
 struct Vertex;
-struct UniformBufferObject;
+struct LightUBO;
 
+class BufferHandler {
+   public:
+    BufferHandler(VulkanGlobalState* VulkanGlobalState) {
+        this->m_vulkanGlobalState = VulkanGlobalState;
+    }
 
-class BufferHandler
-{
-public:
-	BufferHandler(VulkanInstanceManager* vulkanInstanceManager) {
-		this->m_vulkanInstanceManager = vulkanInstanceManager;
-	}
+    void DestroyBuffers();
 
-	void DestroyBuffers();
+    void CreateVertexBuffer(std::vector<Vertex> vertices);
 
-	void BuildVertexBuffer(std::vector<Vertex> vertices);
+    void CreateIndexBuffer(std::vector<uint32_t> indices);
 
-	void BuildIndexBuffer(std::vector<uint32_t> indices);
+    void CreateUniformBuffers();
 
-	void BuildUniformBuffers();
+    void CreateCameraUBO();
 
-	void BuildCommandBuffers();
+    void CreateLightUBO();
 
-	void BuildBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+    void CreateModelUBO(Mesh3D* mesh);
 
-	VkBuffer VertexBuffer = 0;
-	VkDeviceMemory VertexBufferMemory = 0;
+    void CreateCommandBuffers();
 
-	VkBuffer IndexBuffer = 0;
-	VkDeviceMemory IndexBufferMemory = 0;
+    void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
+                      VkMemoryPropertyFlags properties, VkBuffer& buffer,
+                      VkDeviceMemory& bufferMemory);
 
-	std::vector<VkCommandBuffer> CommandBuffers = {};
+    VkBuffer VertexBuffer = 0;
+    VkDeviceMemory VertexBufferMemory = 0;
 
-	std::vector<VkBuffer> UniformBuffers = {};
-	std::vector<VkDeviceMemory> UniformBuffersMemory = {};
-	std::vector<void*> UniformBuffersMapped = {};
+    VkBuffer IndexBuffer = 0;
+    VkDeviceMemory IndexBufferMemory = 0;
 
-	VkCommandBuffer BeginSingleTimeCommands();
+    std::vector<VkCommandBuffer> CommandBuffers = {};
 
-	void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
-private:
-	VulkanInstanceManager* m_vulkanInstanceManager = nullptr;
+    std::vector<VkBuffer> UniformBuffers = {};
+    std::vector<VkDeviceMemory> UniformBuffersMemory = {};
+    std::vector<void*> UniformBuffersMapped = {};
 
+    VkCommandBuffer BeginSingleTimeCommands();
 
-	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-	// COPY BUFFER
-	
-	
+    void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 
-	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+   private:
+    VulkanGlobalState* m_vulkanGlobalState = nullptr;
 
+    void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+    // COPY BUFFER
+
+    uint32_t FindMemoryType(uint32_t typeFilter,
+                            VkMemoryPropertyFlags properties);
 };
 #endif
-
