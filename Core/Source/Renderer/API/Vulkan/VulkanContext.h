@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
+#include "Source/Renderer/API/Vulkan/Components/RenderPass/RenderPassHandler.h"
 #include "Source/Renderer/Camera/CameraController.h"
 #include "Source/Renderer/Mesh/Mesh3D.h"
 #include "VkTypes.h"
@@ -179,6 +180,9 @@ class VulkanContext {
     void RecordCommandBuffer(VkCommandBuffer commandBuffer,
                              uint32_t imageIndex);
 
+    void RecordCommandBufferGeneric(VkCommandBuffer commandBuffer,
+                                    uint32_t imageIndex,
+                                    std::vector<BrVkRenderPass> renderPasses);
     // SEMAPHORES AND FENCES
     // Creates semaphores and fences for each frame in flight
     void CreateSyncObjects();

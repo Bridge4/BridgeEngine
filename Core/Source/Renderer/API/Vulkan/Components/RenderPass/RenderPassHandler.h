@@ -1,6 +1,7 @@
 #ifndef RENDERPASSHANDLER_H
 #define RENDERPASSHANDLER_H
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 #include <vector>
 
@@ -10,6 +11,13 @@
 // class DeviceHandler;
 
 // enum VkFormat;
+
+struct BrVkRenderPass {
+    VkViewport viewport;
+    VkRect2D scissor;
+    VkRenderPassBeginInfo renderPassInfo;
+    VkPipeline pipeline;
+};
 
 class RenderPassHandler {
    public:

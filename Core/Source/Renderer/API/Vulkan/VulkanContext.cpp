@@ -1319,23 +1319,6 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
     }
     vkCmdEndRenderPass(commandBuffer);
     //}
-    // VkImageMemoryBarrier barrier{};
-    // barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    // barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    // barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    // barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    // barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    // barrier.image = m_vulkanGlobalState->m_shadowPassDepthImage;
-    // barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    // barrier.subresourceRange.baseMipLevel = 0;
-    // barrier.subresourceRange.levelCount = 1;
-    // barrier.subresourceRange.baseArrayLayer = 0;
-    // barrier.subresourceRange.layerCount = 1;
-
-    // vkCmdPipelineBarrier(commandBuffer,
-    //                      VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-    //                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,
-    //                      nullptr, 0, nullptr, 1, &barrier);
 
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -1431,6 +1414,193 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
     }
 }
 
+void VulkanContext::RecordCommandBufferGeneric(
+    VkCommandBuffer commandBuffer, uint32_t imageIndex,
+    std::vector<BrVkRenderPass> renderPasses) {
+    /*
+        If the command buffer was already recorded once, then a call to
+       vkBeginCommandBuffer will implicitly reset it. It's not possible to
+       append commands to a buffer at a later time.
+    */
+    VkCommandBufferBeginInfo beginInfo{};
+    /*
+        VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT: The command buffer will be
+       rerecorded right after executing it once.
+        VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT : This is a secondary
+       command buffer that will be entirely within a single render pass.
+        VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT : The command buffer can be
+       resubmitted while it is also already pending execution.
+    */
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+        throw std::runtime_error("failed to begin recording command buffer!");
+    }
+    // We set the viewport and scissor state as dynamic in the pipeline
+    // We need to set those up in the command buffer now
+    VkViewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = static_cast<float>(m_vulkanGlobalState->m_shadowMapWidth);
+    viewport.height =
+        static_cast<float>(m_vulkanGlobalState->m_shadowMapHeight);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+    VkExtent2D shadowMapExtent = {
+        static_cast<uint32_t>(m_vulkanGlobalState->m_shadowMapWidth),
+        static_cast<uint32_t>(m_vulkanGlobalState->m_shadowMapHeight)};
+    VkRect2D scissor{};
+    scissor.offset = {0, 0};
+    scissor.extent = shadowMapExtent;
+    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+    VkRenderPassBeginInfo shadowPassInfo{};
+    shadowPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    shadowPassInfo.renderPass = m_vulkanGlobalState->m_shadowPass;
+    shadowPassInfo.renderArea.offset = {0, 0};
+    shadowPassInfo.renderArea.extent = shadowMapExtent;
+
+    // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
+    std::array<VkClearValue, 1> shadowPassClearValues{};
+    shadowPassClearValues[0].depthStencil = {1.0f, 0};
+    shadowPassInfo.clearValueCount = 1;
+    shadowPassInfo.pClearValues = shadowPassClearValues.data();
+    // for (auto& light : m_vulkanGlobalState->m_lights.lights) {
+    // WARN: HARDCODING SHADOWPASS FRAMEBBUFFERS.
+    // THIS SHOULD BE CHANGED IF MORE THAN 1 SHADOW CASTER
+    shadowPassInfo.framebuffer =
+        m_vulkanGlobalState->m_shadowPassFrameBuffers[0];
+    vkCmdBeginRenderPass(commandBuffer, &shadowPassInfo,
+                         VK_SUBPASS_CONTENTS_INLINE);
+
+    // DRAW CALLS
+    // SCENE
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                      m_vulkanGlobalState->m_shadowPassPipeline);
+
+    if (!m_vulkanGlobalState->m_meshList.empty()) {
+        VkBuffer vertexBuffers[] = {m_bufferHandler->VertexBuffer};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+        vkCmdBindIndexBuffer(commandBuffer, m_bufferHandler->IndexBuffer, 0,
+                             VK_INDEX_TYPE_UINT32);
+        for (auto& mesh : m_vulkanGlobalState->m_meshList) {
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+            model = glm::rotate(model, -glm::radians(90.0f),
+                                glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::scale(model, glm::vec3(0.05f, 0.05f, 0.05f));
+
+            m_vulkanGlobalState->m_shadowPassPushConstants.model = model;
+
+            vkCmdPushConstants(
+                commandBuffer, m_vulkanGlobalState->m_shadowPassPipelineLayout,
+                VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShadowPassPushConstants),
+                &m_vulkanGlobalState->m_shadowPassPushConstants);
+            vkCmdDrawIndexed(commandBuffer,
+                             static_cast<uint32_t>(mesh.m_indexCount), 1,
+                             mesh.m_indexBufferStartIndex, 0, 0);
+        }
+    }
+    vkCmdEndRenderPass(commandBuffer);
+    //}
+
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width =
+        static_cast<float>(m_vulkanGlobalState->GetSwapChainExtent().width);
+    viewport.height =
+        static_cast<float>(m_vulkanGlobalState->GetSwapChainExtent().height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+    scissor.offset = {0, 0};
+    scissor.extent = m_vulkanGlobalState->GetSwapChainExtent();
+    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = m_vulkanGlobalState->m_renderPass;
+    // DEBUG
+    // printf("imageIndex DEBUG: %d\n", imageIndex);
+    renderPassInfo.framebuffer =
+        m_vulkanGlobalState->m_renderPassFrameBuffers[imageIndex];
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent =
+        m_vulkanGlobalState->GetSwapChainExtent();
+
+    // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
+    std::array<VkClearValue, 2> clearValues{};
+    clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+    clearValues[1].depthStencil = {1.0f, 0};
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
+
+    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
+                         VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBindDescriptorSets(
+        commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        m_vulkanGlobalState->m_pipelineLayout, 0, 1,
+        &m_vulkanGlobalState
+             ->m_sceneDescriptorSets[m_vulkanGlobalState->m_currentFrame],
+        0, nullptr);
+    std::vector<VkDescriptorSet> descriptorSetsToBind;
+    if (!m_vulkanGlobalState->m_meshList.empty()) {
+        VkBuffer vertexBuffers[] = {m_bufferHandler->VertexBuffer};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+        vkCmdBindIndexBuffer(commandBuffer, m_bufferHandler->IndexBuffer, 0,
+                             VK_INDEX_TYPE_UINT32);
+        for (auto& mesh : m_vulkanGlobalState->m_meshList) {
+            // Binding the graphics pipeline
+            if (mesh.MeshType == TEXTURED) {
+                vkCmdBindPipeline(commandBuffer,
+                                  VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                  m_vulkanGlobalState->m_texturedPipeline);
+                vkCmdBindDescriptorSets(
+                    commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    m_vulkanGlobalState->m_pipelineLayout, 1, 1,
+                    &mesh.m_descriptorSets[m_vulkanGlobalState->m_currentFrame],
+                    0, nullptr);
+            }
+            /*
+                vkCmdDraw(VkCommandBuffer, vertexCount, instanceCount,
+               firstVertex, firstInstance) vertexCount: Even though we don't
+               have a vertex buffer, we technically still have 3 vertices to
+               draw. instanceCount: Used for instanced rendering, use 1 if
+               you're not doing that. firstVertex: Used as an offset into the
+               vertex buffer, defines the lowest value of gl_VertexIndex.
+                firstInstance: Used as an offset for instanced rendering,
+               defines the lowest value of gl_InstanceIndex.
+            */
+            // vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()),
+            // 1, 0, 0);
+            m_vulkanGlobalState->m_pbrPushConstants = {
+                m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj,
+                m_vulkanGlobalState->m_shadowBias};
+
+            vkCmdPushConstants(
+                commandBuffer, m_vulkanGlobalState->m_pipelineLayout,
+                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                sizeof(PBRPushConstants),
+                &m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj);
+            vkCmdDrawIndexed(commandBuffer,
+                             static_cast<uint32_t>(mesh.m_indexCount), 1,
+                             mesh.m_indexBufferStartIndex, 0, 0);
+        }
+    }
+
+    vkCmdEndRenderPass(commandBuffer);
+    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to record command buffer!");
+    }
+}
 void VulkanContext::CreateSyncObjects() {
     m_vulkanGlobalState->m_imageAvailableSemaphores.resize(m_maxFramesInFlight);
     m_vulkanGlobalState->m_renderFinishedSemaphores.resize(m_maxFramesInFlight);
@@ -1507,6 +1677,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
         m_vulkanGlobalState
             ->m_commandBuffers[m_vulkanGlobalState->m_currentFrame],
         0);
+
     RecordCommandBuffer(
         m_vulkanGlobalState
             ->m_commandBuffers[m_vulkanGlobalState->m_currentFrame],
