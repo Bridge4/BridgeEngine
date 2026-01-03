@@ -83,8 +83,8 @@ void VulkanContext::InitVulkan() {
     m_descriptorSetHandler->CreateTexturedPBRDescriptorSetLayout();
     std::vector<char> vertScene = ReadFile(SHADERS_DIR "scene.spv");
     std::vector<char> fragTextured = ReadFile(SHADERS_DIR "pbr.spv");
-    CreateGraphicsPipeline(vertScene, fragTextured,
-                           &m_vulkanGlobalState->m_pbrPipeline);
+    CreatePBRPipeline(vertScene, fragTextured,
+                      &m_vulkanGlobalState->m_pbrPipeline);
 
     m_bufferHandler->CreateCommandBuffers();
     CreateSyncObjects();
@@ -208,9 +208,9 @@ void VulkanContext::UnloadSceneObjects() {
     }
 }
 
-void VulkanContext::CreateGraphicsPipeline(std::vector<char> vertShaderCode,
-                                           std::vector<char> fragShaderCode,
-                                           VkPipeline* pipeline) {
+void VulkanContext::CreatePBRPipeline(std::vector<char> vertShaderCode,
+                                      std::vector<char> fragShaderCode,
+                                      VkPipeline* pipeline) {
     VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
 
