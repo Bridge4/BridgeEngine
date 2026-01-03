@@ -23,6 +23,8 @@ class DescriptorSetHandler {
     void CreateShadowPassDescriptorSet();
     void CreateTexturedMeshDescriptorSetLayout();
     void CreateTexturedMeshDescriptorSets(Mesh3D* mesh);
+    void CreateTexturedPBRDescriptorSetLayout();
+    void CreateTexturedPBRDescriptorSets(Mesh3D* mesh);
 
    private:
     VulkanGlobalState* m_vulkanGlobalState = nullptr;

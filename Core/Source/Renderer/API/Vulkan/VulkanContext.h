@@ -107,16 +107,6 @@ class VulkanContext {
      * Window is polled and frames are drawn until window is closed
      */
 
-    void CreateSceneDescriptorSetLayout();
-    void CreateSceneDescriptorSets();
-    void CreateTexturedMeshDescriptorSetLayout();
-    void CreateTexturedMeshDescriptorSets(Mesh3D* mesh);
-
-    void CreateTexturedPBRDescriptorSetLayout();
-    void CreateTexturedPBRDescriptorSets(Mesh3D* mesh);
-    void CreateMeshDescriptorSetLayout();
-    void CreateLightDescriptorSetLayout();
-
     // GRAPHICS PIPELINE
     /*
      *   Create a graphics pipeline to render
@@ -164,12 +154,6 @@ class VulkanContext {
                   glm::vec3 scenePosition = glm::vec3(1.0f, 1.0f, 1.0f),
                   glm::vec3 objectRotation = glm::vec3(0.0f, 0.0f, 0.0f),
                   glm::vec3 objectScale = glm::vec3(1.0f, 1.0f, 1.0f));
-
-    // DESCRIPTOR POOL
-    void CreateDescriptorPool();
-
-    // DESCRIPTOR SETS
-    void CreateMeshDescriptorSets();
 
     // COPY BUFFER
     void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
