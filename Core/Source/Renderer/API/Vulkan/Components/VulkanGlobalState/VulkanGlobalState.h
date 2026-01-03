@@ -114,10 +114,10 @@ class VulkanGlobalState {
     std::vector<VkDescriptorSet> m_shadowPassDescriptorSets;
     VkDescriptorSetLayout m_shadowPassDescriptorSetLayout;
 
-    VkPipelineLayout m_pipelineLayout;
+    VkPipelineLayout m_pbrPipelineLayout;
     VkPipelineLayout m_shadowPassPipelineLayout;
 
-    VkPipeline m_texturedPipeline;
+    VkPipeline m_pbrPipeline;
     VkPipeline m_shadowPassPipeline;
     // Based on object type, we can draw with a different bound graphics
     // pipeline if object == drawTypeA bind pipelines[drawTypeA] elif object ==

@@ -84,7 +84,7 @@ void VulkanContext::InitVulkan() {
     std::vector<char> vertScene = ReadFile(SHADERS_DIR "scene.spv");
     std::vector<char> fragTextured = ReadFile(SHADERS_DIR "pbr.spv");
     CreateGraphicsPipeline(vertScene, fragTextured,
-                           &m_vulkanGlobalState->m_texturedPipeline);
+                           &m_vulkanGlobalState->m_pbrPipeline);
 
     m_bufferHandler->CreateCommandBuffers();
     CreateSyncObjects();
@@ -396,7 +396,7 @@ void VulkanContext::CreateGraphicsPipeline(std::vector<char> vertShaderCode,
 
     if (vkCreatePipelineLayout(
             *m_vulkanGlobalState->GetRefLogicalDevice(), &pipelineLayoutInfo,
-            nullptr, &m_vulkanGlobalState->m_pipelineLayout) != VK_SUCCESS) {
+            nullptr, &m_vulkanGlobalState->m_pbrPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     };
 
@@ -414,7 +414,7 @@ void VulkanContext::CreateGraphicsPipeline(std::vector<char> vertShaderCode,
     pipelineInfo.pDepthStencilState = &depthStencil;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
-    pipelineInfo.layout = m_vulkanGlobalState->m_pipelineLayout;
+    pipelineInfo.layout = m_vulkanGlobalState->m_pbrPipelineLayout;
     pipelineInfo.renderPass = m_vulkanGlobalState->m_renderPass;
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
@@ -975,7 +975,7 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
 
     vkCmdBindDescriptorSets(
         commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        m_vulkanGlobalState->m_pipelineLayout, 0, 1,
+        m_vulkanGlobalState->m_pbrPipelineLayout, 0, 1,
         &m_vulkanGlobalState
              ->m_sceneDescriptorSets[m_vulkanGlobalState->m_currentFrame],
         0, nullptr);
@@ -992,10 +992,10 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
             if (mesh.MeshType == TEXTURED) {
                 vkCmdBindPipeline(commandBuffer,
                                   VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                  m_vulkanGlobalState->m_texturedPipeline);
+                                  m_vulkanGlobalState->m_pbrPipeline);
                 vkCmdBindDescriptorSets(
                     commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    m_vulkanGlobalState->m_pipelineLayout, 1, 1,
+                    m_vulkanGlobalState->m_pbrPipelineLayout, 1, 1,
                     &mesh.m_descriptorSets[m_vulkanGlobalState->m_currentFrame],
                     0, nullptr);
             }
@@ -1016,7 +1016,7 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
                 m_vulkanGlobalState->m_shadowBias};
 
             vkCmdPushConstants(
-                commandBuffer, m_vulkanGlobalState->m_pipelineLayout,
+                commandBuffer, m_vulkanGlobalState->m_pbrPipelineLayout,
                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                 sizeof(PBRPushConstants),
                 &m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj);
@@ -1163,7 +1163,7 @@ void VulkanContext::RecordCommandBufferGeneric(
 
     vkCmdBindDescriptorSets(
         commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        m_vulkanGlobalState->m_pipelineLayout, 0, 1,
+        m_vulkanGlobalState->m_pbrPipelineLayout, 0, 1,
         &m_vulkanGlobalState
              ->m_sceneDescriptorSets[m_vulkanGlobalState->m_currentFrame],
         0, nullptr);
@@ -1180,10 +1180,10 @@ void VulkanContext::RecordCommandBufferGeneric(
             if (mesh.MeshType == TEXTURED) {
                 vkCmdBindPipeline(commandBuffer,
                                   VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                  m_vulkanGlobalState->m_texturedPipeline);
+                                  m_vulkanGlobalState->m_pbrPipeline);
                 vkCmdBindDescriptorSets(
                     commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    m_vulkanGlobalState->m_pipelineLayout, 1, 1,
+                    m_vulkanGlobalState->m_pbrPipelineLayout, 1, 1,
                     &mesh.m_descriptorSets[m_vulkanGlobalState->m_currentFrame],
                     0, nullptr);
             }
@@ -1204,7 +1204,7 @@ void VulkanContext::RecordCommandBufferGeneric(
                 m_vulkanGlobalState->m_shadowBias};
 
             vkCmdPushConstants(
-                commandBuffer, m_vulkanGlobalState->m_pipelineLayout,
+                commandBuffer, m_vulkanGlobalState->m_pbrPipelineLayout,
                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                 sizeof(PBRPushConstants),
                 &m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj);
@@ -1456,9 +1456,9 @@ void VulkanContext::Destroy() {
     m_bufferHandler->DestroyBuffers();
 
     vkDestroyPipeline(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                      m_vulkanGlobalState->m_texturedPipeline, nullptr);
+                      m_vulkanGlobalState->m_pbrPipeline, nullptr);
     vkDestroyPipelineLayout(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                            m_vulkanGlobalState->m_pipelineLayout, nullptr);
+                            m_vulkanGlobalState->m_pbrPipelineLayout, nullptr);
 
     vkDestroyRenderPass(*m_vulkanGlobalState->GetRefLogicalDevice(),
                         m_renderPassHandler->m_renderPass, nullptr);
