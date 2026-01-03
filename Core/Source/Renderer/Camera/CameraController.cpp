@@ -171,15 +171,15 @@ void CameraController::HandleInputOrbit(float deltaTime) {
 
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_P)) {
         m_vulkanGlobalState->m_lights.lights[0].intensity.x +=
-            6000.0f * deltaTime;
+            1000.0f * deltaTime;
         m_vulkanGlobalState->m_lights.lights[2].intensity.x +=
-            60000.0f * deltaTime;
+            1000.0f * deltaTime;
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_O)) {
         m_vulkanGlobalState->m_lights.lights[0].intensity.x -=
-            6000.0f * deltaTime;
+            1000.0f * deltaTime;
         m_vulkanGlobalState->m_lights.lights[2].intensity.x -=
-            100000.0f * deltaTime;
+            1000.0f * deltaTime;
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_Q)) {
         orbitCam->Zoom(10.0f * deltaTime);
@@ -303,7 +303,7 @@ void CameraController::UpdateCameraUBO(uint32_t currentImage, float deltaTime) {
                     glm::rotate(modelUBO.model, -glm::radians(90.0f),
                                 glm::vec3(0.0f, 1.0f, 0.0f));
                 modelUBO.model =
-                    glm::scale(modelUBO.model, glm::vec3(0.05f, 0.05f, 0.05f));
+                    glm::scale(modelUBO.model, glm::vec3(2.05f, 2.05f, 2.05f));
             }
             if (glfwGetMouseButton(m_windowHandler->m_window,
                                    GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
