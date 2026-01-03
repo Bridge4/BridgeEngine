@@ -269,7 +269,8 @@ void CameraController::HandleInputOrbit(float deltaTime) {
     }
 }
 
-void CameraController::UpdateCameraUBO(uint32_t currentImage, float deltaTime) {
+void CameraController::UpdateCameraPosition(uint32_t currentImage,
+                                            float deltaTime) {
     m_viewDirection = glm::normalize(m_viewDirection);
 
     m_cameraUBO.view = GetViewMatrix();

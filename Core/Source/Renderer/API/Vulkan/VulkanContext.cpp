@@ -102,23 +102,8 @@ void VulkanContext::RunVulkanRenderer(
     light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     light0.intensity.x = 10000.0f;
 
-    // Light light1;
-    // light1.position = glm::vec4(0.0f, 10.0f, 0.0f, 0.0f);
-    // light1.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    // light1.intensity.x = 1.5f;
-    // Light light2;
-    // light2.position = glm::vec4(-100.0f, 0.0f, 0.0f, 0.0f);
-    // light2.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    // light2.intensity.x = 10000.0f;
-    // Light light3;
-    // light3.position = glm::vec4(0.0f, 0.0f, 10.0f, 0.0f);
-    // light3.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    // light3.intensity.x = 10.0f;
     LightUBO lightUBO;
     lightUBO.lights[0] = light0;
-    // lightUBO.lights[1] = light1;
-    // lightUBO.lights[2] = light2;
-    // lightUBO.lights[3] = light3;
     lightUBO.numLights.x = 1;
     m_vulkanGlobalState->m_lights = lightUBO;
     // need create a shadowpass framebuffer per shadow casting light
@@ -134,6 +119,7 @@ void VulkanContext::RunVulkanRenderer(
         glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
     m_vulkanGlobalState->m_pbrPushConstants.hasRoughness =
         glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+
     while (!m_windowHandler->ShouldClose()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
         float deltaTime =
@@ -146,8 +132,8 @@ void VulkanContext::RunVulkanRenderer(
                    ->m_lightUBOMapped[m_vulkanGlobalState->m_currentFrame],
                &m_vulkanGlobalState->m_lights,
                sizeof(m_vulkanGlobalState->m_lights));
-        m_cameraController->UpdateCameraUBO(m_vulkanGlobalState->m_currentFrame,
-                                            deltaTime);
+        m_cameraController->UpdateCameraPosition(
+            m_vulkanGlobalState->m_currentFrame, deltaTime);
 
         DrawFrame(deltaTime);
     }

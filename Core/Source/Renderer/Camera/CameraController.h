@@ -26,7 +26,7 @@ class CameraController {
     glm::mat4 GetViewMatrix();
     void HandleInputNoClip(float deltaTime);
     void HandleInputOrbit(float deltaTime);
-    void UpdateCameraUBO(uint32_t currentImage, float deltaTime);
+    void UpdateCameraPosition(uint32_t currentImage, float deltaTime);
     float m_cameraSpeed = 0.012f;
     CameraUBO m_cameraUBO;
     glm::vec3 m_eyePosition = glm::vec3(0.0f, 0.0f, 0.0f);
