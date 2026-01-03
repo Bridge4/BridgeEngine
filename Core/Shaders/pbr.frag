@@ -118,6 +118,18 @@ void main() {
     vec3 N = normalize(fragNormal);
     vec3 V = normalize(camera.cameraPos.xyz - fragPos);
 
+    if (pc.hasRoughness.x != 1.0) {
+        roughness = 1.0;
+    }
+
+    if (pc.hasMetallic.x != 1.0) {
+        metallic = 1.0;
+    }
+
+    if (pc.hasAO.x != 1.0) {
+        ao = 1.0;
+    }
+
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
     vec3 Lo = vec3(0.0);

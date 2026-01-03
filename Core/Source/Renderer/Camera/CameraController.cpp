@@ -208,11 +208,15 @@ void CameraController::HandleInputOrbit(float deltaTime) {
     }
 
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_X)) {
-        m_vulkanGlobalState->m_pbrPushConstants.hasEmissive =
+        m_vulkanGlobalState->m_pbrPushConstants.hasMetallic =
+            glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+        m_vulkanGlobalState->m_pbrPushConstants.hasRoughness =
             glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_Z)) {
-        m_vulkanGlobalState->m_pbrPushConstants.hasEmissive =
+        m_vulkanGlobalState->m_pbrPushConstants.hasMetallic =
+            glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+        m_vulkanGlobalState->m_pbrPushConstants.hasRoughness =
             glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
     }
     glm::vec3 camPos = orbitCam->GetEye();

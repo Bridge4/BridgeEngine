@@ -130,6 +130,10 @@ void VulkanContext::RunVulkanRenderer(
 
     m_vulkanGlobalState->m_pbrPushConstants.hasEmissive =
         glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+    m_vulkanGlobalState->m_pbrPushConstants.hasMetallic =
+        glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+    m_vulkanGlobalState->m_pbrPushConstants.hasRoughness =
+        glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
     while (!m_windowHandler->ShouldClose()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
         float deltaTime =
