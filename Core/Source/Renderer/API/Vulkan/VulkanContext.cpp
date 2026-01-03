@@ -127,6 +127,9 @@ void VulkanContext::RunVulkanRenderer(
     m_vulkanGlobalState->m_shadowBias = glm::vec4(0.0005f, 0.0f, 0.0f, 0.0f);
     m_vulkanGlobalState->m_pbrPushConstants = {
         glm::mat4(1.0f), m_vulkanGlobalState->m_shadowBias};
+
+    m_vulkanGlobalState->m_pbrPushConstants.hasEmissive =
+        glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
     while (!m_windowHandler->ShouldClose()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
         float deltaTime =
@@ -1011,15 +1014,21 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
             */
             // vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()),
             // 1, 0, 0);
-            m_vulkanGlobalState->m_pbrPushConstants = {
-                m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj,
-                m_vulkanGlobalState->m_shadowBias};
+            // m_vulkanGlobalState->m_pbrPushConstants = {
+            //    m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj,
+            //    m_vulkanGlobalState->m_shadowBias};
+
+            m_vulkanGlobalState->m_pbrPushConstants.lightViewProj =
+                m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj;
+
+            m_vulkanGlobalState->m_pbrPushConstants.bias =
+                m_vulkanGlobalState->m_shadowBias;
 
             vkCmdPushConstants(
                 commandBuffer, m_vulkanGlobalState->m_pbrPipelineLayout,
                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                 sizeof(PBRPushConstants),
-                &m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj);
+                &m_vulkanGlobalState->m_pbrPushConstants);
             vkCmdDrawIndexed(commandBuffer,
                              static_cast<uint32_t>(mesh.m_indexCount), 1,
                              mesh.m_indexBufferStartIndex, 0, 0);

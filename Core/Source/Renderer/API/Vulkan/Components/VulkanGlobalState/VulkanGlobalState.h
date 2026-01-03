@@ -18,6 +18,12 @@ struct ShadowPassPushConstants {
 struct PBRPushConstants {
     glm::mat4 lightViewProj;
     glm::vec4 bias;
+    glm::vec4 hasAlbedo;
+    glm::vec4 hasMetallic;
+    glm::vec4 hasRoughness;
+    glm::vec4 hasAO;
+    glm::vec4 hasNormal;
+    glm::vec4 hasEmissive;
 };
 class VulkanGlobalState {
    public:

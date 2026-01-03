@@ -29,6 +29,12 @@ layout(set = 1, binding = 7) uniform sampler2D shadowMap;
 layout(push_constant) uniform PushConstants {
     mat4 lightViewProj;
     vec4 bias; // x as bias
+    vec4 hasAlbedo;
+    vec4 hasMetallic;
+    vec4 hasRoughness;
+    vec4 hasAO;
+    vec4 hasNormal;
+    vec4 hasEmissive;
 } pc;
 
 layout(location = 0) in vec3 fragPos;     // world-space position
@@ -147,7 +153,10 @@ void main() {
 
     vec3 ambient = vec3(0.03) * albedo;
     vec3 emissiveColor = emissive * 20.0;
-    vec3 color = ambient + Lo + emissiveColor;
+    vec3 color = ambient + Lo;
+    if (pc.hasEmissive.x == 1.0){
+        color = color + emissiveColor;
+    }
 
 
     outColor = vec4(color, 1.0);
