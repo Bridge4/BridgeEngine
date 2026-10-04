@@ -77,14 +77,14 @@ void ImageHandler::CreateImage(uint32_t width, uint32_t height, VkFormat format,
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.flags = 0;  // Optional
 
-    if (vkCreateImage(*m_vulkanGlobalState->GetRefLogicalDevice(), &imageInfo,
-                      nullptr, &image) != VK_SUCCESS) {
+    if (vkCreateImage(m_deviceHandler->LogicalDevice, &imageInfo, nullptr,
+                      &image) != VK_SUCCESS) {
         throw std::runtime_error("failed to create image!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                                 image, &memRequirements);
+    vkGetImageMemoryRequirements(m_deviceHandler->LogicalDevice, image,
+                                 &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -92,20 +92,19 @@ void ImageHandler::CreateImage(uint32_t width, uint32_t height, VkFormat format,
     allocInfo.memoryTypeIndex =
         FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                         &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(m_deviceHandler->LogicalDevice, &allocInfo, nullptr,
+                         &imageMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate image memory!");
     }
 
-    vkBindImageMemory(*m_vulkanGlobalState->GetRefLogicalDevice(), image,
-                      imageMemory, 0);
+    vkBindImageMemory(m_deviceHandler->LogicalDevice, image, imageMemory, 0);
 }
 
 uint32_t ImageHandler::FindMemoryType(uint32_t typeFilter,
                                       VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(
-        m_vulkanGlobalState->GetPhysicalDevice(), &memProperties);
+    vkGetPhysicalDeviceMemoryProperties(m_deviceHandler->PhysicalDevice,
+                                        &memProperties);
 
     // Go over this section
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {

@@ -1,14 +1,17 @@
 #pragma once
 #include "../ComponentDeclarations.h"
+#include "Source/Renderer/API/Vulkan/Components/Devices/DeviceHandler.h"
 #include "Source/Renderer/API/Vulkan/Components/VulkanGlobalState/VulkanGlobalState.h"
 #include "vulkan/vulkan.h"
 // class VulkanContext;
 class ImageHandler {
    public:
     ImageHandler(VulkanContext* vulkanContext,
-                 VulkanGlobalState* vulkanGlobalState) {
+                 VulkanGlobalState* vulkanGlobalState,
+                 DeviceHandler* deviceHandler) {
         this->m_vulkanContext = vulkanContext;
         this->m_vulkanGlobalState = vulkanGlobalState;
+        this->m_deviceHandler = deviceHandler;
     }
 
     VkImageView CreateImageView(VkDevice device, VkImage image, VkFormat format,
@@ -30,4 +33,5 @@ class ImageHandler {
    private:
     VulkanContext* m_vulkanContext;
     VulkanGlobalState* m_vulkanGlobalState;
+    DeviceHandler* m_deviceHandler;
 };

@@ -6,6 +6,7 @@
 #include "config.h"
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <imgui.h>
 
 #include "VulkanContext.h"
 // Textures through stb library
@@ -34,17 +35,22 @@
 #include "Source/Renderer/Camera/CameraController.h"
 #include "Source/Renderer/Mesh/Mesh3D.h"
 #include "VkTypes.h"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
 
 void VulkanContext::InitVulkan() {
     m_vulkanGlobalState = new VulkanGlobalState(this);
-    m_descriptorSetHandler = new DescriptorSetHandler(m_vulkanGlobalState);
 
     m_deviceHandler = new DeviceHandler(m_vulkanGlobalState);
-    m_imageHandler = new ImageHandler(this, m_vulkanGlobalState);
+    m_descriptorSetHandler =
+        new DescriptorSetHandler(m_vulkanGlobalState, m_deviceHandler);
+    m_imageHandler =
+        new ImageHandler(this, m_vulkanGlobalState, m_deviceHandler);
     m_swapChainHandler =
         new SwapChainHandler(this, m_deviceHandler, m_windowHandler,
                              m_imageHandler, m_vulkanGlobalState);
-    m_bufferHandler = new BufferHandler(m_vulkanGlobalState);
+    m_bufferHandler = new BufferHandler(m_vulkanGlobalState, m_deviceHandler);
     m_renderPassHandler =
         new RenderPassHandler(this, m_swapChainHandler, m_deviceHandler,
                               m_imageHandler, m_vulkanGlobalState);
@@ -88,6 +94,60 @@ void VulkanContext::InitVulkan() {
 
     m_bufferHandler->CreateCommandBuffers();
     CreateSyncObjects();
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+    io.ConfigFlags |=
+        ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+    io.ConfigFlags |=
+        ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+    // ImGui::StyleColorsLight();
+    // float main_scale =
+    //    ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
+    //// Setup scaling
+    // ImGuiStyle& style = ImGui::GetStyle();
+    // style.ScaleAllSizes(main_scale);
+    // style.FontScaleDpi = main_scale;
+    //                   // io.ConfigDpiScaleFonts=true automatically overrides
+    //                   this
+    //                   // for every window depending on the current monitor)
+
+    // Setup Platform/Renderer backends
+    ImGui_ImplVulkan_InitInfo init_info = {};
+
+    ImGui_ImplGlfw_InitForVulkan(m_windowHandler->m_window, true);
+    init_info.ApiVersion = VK_API_VERSION_1_3;  // Pass in your
+    // value of VkApplicationInfo::apiVersion, otherwise will default to
+    // header / version.
+    init_info.Instance = m_vulkanGlobalState->m_instance;
+    init_info.PhysicalDevice = m_deviceHandler->PhysicalDevice;
+    init_info.Device = m_deviceHandler->LogicalDevice;
+
+    QueueFamilyIndices queueFamilyIndices =
+        m_deviceHandler->FindQueueFamilies(m_deviceHandler->PhysicalDevice);
+    init_info.QueueFamily = queueFamilyIndices.graphicsFamily.value();
+    init_info.Queue = m_vulkanGlobalState->m_graphicsQueue;
+    init_info.PipelineCache = VK_NULL_HANDLE;
+    init_info.DescriptorPool = m_vulkanGlobalState->m_descriptorPool;
+    init_info.MinImageCount = 2;
+    init_info.ImageCount = m_maxFramesInFlight;
+    // init_info.Allocator = g_Allocator;
+    init_info.PipelineInfoMain.RenderPass = m_vulkanGlobalState->m_renderPass;
+    init_info.PipelineInfoMain.Subpass = 0;
+    init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    // init_info.CheckVkResultFn = check_vk_result;
+    ImGui_ImplVulkan_LoadFunctions(
+        VK_API_VERSION_1_3,
+        [](const char* function_name, void* user_data) -> PFN_vkVoidFunction {
+            VkInstance instance = *static_cast<VkInstance*>(user_data);
+            return vkGetInstanceProcAddr(instance, function_name);
+        });
+    ImGui_ImplVulkan_Init(&init_info);
 }
 
 void VulkanContext::RunVulkanRenderer(
@@ -134,6 +194,39 @@ void VulkanContext::RunVulkanRenderer(
                 .count();
         lastFrameTime = currentFrameTime;
         m_windowHandler->Poll();
+
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        bool show_demo_window = true;
+        ImGui::ShowDemoWindow(&show_demo_window);
+        ImGui::Begin("ImGui Sanity Check");
+
+        // Test static text
+        ImGui::Text("Hello, Vulkan + ImGui!");
+        ImGui::Separator();
+
+        // Test interactivity with a counter
+        static int counter = 0;
+        if (ImGui::Button("Click Me!")) {
+            counter++;
+        }
+        ImGui::SameLine();
+        ImGui::Text("Button clicks = %d", counter);
+
+        // Test value tracking and color manipulation
+        static float color[3] = {0.45f, 0.55f, 0.60f};
+        ImGui::ColorEdit3("Clear Color Picker", color);
+
+        // Test frame rates (verifies NewFrame delta timing is working)
+        ImGui::Text("Performance: %.3f ms/frame (%.1f FPS)",
+                    1000.0f / ImGui::GetIO().Framerate,
+                    ImGui::GetIO().Framerate);
+
+        ImGui::End();
+
+        ImGui::Render();
         m_cameraController->HandleInputOrbit(deltaTime);
         memcpy(m_vulkanGlobalState
                    ->m_lightUBOMapped[m_vulkanGlobalState->m_currentFrame],
@@ -144,7 +237,7 @@ void VulkanContext::RunVulkanRenderer(
 
         DrawFrame(deltaTime);
     }
-    vkDeviceWaitIdle(*m_vulkanGlobalState->GetRefLogicalDevice());
+    vkDeviceWaitIdle(m_deviceHandler->LogicalDevice);
     Destroy();
 }
 
@@ -181,22 +274,22 @@ void VulkanContext::LoadSceneObjects() {
 void VulkanContext::UnloadSceneObjects() {
     if (!m_vulkanGlobalState->m_meshList.empty()) {
         vkQueueWaitIdle(m_vulkanGlobalState->m_presentQueue);
-        vkDestroyDescriptorPool(*m_vulkanGlobalState->GetRefLogicalDevice(),
+        vkDestroyDescriptorPool(m_deviceHandler->LogicalDevice,
                                 m_vulkanGlobalState->m_descriptorPool, nullptr);
         for (auto& mesh : m_vulkanGlobalState->m_meshList) {
-            vkDestroySampler(*m_vulkanGlobalState->GetRefLogicalDevice(),
+            vkDestroySampler(m_deviceHandler->LogicalDevice,
                              mesh.m_textureSampler, nullptr);
-            vkDestroyImageView(*m_vulkanGlobalState->GetRefLogicalDevice(),
+            vkDestroyImageView(m_deviceHandler->LogicalDevice,
                                mesh.m_textureImageView, nullptr);
-            vkDestroyImage(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                           mesh.m_textureImage, nullptr);
-            vkFreeMemory(*m_vulkanGlobalState->GetRefLogicalDevice(),
+            vkDestroyImage(m_deviceHandler->LogicalDevice, mesh.m_textureImage,
+                           nullptr);
+            vkFreeMemory(m_deviceHandler->LogicalDevice,
                          mesh.m_textureImageMemory, nullptr);
             int bufCount = 0;
             for (auto& buffer : mesh.m_uniformBuffers) {
-                vkDestroyBuffer(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                                buffer, nullptr);
-                vkFreeMemory(*m_vulkanGlobalState->GetRefLogicalDevice(),
+                vkDestroyBuffer(m_deviceHandler->LogicalDevice, buffer,
+                                nullptr);
+                vkFreeMemory(m_deviceHandler->LogicalDevice,
                              mesh.m_uniformBuffersMemory[bufCount], nullptr);
                 bufCount++;
             }
@@ -395,8 +488,8 @@ void VulkanContext::CreateGraphicsPipeline(std::vector<char> vertShaderCode,
     pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
     if (vkCreatePipelineLayout(
-            *m_vulkanGlobalState->GetRefLogicalDevice(), &pipelineLayoutInfo,
-            nullptr, &m_vulkanGlobalState->m_pbrPipelineLayout) != VK_SUCCESS) {
+            m_deviceHandler->LogicalDevice, &pipelineLayoutInfo, nullptr,
+            &m_vulkanGlobalState->m_pbrPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     };
 
@@ -420,16 +513,16 @@ void VulkanContext::CreateGraphicsPipeline(std::vector<char> vertShaderCode,
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
 
-    if (vkCreateGraphicsPipelines(*m_vulkanGlobalState->GetRefLogicalDevice(),
+    if (vkCreateGraphicsPipelines(m_deviceHandler->LogicalDevice,
                                   VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
                                   pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    vkDestroyShaderModule(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                          fragShaderModule, nullptr);
-    vkDestroyShaderModule(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                          vertShaderModule, nullptr);
+    vkDestroyShaderModule(m_deviceHandler->LogicalDevice, fragShaderModule,
+                          nullptr);
+    vkDestroyShaderModule(m_deviceHandler->LogicalDevice, vertShaderModule,
+                          nullptr);
 }
 
 void VulkanContext::CreateShadowPassPipeline(std::vector<char> vertShaderCode,
@@ -599,8 +692,7 @@ void VulkanContext::CreateShadowPassPipeline(std::vector<char> vertShaderCode,
     pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
     if (vkCreatePipelineLayout(
-            *m_vulkanGlobalState->GetRefLogicalDevice(), &pipelineLayoutInfo,
-            nullptr,
+            m_deviceHandler->LogicalDevice, &pipelineLayoutInfo, nullptr,
             &m_vulkanGlobalState->m_shadowPassPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     };
@@ -624,21 +716,21 @@ void VulkanContext::CreateShadowPassPipeline(std::vector<char> vertShaderCode,
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
 
-    if (vkCreateGraphicsPipelines(*m_vulkanGlobalState->GetRefLogicalDevice(),
+    if (vkCreateGraphicsPipelines(m_deviceHandler->LogicalDevice,
                                   VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
                                   pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shadow pass pipeline!");
     }
 
-    vkDestroyShaderModule(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                          fragShaderModule, nullptr);
+    vkDestroyShaderModule(m_deviceHandler->LogicalDevice, fragShaderModule,
+                          nullptr);
 
-    vkDestroyShaderModule(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                          vertShaderModule, nullptr);
+    vkDestroyShaderModule(m_deviceHandler->LogicalDevice, vertShaderModule,
+                          nullptr);
 }
 void VulkanContext::CreateCommandPool() {
-    QueueFamilyIndices queueFamilyIndices = m_deviceHandler->FindQueueFamilies(
-        m_vulkanGlobalState->GetPhysicalDevice());
+    QueueFamilyIndices queueFamilyIndices =
+        m_deviceHandler->FindQueueFamilies(m_deviceHandler->PhysicalDevice);
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -647,9 +739,9 @@ void VulkanContext::CreateCommandPool() {
     // pool
     poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-    if (vkCreateCommandPool(
-            *m_vulkanGlobalState->GetRefLogicalDevice(), &poolInfo, nullptr,
-            &m_vulkanGlobalState->m_commandPool) != VK_SUCCESS) {
+    if (vkCreateCommandPool(m_deviceHandler->LogicalDevice, &poolInfo, nullptr,
+                            &m_vulkanGlobalState->m_commandPool) !=
+        VK_SUCCESS) {
         throw std::runtime_error("failed to create command pool!");
     }
 }
@@ -676,11 +768,10 @@ void VulkanContext::CreateTextureImage(TextureProperties props, Mesh3D* mesh,
                                   stagingBuffer, stagingBufferMemory);
 
     void* data;
-    vkMapMemory(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                stagingBufferMemory, 0, imageSize, 0, &data);
+    vkMapMemory(m_deviceHandler->LogicalDevice, stagingBufferMemory, 0,
+                imageSize, 0, &data);
     memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vkUnmapMemory(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                  stagingBufferMemory);
+    vkUnmapMemory(m_deviceHandler->LogicalDevice, stagingBufferMemory);
 
     // WARN: Potential for memory leak here
     stbi_image_free(pixels);
@@ -703,10 +794,8 @@ void VulkanContext::CreateTextureImage(TextureProperties props, Mesh3D* mesh,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    vkDestroyBuffer(*m_vulkanGlobalState->GetRefLogicalDevice(), stagingBuffer,
-                    nullptr);
-    vkFreeMemory(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                 stagingBufferMemory, nullptr);
+    vkDestroyBuffer(m_deviceHandler->LogicalDevice, stagingBuffer, nullptr);
+    vkFreeMemory(m_deviceHandler->LogicalDevice, stagingBufferMemory, nullptr);
 }
 
 // TEXTURE IMAGE VIEW
@@ -714,7 +803,7 @@ void VulkanContext::CreateTextureImageView(Mesh3D* mesh,
                                            MaterialEnums materialType) {
     mesh->m_materials[materialType].m_textureImageView =
         m_imageHandler->CreateImageView(
-            *m_vulkanGlobalState->GetRefLogicalDevice(),
+            m_deviceHandler->LogicalDevice,
             mesh->m_materials[materialType].m_textureImage,
             VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 }
@@ -733,8 +822,7 @@ void VulkanContext::CreateTextureSampler(Mesh3D* mesh,
     samplerInfo.anisotropyEnable = VK_TRUE;
 
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(m_vulkanGlobalState->GetPhysicalDevice(),
-                                  &properties);
+    vkGetPhysicalDeviceProperties(m_deviceHandler->PhysicalDevice, &properties);
     samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 
     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
@@ -748,9 +836,9 @@ void VulkanContext::CreateTextureSampler(Mesh3D* mesh,
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    if (vkCreateSampler(
-            *m_vulkanGlobalState->GetRefLogicalDevice(), &samplerInfo, nullptr,
-            &mesh->m_materials[materialType].m_textureSampler) != VK_SUCCESS) {
+    if (vkCreateSampler(m_deviceHandler->LogicalDevice, &samplerInfo, nullptr,
+                        &mesh->m_materials[materialType].m_textureSampler) !=
+        VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
 }
@@ -767,8 +855,7 @@ void VulkanContext::CreateTextureSamplerShadowPass() {
     samplerInfo.anisotropyEnable = VK_FALSE;
 
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(m_vulkanGlobalState->GetPhysicalDevice(),
-                                  &properties);
+    vkGetPhysicalDeviceProperties(m_deviceHandler->PhysicalDevice, &properties);
     samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 
     samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
@@ -782,9 +869,9 @@ void VulkanContext::CreateTextureSamplerShadowPass() {
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    if (vkCreateSampler(
-            *m_vulkanGlobalState->GetRefLogicalDevice(), &samplerInfo, nullptr,
-            &m_vulkanGlobalState->m_shadowPassTextureSampler) != VK_SUCCESS) {
+    if (vkCreateSampler(m_deviceHandler->LogicalDevice, &samplerInfo, nullptr,
+                        &m_vulkanGlobalState->m_shadowPassTextureSampler) !=
+        VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
 }
@@ -1026,10 +1113,14 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
         }
     }
 
+    ImDrawData* draw_data = ImGui::GetDrawData();
+
+    ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer);
     vkCmdEndRenderPass(commandBuffer);
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to record command buffer!");
     }
+    ImGui::EndFrame();
 }
 
 void VulkanContext::RecordCommandBufferGeneric(
@@ -1233,15 +1324,14 @@ void VulkanContext::CreateSyncObjects() {
 
     for (int i = 0; i < m_maxFramesInFlight; i++) {
         if (vkCreateSemaphore(
-                *m_vulkanGlobalState->GetRefLogicalDevice(), &semaphoreInfo,
-                nullptr, &m_vulkanGlobalState->m_imageAvailableSemaphores[i]) !=
+                m_deviceHandler->LogicalDevice, &semaphoreInfo, nullptr,
+                &m_vulkanGlobalState->m_imageAvailableSemaphores[i]) !=
                 VK_SUCCESS ||
             vkCreateSemaphore(
-                *m_vulkanGlobalState->GetRefLogicalDevice(), &semaphoreInfo,
-                nullptr, &m_vulkanGlobalState->m_renderFinishedSemaphores[i]) !=
+                m_deviceHandler->LogicalDevice, &semaphoreInfo, nullptr,
+                &m_vulkanGlobalState->m_renderFinishedSemaphores[i]) !=
                 VK_SUCCESS ||
-            vkCreateFence(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                          &fenceInfo, nullptr,
+            vkCreateFence(m_deviceHandler->LogicalDevice, &fenceInfo, nullptr,
                           &m_vulkanGlobalState->m_inFlightFences[i]) !=
                 VK_SUCCESS) {
             throw std::runtime_error("failed to create semaphores!");
@@ -1258,7 +1348,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
         - Present the swap chain image
     */
     vkWaitForFences(
-        *m_vulkanGlobalState->GetRefLogicalDevice(), 1,
+        m_deviceHandler->LogicalDevice, 1,
         &m_vulkanGlobalState
              ->m_inFlightFences[m_vulkanGlobalState->m_currentFrame],
         VK_TRUE, UINT64_MAX);
@@ -1268,8 +1358,8 @@ void VulkanContext::DrawFrame(float deltaTime) {
 
     // SWAP CHAIN RECREATION
     VkResult result = vkAcquireNextImageKHR(
-        *m_vulkanGlobalState->GetRefLogicalDevice(),
-        m_vulkanGlobalState->m_swapChain, UINT64_MAX,
+        m_deviceHandler->LogicalDevice, m_vulkanGlobalState->m_swapChain,
+        UINT64_MAX,
         m_vulkanGlobalState
             ->m_imageAvailableSemaphores[m_vulkanGlobalState->m_currentFrame],
         VK_NULL_HANDLE, &imageIndex);
@@ -1286,7 +1376,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
     }
 
     // Only reset fences if we are submitting work
-    vkResetFences(*m_vulkanGlobalState->GetRefLogicalDevice(), 1,
+    vkResetFences(m_deviceHandler->LogicalDevice, 1,
                   &m_vulkanGlobalState
                        ->m_inFlightFences[m_vulkanGlobalState->m_currentFrame]);
 
@@ -1427,27 +1517,27 @@ void VulkanContext::Destroy() {
     // DestroySwapChain();
 
     for (auto& mesh : m_vulkanGlobalState->m_meshList) {
-        vkDestroySampler(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                         mesh.m_textureSampler, nullptr);
-        vkDestroyImageView(*m_vulkanGlobalState->GetRefLogicalDevice(),
+        vkDestroySampler(m_deviceHandler->LogicalDevice, mesh.m_textureSampler,
+                         nullptr);
+        vkDestroyImageView(m_deviceHandler->LogicalDevice,
                            mesh.m_textureImageView, nullptr);
-        vkDestroyImage(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                       mesh.m_textureImage, nullptr);
-        vkFreeMemory(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                     mesh.m_textureImageMemory, nullptr);
+        vkDestroyImage(m_deviceHandler->LogicalDevice, mesh.m_textureImage,
+                       nullptr);
+        vkFreeMemory(m_deviceHandler->LogicalDevice, mesh.m_textureImageMemory,
+                     nullptr);
     }
 
     for (size_t i = 0; i < m_maxFramesInFlight; i++) {
-        vkDestroyBuffer(*m_vulkanGlobalState->GetRefLogicalDevice(),
+        vkDestroyBuffer(m_deviceHandler->LogicalDevice,
                         m_bufferHandler->UniformBuffers[i], nullptr);
-        vkFreeMemory(*m_vulkanGlobalState->GetRefLogicalDevice(),
+        vkFreeMemory(m_deviceHandler->LogicalDevice,
                      m_bufferHandler->UniformBuffersMemory[i], nullptr);
     }
 
-    vkDestroyDescriptorPool(*m_vulkanGlobalState->GetRefLogicalDevice(),
+    vkDestroyDescriptorPool(m_deviceHandler->LogicalDevice,
                             m_vulkanGlobalState->m_descriptorPool, nullptr);
 
-    vkDestroyDescriptorSetLayout(*m_vulkanGlobalState->GetRefLogicalDevice(),
+    vkDestroyDescriptorSetLayout(m_deviceHandler->LogicalDevice,
                                  m_vulkanGlobalState->m_meshDescriptorSetLayout,
                                  nullptr);
 
@@ -1455,25 +1545,25 @@ void VulkanContext::Destroy() {
     // Call BufferHandler::DestroyBuffers
     m_bufferHandler->DestroyBuffers();
 
-    vkDestroyPipeline(*m_vulkanGlobalState->GetRefLogicalDevice(),
+    vkDestroyPipeline(m_deviceHandler->LogicalDevice,
                       m_vulkanGlobalState->m_pbrPipeline, nullptr);
-    vkDestroyPipelineLayout(*m_vulkanGlobalState->GetRefLogicalDevice(),
+    vkDestroyPipelineLayout(m_deviceHandler->LogicalDevice,
                             m_vulkanGlobalState->m_pbrPipelineLayout, nullptr);
 
-    vkDestroyRenderPass(*m_vulkanGlobalState->GetRefLogicalDevice(),
+    vkDestroyRenderPass(m_deviceHandler->LogicalDevice,
                         m_renderPassHandler->m_renderPass, nullptr);
 
     for (size_t i = 0; i < m_maxFramesInFlight; i++) {
-        vkDestroySemaphore(*m_vulkanGlobalState->GetRefLogicalDevice(),
+        vkDestroySemaphore(m_deviceHandler->LogicalDevice,
                            m_vulkanGlobalState->m_renderFinishedSemaphores[i],
                            nullptr);
-        vkDestroySemaphore(*m_vulkanGlobalState->GetRefLogicalDevice(),
+        vkDestroySemaphore(m_deviceHandler->LogicalDevice,
                            m_vulkanGlobalState->m_imageAvailableSemaphores[i],
                            nullptr);
-        vkDestroyFence(*m_vulkanGlobalState->GetRefLogicalDevice(),
+        vkDestroyFence(m_deviceHandler->LogicalDevice,
                        m_vulkanGlobalState->m_inFlightFences[i], nullptr);
     }
-    vkDestroyCommandPool(*m_vulkanGlobalState->GetRefLogicalDevice(),
+    vkDestroyCommandPool(m_deviceHandler->LogicalDevice,
                          m_vulkanGlobalState->m_commandPool, nullptr);
 
     // DEVICE DESTRUCTION
@@ -1489,9 +1579,8 @@ VkShaderModule VulkanContext::CreateShaderModule(
     createInfo.codeSize = code.size();
     createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
     VkShaderModule shaderModule;
-    if (vkCreateShaderModule(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                             &createInfo, nullptr,
-                             &shaderModule) != VK_SUCCESS) {
+    if (vkCreateShaderModule(m_deviceHandler->LogicalDevice, &createInfo,
+                             nullptr, &shaderModule) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module!");
     }
 
@@ -1533,8 +1622,8 @@ VkCommandBuffer VulkanContext::BeginSingleTimeCommands() {
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                             &allocInfo, &commandBuffer);
+    vkAllocateCommandBuffers(m_deviceHandler->LogicalDevice, &allocInfo,
+                             &commandBuffer);
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1557,7 +1646,7 @@ void VulkanContext::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
                   VK_NULL_HANDLE);
     vkQueueWaitIdle(m_vulkanGlobalState->m_graphicsQueue);
 
-    vkFreeCommandBuffers(*m_vulkanGlobalState->GetRefLogicalDevice(),
+    vkFreeCommandBuffers(m_deviceHandler->LogicalDevice,
                          m_vulkanGlobalState->m_commandPool, 1, &commandBuffer);
 }
 
@@ -1590,7 +1679,7 @@ void VulkanContext::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
 //     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 //     imageInfo.flags = 0;  // Optional
 //
-//     if (vkCreateImage(*m_vulkanGlobalState->GetRefLogicalDevice(),
+//     if (vkCreateImage(m_deviceHandler->LogicalDevice,
 //     &imageInfo,
 //                       nullptr, &image) != VK_SUCCESS) {
 //         throw std::runtime_error("failed to create image!");

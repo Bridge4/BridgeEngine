@@ -5,6 +5,8 @@
 
 #include "Source/Renderer/API/Vulkan/Components/SwapChain/SwapChainHandler.h"
 // #include <glm/glm.hpp>
+#include <../imgui/imgui.h>
+
 #include <../glm/gtc/matrix_transform.hpp>
 #include <../glm/gtx/hash.hpp>
 #include <../glm/gtx/rotate_vector.hpp>
@@ -43,6 +45,7 @@ void CameraController::Initialize() {
 }
 
 void CameraController::HandleInputNoClip(float deltaTime) {
+    ImGui::Text("Hello, world %d", 123);
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_W)) {
         // cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f,
         // 0.001f, 0.001f)); cameraViewMatrix = glm::lookAt(eyePosition,

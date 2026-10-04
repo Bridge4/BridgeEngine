@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "../ComponentDeclarations.h"
+#include "Source/Renderer/API/Vulkan/Components/Devices/DeviceHandler.h"
 #include "Source/Renderer/Mesh/Mesh3D.h"
 
 struct Vertex;
@@ -12,8 +13,10 @@ struct LightUBO;
 
 class BufferHandler {
    public:
-    BufferHandler(VulkanGlobalState* VulkanGlobalState) {
+    BufferHandler(VulkanGlobalState* VulkanGlobalState,
+                  DeviceHandler* deviceHandler) {
         this->m_vulkanGlobalState = VulkanGlobalState;
+        this->m_deviceHandler = deviceHandler;
     }
 
     void DestroyBuffers();
@@ -54,7 +57,7 @@ class BufferHandler {
 
    private:
     VulkanGlobalState* m_vulkanGlobalState = nullptr;
-
+    DeviceHandler* m_deviceHandler;
     void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     // COPY BUFFER
 

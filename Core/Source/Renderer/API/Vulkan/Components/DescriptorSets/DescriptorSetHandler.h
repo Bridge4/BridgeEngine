@@ -10,8 +10,10 @@
 
 class DescriptorSetHandler {
    public:
-    DescriptorSetHandler(VulkanGlobalState* VulkanGlobalState) {
+    DescriptorSetHandler(VulkanGlobalState* VulkanGlobalState,
+                         DeviceHandler* deviceHandler) {
         this->m_vulkanGlobalState = VulkanGlobalState;
+        this->m_deviceHandler = deviceHandler;
     }
 
     void CreateDescriptorPool();
@@ -28,6 +30,7 @@ class DescriptorSetHandler {
 
    private:
     VulkanGlobalState* m_vulkanGlobalState = nullptr;
+    DeviceHandler* m_deviceHandler = nullptr;
 };
 
 #endif

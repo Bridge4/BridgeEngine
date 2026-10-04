@@ -32,14 +32,12 @@ class VulkanGlobalState {
 
     // Getters
     VkInstance GetVulkanInstance() { return m_instance; }
-    VkPhysicalDevice GetPhysicalDevice() { return m_physicalDevice; }
     // std::vector<VkImage>* GetRefSwapChainImages() { return
     // &m_swapChainImages; }
     std::vector<VkImageView>* GetRefSwapChainImageViews() {
         return &m_swapChainImageViews;
     }
     VkFormat GetSwapChainImageFormat() { return m_swapChainImageFormat; }
-    VkDevice* GetRefLogicalDevice() { return &m_logicalDevice; }
     VkSwapchainKHR* GetRefSwapChain() { return &m_swapChain; }
     std::vector<VkImage>* GetRefSwapChainImages() { return &m_swapChainImages; }
     VkRenderPass* GetRefRenderPass() { return &m_renderPass; }
@@ -49,10 +47,6 @@ class VulkanGlobalState {
 
     std::vector<Mesh3D> GetMeshList() { return m_meshList; }
 
-    // Setters
-    void SetPhysicalDevice(VkPhysicalDevice physicalDevice) {
-        this->m_physicalDevice = physicalDevice;
-    }
     void SetSwapChainImageFormat(VkFormat surfaceFormat) {
         this->m_swapChainImageFormat = surfaceFormat;
     };
@@ -68,9 +62,6 @@ class VulkanGlobalState {
 
     // VkInstance m_vulkanInstance = 0;
     VulkanContext* m_vulkanContext = 0;
-
-    VkPhysicalDevice m_physicalDevice = nullptr;
-    VkDevice m_logicalDevice = nullptr;
 
     VkSwapchainKHR m_swapChain = nullptr;
     std::vector<VkImage> m_swapChainImages = {};
