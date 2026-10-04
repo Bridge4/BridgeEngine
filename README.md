@@ -1,3 +1,4 @@
+```
 ▀█████████▄     ▄████████  ▄█  ████████▄     ▄██████▄     ▄████████  
   ███    ███   ███    ███ ███  ███   ▀███   ███    ███   ███    ███  
   ███    ███   ███    ███ ███▌ ███    ███   ███    █▀    ███    █▀   
@@ -15,6 +16,8 @@
        ███    █▄  ███   ███   ███    ███ ███  ███   ███   ███    █▄  
        ███    ███ ███   ███   ███    ███ ███  ███   ███   ███    ███ 
        ██████████  ▀█   █▀    ████████▀  █▀    ▀█   █▀    ██████████ 
+```
+
 # How To Run
 
 If you want to go through the codebase with neovim do `cmake -B build -G Ninja` to generate the compilation database it needs for code-completion. 
