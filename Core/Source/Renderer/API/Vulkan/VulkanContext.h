@@ -112,9 +112,9 @@ class VulkanContext {
      *   Create a graphics pipeline to render
      *
      */
-    void CreateGraphicsPipeline(std::vector<char> vertShaderCode,
-                                std::vector<char> fragShaderCode,
-                                VkPipeline* pipeline);
+    void CreatePBRPipeline(std::vector<char> vertShaderCode,
+                           std::vector<char> fragShaderCode,
+                           VkPipeline* pipeline);
 
     void CreateShadowPassPipeline(std::vector<char> vertShaderCode,
                                   std::vector<char> fragShaderCode,

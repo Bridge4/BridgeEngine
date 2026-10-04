@@ -89,8 +89,8 @@ void VulkanContext::InitVulkan() {
     m_descriptorSetHandler->CreateTexturedPBRDescriptorSetLayout();
     std::vector<char> vertScene = ReadFile(SHADERS_DIR "scene.spv");
     std::vector<char> fragTextured = ReadFile(SHADERS_DIR "pbr.spv");
-    CreateGraphicsPipeline(vertScene, fragTextured,
-                           &m_vulkanGlobalState->m_pbrPipeline);
+    CreatePBRPipeline(vertScene, fragTextured,
+                      &m_vulkanGlobalState->m_pbrPipeline);
 
     m_bufferHandler->CreateCommandBuffers();
     CreateSyncObjects();
@@ -162,23 +162,8 @@ void VulkanContext::RunVulkanRenderer(
     light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     light0.intensity.x = 10000.0f;
 
-    // Light light1;
-    // light1.position = glm::vec4(0.0f, 10.0f, 0.0f, 0.0f);
-    // light1.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    // light1.intensity.x = 1.5f;
-    // Light light2;
-    // light2.position = glm::vec4(-100.0f, 0.0f, 0.0f, 0.0f);
-    // light2.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    // light2.intensity.x = 10000.0f;
-    // Light light3;
-    // light3.position = glm::vec4(0.0f, 0.0f, 10.0f, 0.0f);
-    // light3.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    // light3.intensity.x = 10.0f;
     LightUBO lightUBO;
     lightUBO.lights[0] = light0;
-    // lightUBO.lights[1] = light1;
-    // lightUBO.lights[2] = light2;
-    // lightUBO.lights[3] = light3;
     lightUBO.numLights.x = 1;
     m_vulkanGlobalState->m_lights = lightUBO;
     // need create a shadowpass framebuffer per shadow casting light
@@ -187,6 +172,14 @@ void VulkanContext::RunVulkanRenderer(
     m_vulkanGlobalState->m_shadowBias = glm::vec4(0.0005f, 0.0f, 0.0f, 0.0f);
     m_vulkanGlobalState->m_pbrPushConstants = {
         glm::mat4(1.0f), m_vulkanGlobalState->m_shadowBias};
+
+    m_vulkanGlobalState->m_pbrPushConstants.hasEmissive =
+        glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+    m_vulkanGlobalState->m_pbrPushConstants.hasMetallic =
+        glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+    m_vulkanGlobalState->m_pbrPushConstants.hasRoughness =
+        glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+
     while (!m_windowHandler->ShouldClose()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
         float deltaTime =
@@ -232,8 +225,8 @@ void VulkanContext::RunVulkanRenderer(
                    ->m_lightUBOMapped[m_vulkanGlobalState->m_currentFrame],
                &m_vulkanGlobalState->m_lights,
                sizeof(m_vulkanGlobalState->m_lights));
-        m_cameraController->UpdateCameraUBO(m_vulkanGlobalState->m_currentFrame,
-                                            deltaTime);
+        m_cameraController->UpdateCameraPosition(
+            m_vulkanGlobalState->m_currentFrame, deltaTime);
 
         DrawFrame(deltaTime);
     }
@@ -301,9 +294,9 @@ void VulkanContext::UnloadSceneObjects() {
     }
 }
 
-void VulkanContext::CreateGraphicsPipeline(std::vector<char> vertShaderCode,
-                                           std::vector<char> fragShaderCode,
-                                           VkPipeline* pipeline) {
+void VulkanContext::CreatePBRPipeline(std::vector<char> vertShaderCode,
+                                      std::vector<char> fragShaderCode,
+                                      VkPipeline* pipeline) {
     VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
 
@@ -1098,15 +1091,21 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
             */
             // vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()),
             // 1, 0, 0);
-            m_vulkanGlobalState->m_pbrPushConstants = {
-                m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj,
-                m_vulkanGlobalState->m_shadowBias};
+            // m_vulkanGlobalState->m_pbrPushConstants = {
+            //    m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj,
+            //    m_vulkanGlobalState->m_shadowBias};
+
+            m_vulkanGlobalState->m_pbrPushConstants.lightViewProj =
+                m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj;
+
+            m_vulkanGlobalState->m_pbrPushConstants.bias =
+                m_vulkanGlobalState->m_shadowBias;
 
             vkCmdPushConstants(
                 commandBuffer, m_vulkanGlobalState->m_pbrPipelineLayout,
                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                 sizeof(PBRPushConstants),
-                &m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj);
+                &m_vulkanGlobalState->m_pbrPushConstants);
             vkCmdDrawIndexed(commandBuffer,
                              static_cast<uint32_t>(mesh.m_indexCount), 1,
                              mesh.m_indexBufferStartIndex, 0, 0);

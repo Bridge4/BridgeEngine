@@ -11,13 +11,16 @@ class Renderer {
     Renderer(WindowHandler* window) {
         m_windowRef = window;
         UnloadedObject testObj;
-        testObj.objFilePath = MODELS_DIR "axe/axe.obj";
-        testObj.materialTexFilePaths[ALBEDO] = MODELS_DIR "axe/albedo.png";
-        testObj.materialTexFilePaths[METALLIC] = MODELS_DIR "axe/metallic.png";
+        testObj.objFilePath = MODELS_DIR "dwarf_sword/dwarf.obj";
+        testObj.materialTexFilePaths[ALBEDO] =
+            MODELS_DIR "dwarf_sword/dwarf.png";
+        testObj.materialTexFilePaths[METALLIC] =
+            MODELS_DIR "dwarf_sword/norm.png";
         testObj.materialTexFilePaths[ROUGHNESS] =
-            MODELS_DIR "axe/roughness.png";
+            MODELS_DIR "dwarf_sword/rough.png";
         testObj.materialTexFilePaths[AO] = MODELS_DIR "axe/ao.png";
-        testObj.materialTexFilePaths[NORMAL] = MODELS_DIR "axe/normals.png";
+        testObj.materialTexFilePaths[NORMAL] =
+            MODELS_DIR "dwarf_sword/norm.png";
         testObj.materialTexFilePaths[EMISSIVE] = MODELS_DIR "axe/emissive.png";
 
         UnloadedObject testObj2;
