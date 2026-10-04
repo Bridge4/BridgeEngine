@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 3.7.0)
 
+if(WIN32)
+  set(EXE_ICON "app.rc")
+endif()
 
-add_executable(App "${CMAKE_CURRENT_SOURCE_DIR}/Source/App.cpp")
+add_executable(App "${CMAKE_CURRENT_SOURCE_DIR}/Source/App.cpp" ${EXE_ICON})
+
+set_target_properties(App PROPERTIES OUTPUT_NAME "BridgeEngine")
 
 target_link_libraries(App PUBLIC Core)
 
