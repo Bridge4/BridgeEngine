@@ -1,15 +1,16 @@
 #include "Renderer.h"
 
+#include <imgui.h>
+
 #include "API/Vulkan/Components/Window/WindowHandler.h"
 #include "API/Vulkan/VulkanContext.h"
 #include "FileLoader.h"
-
 void Renderer::CreateAPIContext() {
     this->m_vulkanContext = new VulkanContext();
 
     m_windowRef->vulkanContext = m_vulkanContext;
     m_vulkanContext->m_windowHandler = m_windowRef;
-    m_vulkanContext->CreateVulkanContext();
+    m_vulkanContext->InitVulkan();
 }
 
 void Renderer::SetWindowRef(WindowHandler* window) {
@@ -23,5 +24,6 @@ void Renderer::RunRenderer() {
         loadedObjects.push_back(FileLoader::LoadObject(obj));
     }
 
+    // ImGui::ShowDemoWindow();
     m_vulkanContext->RunVulkanRenderer(loadedObjects);
 }

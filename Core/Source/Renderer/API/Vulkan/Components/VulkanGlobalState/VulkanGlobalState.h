@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "../ComponentDeclarations.h"
-#include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
 #include "Source/Renderer/API/Vulkan/VkTypes.h"
+#include "Source/Renderer/Mesh/Mesh3D.h"
 #include "vulkan/vulkan.h"
 
 struct ShadowPassPushConstants {
@@ -18,6 +18,12 @@ struct ShadowPassPushConstants {
 struct PBRPushConstants {
     glm::mat4 lightViewProj;
     glm::vec4 bias;
+    glm::vec4 hasAlbedo;
+    glm::vec4 hasMetallic;
+    glm::vec4 hasRoughness;
+    glm::vec4 hasAO;
+    glm::vec4 hasNormal;
+    glm::vec4 hasEmissive;
 };
 class VulkanGlobalState {
    public:
@@ -32,14 +38,12 @@ class VulkanGlobalState {
 
     // Getters
     VkInstance GetVulkanInstance() { return m_instance; }
-    VkPhysicalDevice GetPhysicalDevice() { return m_physicalDevice; }
     // std::vector<VkImage>* GetRefSwapChainImages() { return
     // &m_swapChainImages; }
     std::vector<VkImageView>* GetRefSwapChainImageViews() {
         return &m_swapChainImageViews;
     }
     VkFormat GetSwapChainImageFormat() { return m_swapChainImageFormat; }
-    VkDevice* GetRefLogicalDevice() { return &m_logicalDevice; }
     VkSwapchainKHR* GetRefSwapChain() { return &m_swapChain; }
     std::vector<VkImage>* GetRefSwapChainImages() { return &m_swapChainImages; }
     VkRenderPass* GetRefRenderPass() { return &m_renderPass; }
@@ -49,10 +53,6 @@ class VulkanGlobalState {
 
     std::vector<Mesh3D> GetMeshList() { return m_meshList; }
 
-    // Setters
-    void SetPhysicalDevice(VkPhysicalDevice physicalDevice) {
-        this->m_physicalDevice = physicalDevice;
-    }
     void SetSwapChainImageFormat(VkFormat surfaceFormat) {
         this->m_swapChainImageFormat = surfaceFormat;
     };
@@ -68,9 +68,6 @@ class VulkanGlobalState {
 
     // VkInstance m_vulkanInstance = 0;
     VulkanContext* m_vulkanContext = 0;
-
-    VkPhysicalDevice m_physicalDevice = nullptr;
-    VkDevice m_logicalDevice = nullptr;
 
     VkSwapchainKHR m_swapChain = nullptr;
     std::vector<VkImage> m_swapChainImages = {};
@@ -114,10 +111,10 @@ class VulkanGlobalState {
     std::vector<VkDescriptorSet> m_shadowPassDescriptorSets;
     VkDescriptorSetLayout m_shadowPassDescriptorSetLayout;
 
-    VkPipelineLayout m_pipelineLayout;
+    VkPipelineLayout m_pbrPipelineLayout;
     VkPipelineLayout m_shadowPassPipelineLayout;
 
-    VkPipeline m_texturedPipeline;
+    VkPipeline m_pbrPipeline;
     VkPipeline m_shadowPassPipeline;
     // Based on object type, we can draw with a different bound graphics
     // pipeline if object == drawTypeA bind pipelines[drawTypeA] elif object ==

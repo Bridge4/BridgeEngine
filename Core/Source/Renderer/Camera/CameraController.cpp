@@ -1,21 +1,23 @@
 #include "CameraController.h"
 
-#include "../VulkanGlobalState/VulkanGlobalState.h"
+#include "Source/Renderer/API/Vulkan/Components/VulkanGlobalState/VulkanGlobalState.h"
 // GLM INCLUDES
 
-#include "../SwapChain/SwapChainHandler.h"
+#include "Source/Renderer/API/Vulkan/Components/SwapChain/SwapChainHandler.h"
 // #include <glm/glm.hpp>
+#include <../imgui/imgui.h>
+
 #include <../glm/gtc/matrix_transform.hpp>
 #include <../glm/gtx/hash.hpp>
 #include <../glm/gtx/rotate_vector.hpp>
 #include <../glm/gtx/string_cast.hpp>
 #include <../glm/gtx/transform.hpp>
 #include <../glm/gtx/vector_angle.hpp>
+#include <iostream>
 
-#include "../../VulkanContext.h"
-#include "../Window/WindowHandler.h"
 #include "GLFW/glfw3.h"
-#include "Source/Renderer/API/Vulkan/Components/Camera/OrbitCamera.h"
+#include "Source/Renderer/API/Vulkan/Components/Window/WindowHandler.h"
+#include "Source/Renderer/Camera/OrbitCamera.h"
 
 glm::mat4 CameraController::GetViewMatrix() {
     m_viewDirection = glm::normalize(m_viewDirection);
@@ -44,6 +46,7 @@ void CameraController::Initialize() {
 }
 
 void CameraController::HandleInputNoClip(float deltaTime) {
+    ImGui::Text("Hello, world %d", 123);
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_W)) {
         // cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f,
         // 0.001f, 0.001f)); cameraViewMatrix = glm::lookAt(eyePosition,
@@ -109,13 +112,11 @@ void CameraController::HandleInputNoClip(float deltaTime) {
         // cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f,
         // 0.001f, 0.001f)); cameraViewMatrix = glm::lookAt(eyePosition,
         // viewDirection+eyePosition, upVector);
-        // m_vulkanContext->LoadSceneObjects();
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_U)) {
         // cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f,
         // 0.001f, 0.001f)); cameraViewMatrix = glm::lookAt(eyePosition,
         // viewDirection+eyePosition, upVector);
-        // m_vulkanContext->UnloadSceneObjects();
     }
     if (m_lookActive) {
         double xPos, yPos;
@@ -173,15 +174,15 @@ void CameraController::HandleInputOrbit(float deltaTime) {
 
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_P)) {
         m_vulkanGlobalState->m_lights.lights[0].intensity.x +=
-            6000.0f * deltaTime;
+            1000.0f * deltaTime;
         m_vulkanGlobalState->m_lights.lights[2].intensity.x +=
-            60000.0f * deltaTime;
+            1000.0f * deltaTime;
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_O)) {
         m_vulkanGlobalState->m_lights.lights[0].intensity.x -=
-            6000.0f * deltaTime;
+            1000.0f * deltaTime;
         m_vulkanGlobalState->m_lights.lights[2].intensity.x -=
-            100000.0f * deltaTime;
+            1000.0f * deltaTime;
     }
     if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_Q)) {
         orbitCam->Zoom(10.0f * deltaTime);
@@ -209,6 +210,18 @@ void CameraController::HandleInputOrbit(float deltaTime) {
         m_vulkanGlobalState->m_pbrPushConstants.bias.x += 0.001;
     }
 
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_X)) {
+        m_vulkanGlobalState->m_pbrPushConstants.hasMetallic =
+            glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+        m_vulkanGlobalState->m_pbrPushConstants.hasRoughness =
+            glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+    }
+    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_Z)) {
+        m_vulkanGlobalState->m_pbrPushConstants.hasMetallic =
+            glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+        m_vulkanGlobalState->m_pbrPushConstants.hasRoughness =
+            glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+    }
     glm::vec3 camPos = orbitCam->GetEye();
     m_vulkanGlobalState->m_lights.lights[0].position =
         glm::vec4(25.0f, -25.0f, -25.0f, 1.0f);
@@ -259,7 +272,8 @@ void CameraController::HandleInputOrbit(float deltaTime) {
     }
 }
 
-void CameraController::UpdateCameraUBO(uint32_t currentImage, float deltaTime) {
+void CameraController::UpdateCameraPosition(uint32_t currentImage,
+                                            float deltaTime) {
     m_viewDirection = glm::normalize(m_viewDirection);
 
     m_cameraUBO.view = GetViewMatrix();
@@ -293,7 +307,7 @@ void CameraController::UpdateCameraUBO(uint32_t currentImage, float deltaTime) {
                     glm::rotate(modelUBO.model, -glm::radians(90.0f),
                                 glm::vec3(0.0f, 1.0f, 0.0f));
                 modelUBO.model =
-                    glm::scale(modelUBO.model, glm::vec3(0.05f, 0.05f, 0.05f));
+                    glm::scale(modelUBO.model, glm::vec3(2.05f, 2.05f, 2.05f));
             }
             if (glfwGetMouseButton(m_windowHandler->m_window,
                                    GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {

@@ -57,20 +57,19 @@ void DeviceHandler::InitializePhysicalDevice() {
 
     for (const auto& device : devices) {
         if (IsDeviceSuitable(device)) {
-            m_vulkanGlobalState->SetPhysicalDevice(device);
+            this->PhysicalDevice = device;
             break;
         }
     }
 
-    if (m_vulkanGlobalState->GetPhysicalDevice() == VK_NULL_HANDLE) {
+    if (this->PhysicalDevice == VK_NULL_HANDLE) {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
 }
 
 void DeviceHandler::InitializeLogicalDevice() {
     // Specifying queues to be created
-    QueueFamilyIndices indices =
-        FindQueueFamilies(m_vulkanGlobalState->GetPhysicalDevice());
+    QueueFamilyIndices indices = FindQueueFamilies(this->PhysicalDevice);
     VkDeviceQueueCreateInfo queueCreateInfo{};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
@@ -112,17 +111,14 @@ void DeviceHandler::InitializeLogicalDevice() {
         createInfo.enabledLayerCount = 0;
     }
 
-    if (vkCreateDevice(m_vulkanGlobalState->GetPhysicalDevice(), &createInfo,
-                       nullptr, m_vulkanGlobalState->GetRefLogicalDevice()) !=
-        VK_SUCCESS) {
+    if (vkCreateDevice(this->PhysicalDevice, &createInfo, nullptr,
+                       &LogicalDevice) != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device!");
     }
 
-    vkGetDeviceQueue(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                     indices.graphicsFamily.value(), 0,
+    vkGetDeviceQueue(LogicalDevice, indices.graphicsFamily.value(), 0,
                      &m_vulkanGlobalState->m_graphicsQueue);
-    vkGetDeviceQueue(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                     indices.presentFamily.value(), 0,
+    vkGetDeviceQueue(LogicalDevice, indices.presentFamily.value(), 0,
                      &m_vulkanGlobalState->m_presentQueue);
 }
 

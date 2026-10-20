@@ -4,9 +4,10 @@
 // VULKAN PLATFORM DEFINITION
 #include <iostream>
 
-#include "Source/Renderer/API/Vulkan/Components/Camera/CameraController.h"
 #include "Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
-#include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
+#include "Source/Renderer/API/Vulkan/Components/RenderPass/RenderPassHandler.h"
+#include "Source/Renderer/Camera/CameraController.h"
+#include "Source/Renderer/Mesh/Mesh3D.h"
 #include "VkTypes.h"
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR
@@ -57,7 +58,7 @@ class VulkanContext {
 #else
     const bool enableValidationLayers = true;
 #endif
-    void CreateVulkanContext();
+    void InitVulkan();
 
     void RunVulkanRenderer(std::vector<LoadedObject> objectsToRender);
 
@@ -106,24 +107,14 @@ class VulkanContext {
      * Window is polled and frames are drawn until window is closed
      */
 
-    void CreateSceneDescriptorSetLayout();
-    void CreateSceneDescriptorSets();
-    void CreateTexturedMeshDescriptorSetLayout();
-    void CreateTexturedMeshDescriptorSets(Mesh3D* mesh);
-
-    void CreateTexturedPBRDescriptorSetLayout();
-    void CreateTexturedPBRDescriptorSets(Mesh3D* mesh);
-    void CreateMeshDescriptorSetLayout();
-    void CreateLightDescriptorSetLayout();
-
     // GRAPHICS PIPELINE
     /*
      *   Create a graphics pipeline to render
      *
      */
-    void CreateGraphicsPipeline(std::vector<char> vertShaderCode,
-                                std::vector<char> fragShaderCode,
-                                VkPipeline* pipeline);
+    void CreatePBRPipeline(std::vector<char> vertShaderCode,
+                           std::vector<char> fragShaderCode,
+                           VkPipeline* pipeline);
 
     void CreateShadowPassPipeline(std::vector<char> vertShaderCode,
                                   std::vector<char> fragShaderCode,
@@ -164,12 +155,6 @@ class VulkanContext {
                   glm::vec3 objectRotation = glm::vec3(0.0f, 0.0f, 0.0f),
                   glm::vec3 objectScale = glm::vec3(1.0f, 1.0f, 1.0f));
 
-    // DESCRIPTOR POOL
-    void CreateDescriptorPool();
-
-    // DESCRIPTOR SETS
-    void CreateMeshDescriptorSets();
-
     // COPY BUFFER
     void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
@@ -179,6 +164,9 @@ class VulkanContext {
     void RecordCommandBuffer(VkCommandBuffer commandBuffer,
                              uint32_t imageIndex);
 
+    void RecordCommandBufferGeneric(VkCommandBuffer commandBuffer,
+                                    uint32_t imageIndex,
+                                    std::vector<BrVkRenderPass> renderPasses);
     // SEMAPHORES AND FENCES
     // Creates semaphores and fences for each frame in flight
     void CreateSyncObjects();

@@ -5,13 +5,15 @@
 #include <vector>
 
 #include "../ComponentDeclarations.h"
-#include "Source/Renderer/API/Vulkan/Components/Mesh/Mesh3D.h"
 #include "Source/Renderer/API/Vulkan/VkTypes.h"
+#include "Source/Renderer/Mesh/Mesh3D.h"
 
 class DescriptorSetHandler {
    public:
-    DescriptorSetHandler(VulkanGlobalState* VulkanGlobalState) {
+    DescriptorSetHandler(VulkanGlobalState* VulkanGlobalState,
+                         DeviceHandler* deviceHandler) {
         this->m_vulkanGlobalState = VulkanGlobalState;
+        this->m_deviceHandler = deviceHandler;
     }
 
     void CreateDescriptorPool();
@@ -23,9 +25,12 @@ class DescriptorSetHandler {
     void CreateShadowPassDescriptorSet();
     void CreateTexturedMeshDescriptorSetLayout();
     void CreateTexturedMeshDescriptorSets(Mesh3D* mesh);
+    void CreateTexturedPBRDescriptorSetLayout();
+    void CreateTexturedPBRDescriptorSets(Mesh3D* mesh);
 
    private:
     VulkanGlobalState* m_vulkanGlobalState = nullptr;
+    DeviceHandler* m_deviceHandler = nullptr;
 };
 
 #endif

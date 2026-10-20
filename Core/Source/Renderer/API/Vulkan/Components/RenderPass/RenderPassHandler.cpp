@@ -104,8 +104,8 @@ void RenderPassHandler::CreateRenderPass() {
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-    if (vkCreateRenderPass(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                           &renderPassInfo, nullptr,
+    if (vkCreateRenderPass(m_deviceHandler->LogicalDevice, &renderPassInfo,
+                           nullptr,
                            &m_vulkanGlobalState->m_renderPass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
     }
@@ -163,8 +163,8 @@ void RenderPassHandler::CreateShadowPass() {
     shadowPassInfo.dependencyCount = 1;
     shadowPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                           &shadowPassInfo, nullptr,
+    if (vkCreateRenderPass(m_deviceHandler->LogicalDevice, &shadowPassInfo,
+                           nullptr,
                            &m_vulkanGlobalState->m_shadowPass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
     }
@@ -185,7 +185,7 @@ void RenderPassHandler::CreateRenderPassDepthResources() {
         m_vulkanGlobalState->m_renderPassDepthImageMemory);
     m_vulkanGlobalState->m_renderPassDepthImageView =
         m_imageHandler->CreateImageView(
-            *m_vulkanGlobalState->GetRefLogicalDevice(),
+            m_deviceHandler->LogicalDevice,
             m_vulkanGlobalState->m_renderPassDepthImage, depthFormat,
             VK_IMAGE_ASPECT_DEPTH_BIT);
 
@@ -219,8 +219,8 @@ void RenderPassHandler::CreateRenderPassFrameBuffers() {
         framebufferInfo.layers = 1;
 
         if (vkCreateFramebuffer(
-                *m_vulkanGlobalState->GetRefLogicalDevice(), &framebufferInfo,
-                nullptr, &m_vulkanGlobalState->m_renderPassFrameBuffers[i]) !=
+                m_deviceHandler->LogicalDevice, &framebufferInfo, nullptr,
+                &m_vulkanGlobalState->m_renderPassFrameBuffers[i]) !=
             VK_SUCCESS) {
             throw std::runtime_error("failed to create framebuffer!");
         }
@@ -241,7 +241,7 @@ void RenderPassHandler::CreateShadowPassDepthResources() {
 
     m_vulkanGlobalState->m_shadowPassDepthImageView =
         m_imageHandler->CreateImageView(
-            *m_vulkanGlobalState->GetRefLogicalDevice(),
+            m_deviceHandler->LogicalDevice,
             m_vulkanGlobalState->m_shadowPassDepthImage, depthFormat,
             VK_IMAGE_ASPECT_DEPTH_BIT);
 
@@ -271,8 +271,8 @@ void RenderPassHandler::CreateShadowPassFrameBuffers() {
         framebufferInfo.layers = 1;
 
         if (vkCreateFramebuffer(
-                *m_vulkanGlobalState->GetRefLogicalDevice(), &framebufferInfo,
-                nullptr, &m_vulkanGlobalState->m_shadowPassFrameBuffers[i]) !=
+                m_deviceHandler->LogicalDevice, &framebufferInfo, nullptr,
+                &m_vulkanGlobalState->m_shadowPassFrameBuffers[i]) !=
             VK_SUCCESS) {
             throw std::runtime_error("failed to create framebuffer!");
         }
@@ -284,8 +284,8 @@ VkFormat RenderPassHandler::FindSupportedFormat(
     VkFormatFeatureFlags features) {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(
-            m_vulkanGlobalState->GetPhysicalDevice(), format, &props);
+        vkGetPhysicalDeviceFormatProperties(m_deviceHandler->PhysicalDevice,
+                                            format, &props);
         if (tiling == VK_IMAGE_TILING_LINEAR &&
             (props.linearTilingFeatures & features) == features) {
             return format;
@@ -368,8 +368,8 @@ VkCommandBuffer RenderPassHandler::BeginSingleTimeCommands() {
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(*m_vulkanGlobalState->GetRefLogicalDevice(),
-                             &allocInfo, &commandBuffer);
+    vkAllocateCommandBuffers(m_deviceHandler->LogicalDevice, &allocInfo,
+                             &commandBuffer);
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -392,6 +392,6 @@ void RenderPassHandler::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
                   VK_NULL_HANDLE);
     vkQueueWaitIdle(m_vulkanGlobalState->m_graphicsQueue);
 
-    vkFreeCommandBuffers(*m_vulkanGlobalState->GetRefLogicalDevice(),
+    vkFreeCommandBuffers(m_deviceHandler->LogicalDevice,
                          m_vulkanGlobalState->m_commandPool, 1, &commandBuffer);
 }
