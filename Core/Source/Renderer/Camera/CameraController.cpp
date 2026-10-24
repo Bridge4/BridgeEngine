@@ -16,7 +16,8 @@
 #include <iostream>
 
 #include "GLFW/glfw3.h"
-#include "Source/Renderer/API/Vulkan/Components/Window/WindowHandler.h"
+#include "Source/Renderer/API/Vulkan/Components/Window/WindowingBackend.h"
+#include "Source/Renderer/API/Vulkan/Components/WindowVK/WindowHandlerVK.h"
 #include "Source/Renderer/Camera/OrbitCamera.h"
 
 glm::mat4 CameraController::GetViewMatrix() {
@@ -47,18 +48,18 @@ void CameraController::Initialize() {
 
 void CameraController::HandleInputNoClip(float deltaTime) {
     ImGui::Text("Hello, world %d", 123);
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_W)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_W)) {
         // cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f,
         // 0.001f, 0.001f)); cameraViewMatrix = glm::lookAt(eyePosition,
         // viewDirection+eyePosition, upVector);
         m_eyePosition += deltaTime * m_cameraSpeed * m_viewDirection;
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_S)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_S)) {
         // cameraViewMatrix = glm::translate(cameraViewMatrix,
         // -glm::vec3(0.001f, 0.001f, 0.001f));
         m_eyePosition -= deltaTime * m_cameraSpeed * m_viewDirection;
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_A)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_A)) {
         // glm::rotate(glm::vec3(0.0f, 0.0f, 0.0f), glm::radians(45.0f),
         // glm::vec3(0.0f, 0.0f, 1.0f)); cameraViewMatrix =
         // glm::rotate(cameraViewMatrix, glm::radians(0.01f), glm::vec3(0.0f,
@@ -67,7 +68,7 @@ void CameraController::HandleInputNoClip(float deltaTime) {
             deltaTime * m_cameraSpeed *
             -glm::normalize(glm::cross(m_viewDirection, m_upVector));
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_D)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_D)) {
         // cameraViewMatrix = glm::rotate(cameraViewMatrix,
         // glm::radians(-0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
         m_eyePosition -=
@@ -75,54 +76,54 @@ void CameraController::HandleInputNoClip(float deltaTime) {
             -glm::normalize(glm::cross(m_viewDirection, m_upVector));
     }
 
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_SPACE)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_SPACE)) {
         // cameraViewMatrix = glm::rotate(cameraViewMatrix,
         // glm::radians(-0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
         m_eyePosition += deltaTime * m_cameraSpeed *
                          -glm::normalize(glm::cross(
                              m_viewDirection, glm::vec3(1.0f, 0.0f, 0.0f)));
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_LEFT_CONTROL)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_LEFT_CONTROL)) {
         // cameraViewMatrix = glm::rotate(cameraViewMatrix,
         // glm::radians(-0.01f), glm::vec3(0.0f, 0.0f, 1.0f));
         m_eyePosition -= deltaTime * m_cameraSpeed *
                          -glm::normalize(glm::cross(
                              m_viewDirection, glm::vec3(1.0f, 0.0f, 0.0f)));
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_ESCAPE)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_ESCAPE)) {
         exit(0);
     }
 
-    if (glfwGetMouseButton(m_windowHandler->m_window, GLFW_MOUSE_BUTTON_2) ==
+    if (glfwGetMouseButton(m_windowingBackend->m_window, GLFW_MOUSE_BUTTON_2) ==
         GLFW_PRESS) {
         if (!m_lookActive) {
             glfwSetCursorPos(
-                m_windowHandler->m_window,
+                m_windowingBackend->m_window,
                 (m_swapChainHandler->m_swapChainExtent.width / 2.0f),
                 (m_swapChainHandler->m_swapChainExtent.height / 2.0f));
             m_lookToggled = true;
         }
         m_lookActive = true;
     }
-    if (glfwGetMouseButton(m_windowHandler->m_window, GLFW_MOUSE_BUTTON_2) ==
+    if (glfwGetMouseButton(m_windowingBackend->m_window, GLFW_MOUSE_BUTTON_2) ==
         GLFW_RELEASE) {
         m_lookActive = false;
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_L)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_L)) {
         // cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f,
         // 0.001f, 0.001f)); cameraViewMatrix = glm::lookAt(eyePosition,
         // viewDirection+eyePosition, upVector);
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_U)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_U)) {
         // cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f,
         // 0.001f, 0.001f)); cameraViewMatrix = glm::lookAt(eyePosition,
         // viewDirection+eyePosition, upVector);
     }
     if (m_lookActive) {
         double xPos, yPos;
-        glfwSetInputMode(m_windowHandler->m_window, GLFW_CURSOR,
+        glfwSetInputMode(m_windowingBackend->m_window, GLFW_CURSOR,
                          GLFW_CURSOR_HIDDEN);
-        glfwGetCursorPos(m_windowHandler->m_window, &xPos, &yPos);
+        glfwGetCursorPos(m_windowingBackend->m_window, &xPos, &yPos);
         float deltaX, deltaY;
         deltaX = xPos - m_prevMouseX;
         deltaY = yPos - m_prevMouseY;
@@ -145,78 +146,78 @@ void CameraController::HandleInputNoClip(float deltaTime) {
         m_prevMouseX = xPos;
         m_prevMouseY = yPos;
     } else if (!m_lookActive &&
-               glfwGetInputMode(m_windowHandler->m_window, GLFW_CURSOR) ==
+               glfwGetInputMode(m_windowingBackend->m_window, GLFW_CURSOR) ==
                    GLFW_CURSOR_HIDDEN) {
-        glfwSetInputMode(m_windowHandler->m_window, GLFW_CURSOR,
+        glfwSetInputMode(m_windowingBackend->m_window, GLFW_CURSOR,
                          GLFW_CURSOR_NORMAL);
     }
 }
 
 void CameraController::HandleInputOrbit(float deltaTime) {
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_ESCAPE)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_ESCAPE)) {
         exit(0);
     }
 
-    if (glfwGetMouseButton(m_windowHandler->m_window, GLFW_MOUSE_BUTTON_2) ==
+    if (glfwGetMouseButton(m_windowingBackend->m_window, GLFW_MOUSE_BUTTON_2) ==
         GLFW_PRESS) {
         if (!m_lookActive) {
             glfwSetCursorPos(
-                m_windowHandler->m_window,
+                m_windowingBackend->m_window,
                 m_swapChainHandler->m_swapChainExtent.width / 2.0,
                 m_swapChainHandler->m_swapChainExtent.height / 2.0);
             m_lookToggled = true;
         }
         m_lookActive = true;
-    } else if (glfwGetMouseButton(m_windowHandler->m_window,
+    } else if (glfwGetMouseButton(m_windowingBackend->m_window,
                                   GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE) {
         m_lookActive = false;
     }
 
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_P)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_P)) {
         m_vulkanGlobalState->m_lights.lights[0].intensity.x +=
             1000.0f * deltaTime;
         m_vulkanGlobalState->m_lights.lights[2].intensity.x +=
             1000.0f * deltaTime;
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_O)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_O)) {
         m_vulkanGlobalState->m_lights.lights[0].intensity.x -=
             1000.0f * deltaTime;
         m_vulkanGlobalState->m_lights.lights[2].intensity.x -=
             1000.0f * deltaTime;
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_Q)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_Q)) {
         orbitCam->Zoom(10.0f * deltaTime);
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_E)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_E)) {
         orbitCam->Zoom(-10.0f * deltaTime);
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_A)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_A)) {
         orbitCam->RotateAzimuth(10.0f * deltaTime);
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_D)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_D)) {
         orbitCam->RotateAzimuth(-10.0f * deltaTime);
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_W)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_W)) {
         orbitCam->RotatePolar(10.0f * deltaTime);
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_S)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_S)) {
         orbitCam->RotatePolar(-10.0f * deltaTime);
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_I)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_I)) {
         m_invertHorizontal = !m_invertHorizontal;
     }
 
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_B)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_B)) {
         m_vulkanGlobalState->m_pbrPushConstants.bias.x += 0.001;
     }
 
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_X)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_X)) {
         m_vulkanGlobalState->m_pbrPushConstants.hasMetallic =
             glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
         m_vulkanGlobalState->m_pbrPushConstants.hasRoughness =
             glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
     }
-    if (glfwGetKey(m_windowHandler->m_window, GLFW_KEY_Z)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_Z)) {
         m_vulkanGlobalState->m_pbrPushConstants.hasMetallic =
             glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
         m_vulkanGlobalState->m_pbrPushConstants.hasRoughness =
@@ -245,10 +246,10 @@ void CameraController::HandleInputOrbit(float deltaTime) {
 
     if (m_lookActive) {
         double xPos, yPos;
-        glfwGetCursorPos(m_windowHandler->m_window, &xPos, &yPos);
+        glfwGetCursorPos(m_windowingBackend->m_window, &xPos, &yPos);
 
         float deltaX, deltaY;
-        glfwSetInputMode(m_windowHandler->m_window, GLFW_CURSOR,
+        glfwSetInputMode(m_windowingBackend->m_window, GLFW_CURSOR,
                          GLFW_CURSOR_HIDDEN);
         deltaX = (xPos - m_prevMouseX) * m_cameraSpeed;
         if (m_invertHorizontal) deltaX = -deltaX;
@@ -261,13 +262,13 @@ void CameraController::HandleInputOrbit(float deltaTime) {
         } else {
             m_lookToggled = false;
         }
-        glfwSetCursorPos(m_windowHandler->m_window,
+        glfwSetCursorPos(m_windowingBackend->m_window,
                          m_vulkanGlobalState->m_swapChainExtent.width / 2.0,
                          m_vulkanGlobalState->m_swapChainExtent.height / 2.0);
         m_prevMouseX = m_vulkanGlobalState->m_swapChainExtent.width / 2.0;
         m_prevMouseY = m_vulkanGlobalState->m_swapChainExtent.height / 2.0;
     } else {
-        glfwSetInputMode(m_windowHandler->m_window, GLFW_CURSOR,
+        glfwSetInputMode(m_windowingBackend->m_window, GLFW_CURSOR,
                          GLFW_CURSOR_NORMAL);
     }
 }
@@ -309,7 +310,7 @@ void CameraController::UpdateCameraPosition(uint32_t currentImage,
                 modelUBO.model =
                     glm::scale(modelUBO.model, glm::vec3(2.05f, 2.05f, 2.05f));
             }
-            if (glfwGetMouseButton(m_windowHandler->m_window,
+            if (glfwGetMouseButton(m_windowingBackend->m_window,
                                    GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
             }
 

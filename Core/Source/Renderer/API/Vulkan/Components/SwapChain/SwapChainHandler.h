@@ -10,18 +10,17 @@
 class SwapChainHandler {
    public:
     SwapChainHandler(VulkanContext* context, DeviceHandler* deviceHandler,
-                     WindowHandler* targetWindow, ImageHandler* imgViewHandler,
+                     ImageHandler* imgViewHandler,
                      VulkanGlobalState* VulkanGlobalState) {
         this->m_vulkanContext = context;
         this->m_deviceHandler = deviceHandler;
-        this->m_windowHandler = targetWindow;
         this->m_imageViewHandler = imgViewHandler;
         this->m_vulkanGlobalState = VulkanGlobalState;
     };
 
-    void Initialize();
+    void Initialize(int frameBufferWidth, int frameBufferHeight);
 
-    void Rebuild();
+    void Rebuild(int frameBufferWidth, int frameBufferHeight);
 
     void Destroy();
 
@@ -35,7 +34,6 @@ class SwapChainHandler {
     VulkanContext* m_vulkanContext = 0;
     VulkanGlobalState* m_vulkanGlobalState = 0;
     DeviceHandler* m_deviceHandler = 0;
-    WindowHandler* m_windowHandler = 0;
     ImageHandler* m_imageViewHandler = 0;
 
     // HELPERS
@@ -45,7 +43,8 @@ class SwapChainHandler {
     VkPresentModeKHR ChooseSwapPresentMode(
         const std::vector<VkPresentModeKHR>& availablePresentModes);
 
-    VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+    VkExtent2D ChooseSwapExtent(int frameBufferWidth, int frameBufferHeight,
+                                const VkSurfaceCapabilitiesKHR& capabilities);
 };
 
 #endif  // !SWAPCHAINHANDLER_H

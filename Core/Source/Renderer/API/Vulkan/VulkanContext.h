@@ -45,7 +45,7 @@ class DeviceHandler;
 class SwapChainHandler;
 class ImageHandler;
 class BufferHandler;
-class WindowHandler;
+class WindowingBackend;
 class RenderPassHandler;
 class CameraController;
 class VulkanGlobalState;
@@ -60,14 +60,15 @@ class VulkanContext {
 #endif
     void InitVulkan();
 
-    void RunVulkanRenderer(std::vector<LoadedObject> objectsToRender);
+    void RenderFrame(std::vector<LoadedObject> objectsToRender,
+                     float deltaTime);
 
     void LoadSceneObjects();
 
     void UnloadSceneObjects();
 
     VulkanGlobalState* m_vulkanGlobalState;
-    WindowHandler* m_windowHandler;
+    WindowingBackend* m_windowingBackend = nullptr;
 
     const std::vector<const char*> m_validationLayers = {
         "VK_LAYER_KHRONOS_validation"};
@@ -86,9 +87,12 @@ class VulkanContext {
     VkCommandBuffer BeginSingleTimeCommands();
 
     void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+    DeviceHandler* m_deviceHandler;
+    // CLEANUP
+    void Destroy();
 
    private:
-    DeviceHandler* m_deviceHandler;
+    // DeviceHandler* m_deviceHandler;
     SwapChainHandler* m_swapChainHandler;
     BufferHandler* m_bufferHandler;
     RenderPassHandler* m_renderPassHandler;
@@ -197,8 +201,5 @@ class VulkanContext {
 
         return buffer;
     }
-
-    // CLEANUP
-    void Destroy();
 };
 #endif  // !VULKANCONTEXT_H

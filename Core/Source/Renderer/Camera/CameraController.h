@@ -10,14 +10,15 @@
 class CameraController {
    public:
     enum CameraType { NO_CLIP, ORBIT };
-    CameraController(VulkanContext* vulkanContext, WindowHandler* windowHandler,
+    CameraController(VulkanContext* vulkanContext,
+                     WindowingBackend* windowHandler,
                      SwapChainHandler* swapChainHandler,
                      BufferHandler* bufferHandler,
                      VulkanGlobalState* VulkanGlobalState,
                      CameraType camType = ORBIT) {
         this->m_vulkanContext = vulkanContext;
         this->m_bufferHandler = bufferHandler;
-        this->m_windowHandler = windowHandler;
+        this->m_windowingBackend = windowHandler;
         this->m_swapChainHandler = swapChainHandler;
         this->m_vulkanGlobalState = VulkanGlobalState;
         this->m_cameraType = camType;
@@ -39,7 +40,7 @@ class CameraController {
    private:
     void Initialize();
     VulkanContext* m_vulkanContext = 0;
-    WindowHandler* m_windowHandler = 0;
+    WindowingBackend* m_windowingBackend = 0;
     SwapChainHandler* m_swapChainHandler = 0;
     BufferHandler* m_bufferHandler = 0;
     VulkanGlobalState* m_vulkanGlobalState = 0;

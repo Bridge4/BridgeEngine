@@ -71,8 +71,10 @@ target_sources(Core PRIVATE
                "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/SwapChain/SwapChainHandler.cpp"
                "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/VulkanGlobalState/VulkanGlobalState.h"
                "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/VulkanGlobalState/VulkanGlobalState.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Window/WindowHandler.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Window/WindowHandler.cpp")
+               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Window/WindowingBackend.h"
+               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Window/WindowingBackend.cpp"
+               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/WindowVK/WindowHandlerVK.h"
+               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/WindowVK/WindowHandlerVK.cpp")
 
 target_link_libraries(imgui PRIVATE glfw Vulkan::Vulkan)
 target_link_libraries(${PROJECT_NAME} glfw ${GLFW_LIBRARIES} Vulkan::Vulkan glm imgui)

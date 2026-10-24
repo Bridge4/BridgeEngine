@@ -4,9 +4,20 @@
 #include "vulkan/vulkan.h"
 struct GLFWwindow;
 
-class WindowHandler {
+// API Specific Window handler
+// Should carry a reference to the windowing front end so we decouple vulkan
+// from whatever windowing library we are using
+
+struct FrameBufferData {
+    int height;
+    int width;
+};
+
+class WindowHandlerVK {
    public:
-    WindowHandler() {};
+    WindowHandlerVK(WindowingBackend* windowingBackend) {
+        m_windowingBackend = windowingBackend;
+    };
 
     void SetApiContext(VulkanContext* apiVulkan) { vulkanContext = apiVulkan; }
 
@@ -16,7 +27,7 @@ class WindowHandler {
 
     void Destroy();
 
-    void HandleMinimization();
+    void PollWindowNotMinimized();
 
     void GetFramebufferSize(int* width, int* height);
 
@@ -30,10 +41,12 @@ class WindowHandler {
 
     // void key_callback(GLFWwindow* m_window, int key, int scancode, int
     // action, int mods);
+    //
     VulkanContext* vulkanContext;
     GLFWwindow* m_window;
 
     uint32_t m_width, m_height;
+    FrameBufferData m_frameBufferData;
 
    private:
     // HELPERS
@@ -41,4 +54,5 @@ class WindowHandler {
     // Used by createWindow();
     static void FramebufferResizeCallback(GLFWwindow* window, int width,
                                           int height);
+    WindowingBackend* m_windowingBackend;
 };

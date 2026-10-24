@@ -1,5 +1,5 @@
 #define GLFW_INCLUDE_VULKAN
-#include "WindowHandler.h"
+#include "WindowingBackend.h"
 
 #include <GLFW/glfw3.h>
 
@@ -7,10 +7,14 @@
 
 #include "../../VulkanContext.h"
 #include "../VulkanGlobalState/VulkanGlobalState.h"
-VkResult WindowHandler::CreateSurface() {
-    return glfwCreateWindowSurface(
-        vulkanContext->m_vulkanGlobalState->m_instance, m_window, nullptr,
-        &vulkanContext->m_vulkanGlobalState->m_surface);
+// Create Surface
+// 1. Get reference to API
+// 2. Call API-specific windowing setup
+
+// NOTE: VULKAN WINDOWING
+VkResult WindowingBackend::CreateSurfaceVkGLFW(VkInstance instance,
+                                               VkSurfaceKHR* surface) {
+    return glfwCreateWindowSurface(instance, m_window, nullptr, surface);
 }
 
 // void key_callback(GLFWwindow* m_window, int key, int scancode, int action,
@@ -18,10 +22,11 @@ VkResult WindowHandler::CreateSurface() {
 //{
 // }
 
-void WindowHandler::Create(uint32_t w, uint32_t h) {
+void WindowingBackend::CreateWindowVkGLFW(uint32_t w, uint32_t h) {
     m_width = w, m_height = h;
     // GLFW creates an OpenGL context so we need to undo that
     glfwInit();
+    // NOTE: VULKAN WINDOWING
     // Undoing OpenGL context creation
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
@@ -31,11 +36,11 @@ void WindowHandler::Create(uint32_t w, uint32_t h) {
     // Very important line, if you forget this then the callback with cause an
     // access violation due to nullptr
     glfwSetWindowUserPointer(m_window, this);
-    glfwSetFramebufferSizeCallback(m_window, FramebufferResizeCallback);
+    glfwSetFramebufferSizeCallback(m_window, FramebufferResizeCallbackGLFW);
     // glfwSetKeyCallback(m_window, key_callback);
 }
 
-void WindowHandler::HandleMinimization() {
+void WindowingBackend::PollWindowNotMinimizedGLFW() {
     int w = 0, h = 0;
     glfwGetFramebufferSize(m_window, &w, &h);
 
@@ -43,24 +48,29 @@ void WindowHandler::HandleMinimization() {
         glfwGetFramebufferSize(m_window, &w, &h);
         glfwWaitEvents();
     }
+
+    // TODO: Call renderer window minimization handling code here
+    // WindowHandler -> Renderer -> Vulkan/DirectX/OpenGL/etc
 }
 
-void WindowHandler::GetFramebufferSize(int* width, int* height) {
+void WindowingBackend::GetFramebufferSizeGLFW(int* width, int* height) {
     glfwGetFramebufferSize(m_window, width, height);
 }
 
-void WindowHandler::Destroy() {
+void WindowingBackend::DestroyGLFW() {
     glfwDestroyWindow(m_window);
     glfwTerminate();
 }
 
-int WindowHandler::ShouldClose() { return glfwWindowShouldClose(m_window); }
+int WindowingBackend::ShouldCloseGLFW() {
+    return glfwWindowShouldClose(m_window);
+}
 
-void WindowHandler::Poll() { glfwPollEvents(); }
+void WindowingBackend::PollGLFW() { glfwPollEvents(); }
 // Checks if the framebuffer has been resized using GLFW function
-void WindowHandler::FramebufferResizeCallback(GLFWwindow* window, int width,
-                                              int height) {
+void WindowingBackend::FramebufferResizeCallbackGLFW(GLFWwindow* window,
+                                                     int width, int height) {
     auto wnd =
-        reinterpret_cast<WindowHandler*>(glfwGetWindowUserPointer(window));
+        reinterpret_cast<WindowingBackend*>(glfwGetWindowUserPointer(window));
     wnd->framebufferResized = true;
 }

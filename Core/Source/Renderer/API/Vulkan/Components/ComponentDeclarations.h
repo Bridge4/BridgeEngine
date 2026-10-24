@@ -1,7 +1,8 @@
 #ifndef COMPONENTDECLARATIONS_H
 #define COMPONENTDECLARATIONS_H
 class VulkanContext;
-class WindowHandler;
+class WindowingBackend;
+class WindowHandlerVK;
 class SwapChainHandler;
 class BufferHandler;
 class CameraHandler;

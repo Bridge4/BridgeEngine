@@ -13,9 +13,9 @@
 #include "../Images/ImageHandler.h"
 #include "../RenderPass/RenderPassHandler.h"
 #include "../VulkanGlobalState/VulkanGlobalState.h"
-#include "../Window/WindowHandler.h"
+#include "../WindowVK/WindowHandlerVK.h"
 
-void SwapChainHandler::Initialize() {
+void SwapChainHandler::Initialize(int frameBufferWidth, int frameBufferHeight) {
     VkSurfaceKHR surface = m_vulkanGlobalState->GetSurface();
 
     SwapChainSupportDetails swapChainSupport =
@@ -25,7 +25,8 @@ void SwapChainHandler::Initialize() {
         ChooseSwapSurfaceFormat(swapChainSupport.formats);
     VkPresentModeKHR presentMode =
         ChooseSwapPresentMode(swapChainSupport.presentModes);
-    VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities);
+    VkExtent2D extent = ChooseSwapExtent(frameBufferWidth, frameBufferHeight,
+                                         swapChainSupport.capabilities);
 
     // the reason we do +1 is because we will have to wait for the driver to
     // complete internal operations before acquiring another image.
@@ -102,12 +103,12 @@ void SwapChainHandler::Initialize() {
     m_vulkanGlobalState->SetSwapChainImageViews(swapChainImageViews);
 }
 
-void SwapChainHandler::Rebuild() {
+void SwapChainHandler::Rebuild(int frameBufferWidth, int frameBufferHeight) {
     // Handling minimization
-    m_windowHandler->HandleMinimization();
-    vkDeviceWaitIdle(m_deviceHandler->LogicalDevice);
+    // m_windowHandler->PollWindowNotMinimized();
+    // vkDeviceWaitIdle(m_deviceHandler->LogicalDevice);
     Destroy();
-    Initialize();
+    Initialize(frameBufferWidth, frameBufferHeight);
 }
 
 void SwapChainHandler::Destroy() {
@@ -157,26 +158,28 @@ VkPresentModeKHR SwapChainHandler::ChooseSwapPresentMode(
 }
 
 VkExtent2D SwapChainHandler::ChooseSwapExtent(
+    int frameBufferWidth, int frameBufferHeight,
     const VkSurfaceCapabilitiesKHR& capabilities) {
     // Fun fact: wrapping a function call with parentheses can prevent macro
     // expansions
     if (capabilities.currentExtent.width !=
         (std::numeric_limits<uint32_t>::max)()) {
         return capabilities.currentExtent;
-    } else {
-        int width, height;
-        m_windowHandler->GetFramebufferSize(&width, &height);
-
-        VkExtent2D actualExtent = {static_cast<uint32_t>(width),
-                                   static_cast<uint32_t>(height)};
-
-        actualExtent.width =
-            std::clamp(actualExtent.width, capabilities.minImageExtent.width,
-                       capabilities.maxImageExtent.width);
-        actualExtent.height =
-            std::clamp(actualExtent.height, capabilities.minImageExtent.height,
-                       capabilities.maxImageExtent.height);
-
-        return actualExtent;
     }
+
+    // TODO: Framebuffer Size should be updated at the Renderer level
+    // m_windowHandler->GetFramebufferSize(&frameBufferWidth,
+    // &frameBufferHeight);
+
+    VkExtent2D actualExtent = {static_cast<uint32_t>(frameBufferWidth),
+                               static_cast<uint32_t>(frameBufferHeight)};
+
+    actualExtent.width =
+        std::clamp(actualExtent.width, capabilities.minImageExtent.width,
+                   capabilities.maxImageExtent.width);
+    actualExtent.height =
+        std::clamp(actualExtent.height, capabilities.minImageExtent.height,
+                   capabilities.maxImageExtent.height);
+
+    return actualExtent;
 }

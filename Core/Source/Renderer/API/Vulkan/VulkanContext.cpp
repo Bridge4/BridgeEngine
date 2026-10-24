@@ -31,7 +31,8 @@
 #include "Components/RenderPass/RenderPassHandler.h"
 #include "Components/SwapChain/SwapChainHandler.h"
 #include "Components/VulkanGlobalState/VulkanGlobalState.h"
-#include "Components/Window/WindowHandler.h"
+#include "Components/Window/WindowingBackend.h"
+#include "Components/WindowVK/WindowHandlerVK.h"
 #include "Source/Renderer/Camera/CameraController.h"
 #include "Source/Renderer/Mesh/Mesh3D.h"
 #include "VkTypes.h"
@@ -47,24 +48,31 @@ void VulkanContext::InitVulkan() {
         new DescriptorSetHandler(m_vulkanGlobalState, m_deviceHandler);
     m_imageHandler =
         new ImageHandler(this, m_vulkanGlobalState, m_deviceHandler);
-    m_swapChainHandler =
-        new SwapChainHandler(this, m_deviceHandler, m_windowHandler,
-                             m_imageHandler, m_vulkanGlobalState);
+    m_swapChainHandler = new SwapChainHandler(
+        this, m_deviceHandler, m_imageHandler, m_vulkanGlobalState);
     m_bufferHandler = new BufferHandler(m_vulkanGlobalState, m_deviceHandler);
     m_renderPassHandler =
         new RenderPassHandler(this, m_swapChainHandler, m_deviceHandler,
                               m_imageHandler, m_vulkanGlobalState);
     m_swapChainHandler->m_renderPassHandler = m_renderPassHandler;
     m_cameraController =
-        new CameraController(this, m_windowHandler, m_swapChainHandler,
+        new CameraController(this, m_windowingBackend, m_swapChainHandler,
                              m_bufferHandler, m_vulkanGlobalState);
 
     m_vulkanGlobalState->CreateVulkanInstance();
-    m_windowHandler->vulkanContext = this;
-    if (m_windowHandler->CreateSurface() != VK_SUCCESS)
+    // NOTE: Windowing code
+    // m_windowHandlerVK->vulkanContext = this;
+
+    if (m_windowingBackend->CreateSurfaceVkGLFW(
+            m_vulkanGlobalState->m_instance, &m_vulkanGlobalState->m_surface) !=
+        VK_SUCCESS)
         throw std::runtime_error("Failed to create window surface");
+
     m_deviceHandler->Initialize();
-    m_swapChainHandler->Initialize();
+    int frameBufferWidth, frameBufferHeight;
+    m_windowingBackend->GetFramebufferSizeGLFW(&frameBufferWidth,
+                                               &frameBufferHeight);
+    m_swapChainHandler->Initialize(frameBufferWidth, frameBufferHeight);
 
     m_renderPassHandler->CreateRenderPass();
     m_renderPassHandler->CreateShadowPass();
@@ -120,7 +128,7 @@ void VulkanContext::InitVulkan() {
     // Setup Platform/Renderer backends
     ImGui_ImplVulkan_InitInfo init_info = {};
 
-    ImGui_ImplGlfw_InitForVulkan(m_windowHandler->m_window, true);
+    ImGui_ImplGlfw_InitForVulkan(m_windowingBackend->m_window, true);
     init_info.ApiVersion = VK_API_VERSION_1_3;  // Pass in your
     // value of VkApplicationInfo::apiVersion, otherwise will default to
     // header / version.
@@ -150,8 +158,8 @@ void VulkanContext::InitVulkan() {
     ImGui_ImplVulkan_Init(&init_info);
 }
 
-void VulkanContext::RunVulkanRenderer(
-    std::vector<LoadedObject> objectsToRender) {
+void VulkanContext::RenderFrame(std::vector<LoadedObject> objectsToRender,
+                                float deltaTime) {
     std::chrono::high_resolution_clock::time_point lastFrameTime;
     lastFrameTime = std::chrono::high_resolution_clock::now();
 
@@ -180,58 +188,56 @@ void VulkanContext::RunVulkanRenderer(
     m_vulkanGlobalState->m_pbrPushConstants.hasRoughness =
         glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
 
-    while (!m_windowHandler->ShouldClose()) {
-        auto currentFrameTime = std::chrono::high_resolution_clock::now();
-        float deltaTime =
-            std::chrono::duration<float>(currentFrameTime - lastFrameTime)
-                .count();
-        lastFrameTime = currentFrameTime;
-        m_windowHandler->Poll();
+    // while (!m_windowHandler->ShouldClose()) {
+    // auto currentFrameTime = std::chrono::high_resolution_clock::now();
+    // float deltaTime =
+    //     std::chrono::duration<float>(currentFrameTime - lastFrameTime)
+    //         .count();
+    // lastFrameTime = currentFrameTime;
+    // m_windowHandler->Poll();
 
-        ImGui_ImplVulkan_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
 
-        bool show_demo_window = true;
-        ImGui::ShowDemoWindow(&show_demo_window);
-        ImGui::Begin("ImGui Sanity Check");
+    bool show_demo_window = true;
+    ImGui::ShowDemoWindow(&show_demo_window);
+    ImGui::Begin("ImGui Sanity Check");
 
-        // Test static text
-        ImGui::Text("Hello, Vulkan + ImGui!");
-        ImGui::Separator();
+    // Test static text
+    ImGui::Text("Hello, Vulkan + ImGui!");
+    ImGui::Separator();
 
-        // Test interactivity with a counter
-        static int counter = 0;
-        if (ImGui::Button("Click Me!")) {
-            counter++;
-        }
-        ImGui::SameLine();
-        ImGui::Text("Button clicks = %d", counter);
-
-        // Test value tracking and color manipulation
-        static float color[3] = {0.45f, 0.55f, 0.60f};
-        ImGui::ColorEdit3("Clear Color Picker", color);
-
-        // Test frame rates (verifies NewFrame delta timing is working)
-        ImGui::Text("Performance: %.3f ms/frame (%.1f FPS)",
-                    1000.0f / ImGui::GetIO().Framerate,
-                    ImGui::GetIO().Framerate);
-
-        ImGui::End();
-
-        ImGui::Render();
-        m_cameraController->HandleInputOrbit(deltaTime);
-        memcpy(m_vulkanGlobalState
-                   ->m_lightUBOMapped[m_vulkanGlobalState->m_currentFrame],
-               &m_vulkanGlobalState->m_lights,
-               sizeof(m_vulkanGlobalState->m_lights));
-        m_cameraController->UpdateCameraPosition(
-            m_vulkanGlobalState->m_currentFrame, deltaTime);
-
-        DrawFrame(deltaTime);
+    // Test interactivity with a counter
+    static int counter = 0;
+    if (ImGui::Button("Click Me!")) {
+        counter++;
     }
-    vkDeviceWaitIdle(m_deviceHandler->LogicalDevice);
-    Destroy();
+    ImGui::SameLine();
+    ImGui::Text("Button clicks = %d", counter);
+
+    // Test value tracking and color manipulation
+    static float color[3] = {0.45f, 0.55f, 0.60f};
+    ImGui::ColorEdit3("Clear Color Picker", color);
+
+    // Test frame rates (verifies NewFrame delta timing is working)
+    ImGui::Text("Performance: %.3f ms/frame (%.1f FPS)",
+                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+    ImGui::End();
+
+    ImGui::Render();
+    m_cameraController->HandleInputOrbit(deltaTime);
+    memcpy(m_vulkanGlobalState
+               ->m_lightUBOMapped[m_vulkanGlobalState->m_currentFrame],
+           &m_vulkanGlobalState->m_lights,
+           sizeof(m_vulkanGlobalState->m_lights));
+    m_cameraController->UpdateCameraPosition(
+        m_vulkanGlobalState->m_currentFrame, deltaTime);
+
+    DrawFrame(deltaTime);
+
+    //}
 }
 
 void VulkanContext::LoadSceneObjects() {
@@ -1363,7 +1369,13 @@ void VulkanContext::DrawFrame(float deltaTime) {
             ->m_imageAvailableSemaphores[m_vulkanGlobalState->m_currentFrame],
         VK_NULL_HANDLE, &imageIndex);
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        m_swapChainHandler->Rebuild();
+        int frameBufferWidth, frameBufferHeight;
+        // TODO: Call to Renderer Front End to get framebuffer sizes
+        m_windowingBackend->GetFramebufferSizeGLFW(&frameBufferWidth,
+                                                   &frameBufferHeight);
+        m_windowingBackend->PollWindowNotMinimizedGLFW();
+        vkDeviceWaitIdle(m_deviceHandler->LogicalDevice);
+        m_swapChainHandler->Rebuild(frameBufferWidth, frameBufferHeight);
         // TODO: MUST NOT FORGET THIS
         m_renderPassHandler->CreateRenderPass();
         m_renderPassHandler->CreateRenderPassFrameBuffers();
@@ -1441,9 +1453,14 @@ void VulkanContext::DrawFrame(float deltaTime) {
         vkQueuePresentKHR(m_vulkanGlobalState->m_presentQueue, &presentInfo);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
-        m_windowHandler->framebufferResized) {
-        m_windowHandler->framebufferResized = false;
-        m_swapChainHandler->Rebuild();
+        m_windowingBackend->framebufferResized) {
+        m_windowingBackend->framebufferResized = false;
+        int frameBufferWidth, frameBufferHeight;
+        m_windowingBackend->GetFramebufferSizeGLFW(&frameBufferWidth,
+                                                   &frameBufferHeight);
+        m_windowingBackend->PollWindowNotMinimizedGLFW();
+        vkDeviceWaitIdle(m_deviceHandler->LogicalDevice);
+        m_swapChainHandler->Rebuild(frameBufferWidth, frameBufferHeight);
         // TODO: MUST NOT FORGET THIS
         m_renderPassHandler->CreateRenderPass();
         m_renderPassHandler->CreateRenderPassFrameBuffers();
@@ -1512,6 +1529,7 @@ DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 }
 
 void VulkanContext::Destroy() {
+    vkDeviceWaitIdle(m_deviceHandler->LogicalDevice);
     m_swapChainHandler->Destroy();
     // DestroySwapChain();
 
@@ -1568,7 +1586,7 @@ void VulkanContext::Destroy() {
     // DEVICE DESTRUCTION
     m_deviceHandler->Destroy();
     // GLFW DESTRUCTION
-    m_windowHandler->Destroy();
+    m_windowingBackend->DestroyGLFW();
 }
 
 VkShaderModule VulkanContext::CreateShaderModule(

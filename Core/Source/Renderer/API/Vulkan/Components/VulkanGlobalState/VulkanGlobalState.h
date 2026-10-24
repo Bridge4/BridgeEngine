@@ -178,6 +178,8 @@ class VulkanGlobalState {
     VkDebugUtilsMessengerEXT m_debugMessenger;
     int m_maxFramesInFlight = 2;
     int m_maxMeshes = 10;
+    int m_frameBufferHeight = 0;
+    int m_frameBufferWidth = 0;
 
    private:
 };

@@ -6,9 +6,8 @@
 #include <set>
 
 #include "../VulkanGlobalState/VulkanGlobalState.h"
-#include "../Window/WindowHandler.h"
+#include "../Window/WindowingBackend.h"
 // CORE FUNCTIONS
-// #include "WindowHandler.h"
 #include "../../VulkanContext.h"
 
 void DeviceHandler::Initialize() {
