@@ -32,7 +32,6 @@
 #include "Components/SwapChain/SwapChainHandler.h"
 #include "Components/VulkanGlobalState/VulkanGlobalState.h"
 #include "Components/Window/WindowingBackend.h"
-#include "Components/WindowVK/WindowHandlerVK.h"
 #include "Source/Renderer/Camera/CameraController.h"
 #include "Source/Renderer/Mesh/Mesh3D.h"
 #include "VkTypes.h"
@@ -158,21 +157,18 @@ void VulkanContext::InitVulkan() {
     ImGui_ImplVulkan_Init(&init_info);
 }
 
-void VulkanContext::RenderFrame(std::vector<LoadedObject> objectsToRender,
-                                float deltaTime) {
-    std::chrono::high_resolution_clock::time_point lastFrameTime;
-    lastFrameTime = std::chrono::high_resolution_clock::now();
-
+void VulkanContext::DescribeScene(std::vector<LoadedObject> objectsToRender,
+                                  std::vector<Light> lightsToRender) {
     m_objectsToRender = objectsToRender;
 
-    Light light0;
-    light0.position = glm::vec4(10.0f, 20.0f, 10.0f, 1.0f);
-    light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    light0.intensity.x = 10000.0f;
-
     LightUBO lightUBO;
-    lightUBO.lights[0] = light0;
-    lightUBO.numLights.x = 1;
+    int i = 0;
+    for (auto light : lightsToRender) {
+        lightUBO.lights[i] = light;
+        i++;
+        lightUBO.numLights.x = i;
+    }
+
     m_vulkanGlobalState->m_lights = lightUBO;
     // need create a shadowpass framebuffer per shadow casting light
     m_renderPassHandler->CreateShadowPassFrameBuffers();
@@ -180,22 +176,10 @@ void VulkanContext::RenderFrame(std::vector<LoadedObject> objectsToRender,
     m_vulkanGlobalState->m_shadowBias = glm::vec4(0.0005f, 0.0f, 0.0f, 0.0f);
     m_vulkanGlobalState->m_pbrPushConstants = {
         glm::mat4(1.0f), m_vulkanGlobalState->m_shadowBias};
+}
 
-    m_vulkanGlobalState->m_pbrPushConstants.hasEmissive =
-        glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
-    m_vulkanGlobalState->m_pbrPushConstants.hasMetallic =
-        glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
-    m_vulkanGlobalState->m_pbrPushConstants.hasRoughness =
-        glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
-
-    // while (!m_windowHandler->ShouldClose()) {
-    // auto currentFrameTime = std::chrono::high_resolution_clock::now();
-    // float deltaTime =
-    //     std::chrono::duration<float>(currentFrameTime - lastFrameTime)
-    //         .count();
-    // lastFrameTime = currentFrameTime;
-    // m_windowHandler->Poll();
-
+void VulkanContext::RenderFrame(std::vector<LoadedObject> objectsToRender,
+                                float deltaTime) {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();

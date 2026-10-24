@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "API/Vulkan/Components/Window/WindowingBackend.h"
+#include "API/Vulkan/VulkanContext.h"
 #include "FileLoader.h"
 #include "Renderer.h"
 #include "RendererTypes.h"
@@ -61,9 +62,16 @@ int main() {
         loadedObjects.push_back(loadedObject);
     }
     renderer->m_loadedObjects = loadedObjects;
+    Light light0;
+    light0.position = glm::vec4(10.0f, 20.0f, 10.0f, 1.0f);
+    light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    light0.intensity.x = 10000.0f;
+    std::vector<Light> lightsToRender;
+    lightsToRender.push_back(light0);
 
     std::chrono::high_resolution_clock::time_point lastFrameTime;
     lastFrameTime = std::chrono::high_resolution_clock::now();
+    renderer->m_vulkanContext->DescribeScene(loadedObjects, lightsToRender);
     while (!windowingBackend->ShouldCloseGLFW()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
         float deltaTime =

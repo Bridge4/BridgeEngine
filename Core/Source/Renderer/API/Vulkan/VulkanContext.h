@@ -90,6 +90,8 @@ class VulkanContext {
     DeviceHandler* m_deviceHandler;
     // CLEANUP
     void Destroy();
+    void DescribeScene(std::vector<LoadedObject> objectsToRender,
+                       std::vector<Light> lightsToRender);
 
    private:
     // DeviceHandler* m_deviceHandler;
