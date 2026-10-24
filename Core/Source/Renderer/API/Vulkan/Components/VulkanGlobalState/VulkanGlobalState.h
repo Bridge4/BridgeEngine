@@ -126,11 +126,11 @@ class VulkanGlobalState {
     std::unordered_map<BeDrawType, std::vector<VkDescriptorSetLayout*>>
         m_descriptorSetLayouts = {};
 
-    DsLayoutInfo m_dsLayoutInfoScene;
-    DsLayoutInfo m_dsLayoutInfoTexturedMesh;
-    DsLayoutInfo m_dsLayoutInfoUntexturedMesh;
-    DsLayoutInfo m_dsLayoutInfoHeightMap;
-    std::vector<DsLayoutInfo> m_dsLayoutInfos = {
+    DescriptorSetLayoutInfo m_dsLayoutInfoScene;
+    DescriptorSetLayoutInfo m_dsLayoutInfoTexturedMesh;
+    DescriptorSetLayoutInfo m_dsLayoutInfoUntexturedMesh;
+    DescriptorSetLayoutInfo m_dsLayoutInfoHeightMap;
+    std::vector<DescriptorSetLayoutInfo> m_dsLayoutInfos = {
         m_dsLayoutInfoScene, m_dsLayoutInfoTexturedMesh,
         m_dsLayoutInfoUntexturedMesh, m_dsLayoutInfoHeightMap};
 

@@ -17,8 +17,9 @@ class DescriptorSetHandler {
     }
 
     void CreateDescriptorPool();
-    void CreateDescriptorSetLayout(DsLayoutInfo* dsLayout,
-                                   std::vector<DSBindingInfo> bindings);
+    void CreateDescriptorSetLayout(
+        DescriptorSetLayoutInfo* dsLayout,
+        std::vector<DescriptorSetBindingInfo> bindings);
     void CreateSceneDescriptorSetLayout();
     void CreateSceneDescriptorSets();
     void CreateShadowPassDescriptorSetLayout();

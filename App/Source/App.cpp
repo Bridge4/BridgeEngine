@@ -72,6 +72,7 @@ int main() {
     std::chrono::high_resolution_clock::time_point lastFrameTime;
     lastFrameTime = std::chrono::high_resolution_clock::now();
     renderer->m_vulkanContext->DescribeScene(loadedObjects, lightsToRender);
+
     while (!windowingBackend->ShouldCloseGLFW()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
         float deltaTime =

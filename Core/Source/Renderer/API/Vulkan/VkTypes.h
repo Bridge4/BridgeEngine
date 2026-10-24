@@ -123,14 +123,14 @@ enum DescriptorSetLayoutType {
     HEIGHT_MAP
 };
 
-struct DsLayoutInfo {
+struct DescriptorSetLayoutInfo {
     DescriptorSetLayoutType Type;
     std::vector<VkDescriptorSetLayoutBinding> Bindings;
     std::unordered_map<VkDescriptorType, uint32_t> BindingTypeCount;
     uint32_t BindingCount = Bindings.size();
 };
 
-struct DSBindingInfo {
+struct DescriptorSetBindingInfo {
     uint32_t BindingCount;
     VkDescriptorType DescriptorType;
     VkShaderStageFlags ShaderStages;

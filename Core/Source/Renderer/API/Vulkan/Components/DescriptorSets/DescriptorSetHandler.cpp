@@ -40,7 +40,8 @@ void DescriptorSetHandler::CreateDescriptorPool() {
 }
 
 void DescriptorSetHandler::CreateDescriptorSetLayout(
-    DsLayoutInfo* dsLayout, std::vector<DSBindingInfo> bindingInfoList) {
+    DescriptorSetLayoutInfo* dsLayout,
+    std::vector<DescriptorSetBindingInfo> bindingInfoList) {
     std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {};
     uint32_t bindingIndex = 0;
     for (auto& bindingInfo : bindingInfoList) {
