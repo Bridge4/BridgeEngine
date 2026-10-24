@@ -1058,6 +1058,7 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
         vkCmdBindIndexBuffer(commandBuffer, m_bufferHandler->IndexBuffer, 0,
                              VK_INDEX_TYPE_UINT32);
         for (auto& mesh : m_vulkanGlobalState->m_meshList) {
+            mesh.m_scale = glm::vec3(0.01f, 0.01f, 0.01f);
             // Binding the graphics pipeline
             if (mesh.MeshType == TEXTURED) {
                 vkCmdBindPipeline(commandBuffer,
