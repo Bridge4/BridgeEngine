@@ -59,6 +59,33 @@ void DescriptorSetHandler::CreateDescriptorPoolBindless() {
     }
 }
 
+void DescriptorSetHandler::CreateDescriptorPoolBindlessScene() {
+    // Get number of descriptor sets
+    // Create array poolSizes = # of descriptor types
+    // Need list of descriptor types used across all sets
+    // Need number of each type used
+    // Need number of frames in flight
+    std::array<VkDescriptorPoolSize, 1> poolSizes{};
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes[0].descriptorCount =
+        (2 * m_vulkanGlobalState->m_maxFramesInFlight) +
+        (2 * m_vulkanGlobalState->m_maxMeshes);
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    poolInfo.pPoolSizes = poolSizes.data();
+    poolInfo.maxSets = m_vulkanGlobalState->m_maxFramesInFlight *
+                       m_vulkanGlobalState->m_maxMeshes;
+
+    if (vkCreateDescriptorPool(
+            m_deviceHandler->LogicalDevice, &poolInfo, nullptr,
+            &m_vulkanGlobalState->m_descriptorPoolBindlessScene) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool!");
+    }
+}
+
 void DescriptorSetHandler::CreateDescriptorSetLayoutBindless() {
     // Combined Image Samplers
     VkDescriptorSetLayoutBinding samplers{};
@@ -69,7 +96,8 @@ void DescriptorSetHandler::CreateDescriptorSetLayoutBindless() {
     samplers.stageFlags = VK_SHADER_STAGE_ALL;
     VkDescriptorBindingFlags flags =
         VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
-        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
+        VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
 
     VkDescriptorSetLayoutBindingFlagsCreateInfo flagsInfo{
         VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO};
@@ -90,6 +118,23 @@ void DescriptorSetHandler::CreateDescriptorSetLayoutBindless() {
             &m_vulkanGlobalState->m_bindlessDescriptorSetLayout) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
+    }
+}
+
+void DescriptorSetHandler::CreateDescriptorSetBindless() {
+    std::vector<VkDescriptorSetLayout> layout(
+        1, m_vulkanGlobalState->m_bindlessDescriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = m_vulkanGlobalState->m_descriptorPoolBindless;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = layout.data();
+
+    if (vkAllocateDescriptorSets(
+            m_deviceHandler->LogicalDevice, &allocInfo,
+            &m_vulkanGlobalState->m_globalBindlessDescriptorSet) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor sets!");
     }
 }
 
@@ -192,7 +237,7 @@ void DescriptorSetHandler::CreateSceneDescriptorSets() {
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     if (m_vulkanGlobalState->m_renderingMode == ERenderingMode::Bindless) {
         allocInfo.descriptorPool =
-            m_vulkanGlobalState->m_descriptorPoolBindless;
+            m_vulkanGlobalState->m_descriptorPoolBindlessScene;
     } else {
         allocInfo.descriptorPool = m_vulkanGlobalState->m_descriptorPool;
     }
@@ -513,7 +558,12 @@ void DescriptorSetHandler::CreateShadowPassDescriptorSet() {
         m_vulkanGlobalState->m_shadowPassDescriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = m_vulkanGlobalState->m_descriptorPool;
+    if (m_vulkanGlobalState->m_renderingMode == ERenderingMode::Bindless) {
+        allocInfo.descriptorPool =
+            m_vulkanGlobalState->m_descriptorPoolBindlessScene;
+    } else {
+        allocInfo.descriptorPool = m_vulkanGlobalState->m_descriptorPool;
+    }
     allocInfo.descriptorSetCount =
         static_cast<uint32_t>(m_vulkanGlobalState->m_maxFramesInFlight);
     allocInfo.pSetLayouts = layouts.data();

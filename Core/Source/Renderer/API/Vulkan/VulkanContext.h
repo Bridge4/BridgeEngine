@@ -93,6 +93,8 @@ class VulkanContext {
     void Destroy();
     void DescribeScene(std::vector<LoadedObject> objectsToRender,
                        std::vector<Light> lightsToRender);
+    void RegisterTexture(VkImageView textureImageView,
+                         VkSampler textureSampler);
 
    private:
     // DeviceHandler* m_deviceHandler;
@@ -103,6 +105,7 @@ class VulkanContext {
     DescriptorSetHandler* m_descriptorSetHandler;
 
     ImageHandler* m_imageHandler;
+    int m_textureHeap[22000];
 
     uint32_t m_windowWidth = 800;
     uint32_t m_windowHeight = 600;

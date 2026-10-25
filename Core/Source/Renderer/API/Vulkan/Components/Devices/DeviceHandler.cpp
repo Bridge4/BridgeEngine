@@ -102,6 +102,7 @@ void DeviceHandler::InitializeLogicalDevice() {
         vulkan12Features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
         vulkan12Features.descriptorBindingPartiallyBound = VK_TRUE;
         vulkan12Features.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+        vulkan12Features.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
     }
 
     // Creating logical device

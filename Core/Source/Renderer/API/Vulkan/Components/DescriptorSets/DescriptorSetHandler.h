@@ -31,7 +31,9 @@ class DescriptorSetHandler {
 
     // === BINDLESS === //
     void CreateDescriptorPoolBindless();
+    void CreateDescriptorPoolBindlessScene();
     void CreateDescriptorSetLayoutBindless();
+    void CreateDescriptorSetBindless();
     void RegisterTexture();
 
    private:

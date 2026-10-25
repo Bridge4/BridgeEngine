@@ -83,14 +83,21 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
 
     if (ERenderingMode::Bindless) {
         m_descriptorSetHandler->CreateDescriptorPoolBindless();
+        m_descriptorSetHandler->CreateDescriptorPoolBindlessScene();
         m_descriptorSetHandler->CreateDescriptorSetLayoutBindless();
+        m_descriptorSetHandler->CreateDescriptorSetBindless();
+    } else {
+        m_descriptorSetHandler->CreateDescriptorPool();
     }
-    m_descriptorSetHandler->CreateDescriptorPool();
     // SceneDescriptorSets
     m_descriptorSetHandler->CreateSceneDescriptorSetLayout();
     m_bufferHandler->CreateCameraUBO();
     m_bufferHandler->CreateLightUBO();
     m_descriptorSetHandler->CreateSceneDescriptorSets();
+
+    // NOTE: WE HAVE FINISHED SETTING UP THE BINDLESS DESCRIPTOR POOLS AND
+    // WE NOW NEED TO SETUP THE MATERIAL INDEX STRUCT, BINDLESS PBR SHADERS,
+    // BINDLESS PBR PIPELINE AND BINDLESS PBR DRAW LOGIC
 
     std::vector<char> vertShadow = ReadFile(SHADERS_DIR "shadow.spv");
     std::vector<char> fragShadow = ReadFile(SHADERS_DIR "shadowFrag.spv");
@@ -183,6 +190,31 @@ void VulkanContext::DescribeScene(std::vector<LoadedObject> objectsToRender,
     m_vulkanGlobalState->m_pbrPushConstants = {
         glm::mat4(1.0f), m_vulkanGlobalState->m_shadowBias};
 }
+void VulkanContext::RegisterTexture(VkImageView textureImageView,
+                                    VkSampler textureSampler) {
+    uint32_t idx;
+    // Find free slot
+    for (int i = 0; i < 22000; i++) {
+        // lmao
+        if (m_textureHeap[i] == 0) {
+            idx = i;
+            m_textureHeap[i] = 1;
+        }
+    }
+    // Get free index in our global textures array
+    VkDescriptorImageInfo imageInfo{textureSampler, textureImageView,
+                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    VkWriteDescriptorSet w{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+    // CREATE THE DESCRIPTOR SET YOU DOLT
+    w.dstSet = m_vulkanGlobalState->m_globalBindlessDescriptorSet;
+    w.dstBinding = 0;
+    w.dstArrayElement = idx;
+    w.descriptorCount = 1;
+    w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    w.pImageInfo = &imageInfo;
+    vkUpdateDescriptorSets(m_deviceHandler->LogicalDevice, 1, &w, 0, nullptr);
+    // return idx;  // store in the material
+}
 
 void VulkanContext::RenderFrame(std::vector<LoadedObject> objectsToRender,
                                 float deltaTime) {
@@ -238,20 +270,36 @@ void VulkanContext::LoadSceneObjects() {
                  glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(5.0f, 5.0f, 5.0f));
         std::vector<MaterialEnums> materialTypes = {ALBEDO, METALLIC, ROUGHNESS,
                                                     AO,     NORMAL,   EMISSIVE};
-        for (auto& matType : materialTypes) {
-            CreateTextureImage(obj.textureProperties[matType],
-                               &m_vulkanGlobalState->m_meshList[meshCount],
-                               matType);
-            CreateTextureImageView(&m_vulkanGlobalState->m_meshList[meshCount],
+        if (m_vulkanGlobalState->m_renderingMode == ERenderingMode::Bindless) {
+            for (auto& matType : materialTypes) {
+                CreateTextureImage(obj.textureProperties[matType],
+                                   &m_vulkanGlobalState->m_meshList[meshCount],
                                    matType);
-            CreateTextureSampler(&m_vulkanGlobalState->m_meshList[meshCount],
-                                 matType);
+                CreateTextureImageView(
+                    &m_vulkanGlobalState->m_meshList[meshCount], matType);
+                CreateTextureSampler(
+                    &m_vulkanGlobalState->m_meshList[meshCount], matType);
+                RegisterTexture(m_vulkanGlobalState->m_meshList[meshCount]
+                                    .m_textureImageView,
+                                m_vulkanGlobalState->m_meshList[meshCount]
+                                    .m_textureSampler);
+            }
+        } else {
+            for (auto& matType : materialTypes) {
+                CreateTextureImage(obj.textureProperties[matType],
+                                   &m_vulkanGlobalState->m_meshList[meshCount],
+                                   matType);
+                CreateTextureImageView(
+                    &m_vulkanGlobalState->m_meshList[meshCount], matType);
+                CreateTextureSampler(
+                    &m_vulkanGlobalState->m_meshList[meshCount], matType);
+                m_descriptorSetHandler->CreateTexturedPBRDescriptorSets(
+                    &m_vulkanGlobalState->m_meshList[meshCount]);
+            }
         }
 
         // Create Mesh Uniform Buffers
         m_bufferHandler->CreateModelUBO(
-            &m_vulkanGlobalState->m_meshList[meshCount]);
-        m_descriptorSetHandler->CreateTexturedPBRDescriptorSets(
             &m_vulkanGlobalState->m_meshList[meshCount]);
         meshCount++;
         xPos += 5.0f;
