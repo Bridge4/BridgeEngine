@@ -25,8 +25,10 @@ class VulkanGlobalState {
     // The VulkanGlobalState will hold the resources created by the various
     // handlers
 
-    VulkanGlobalState(VulkanContext* vulkanContext) {
+    VulkanGlobalState(VulkanContext* vulkanContext,
+                      ERenderingMode renderingMode) {
         this->m_vulkanContext = vulkanContext;
+        this->m_renderingMode = renderingMode;
     }
 
     void CreateVulkanInstance();
@@ -38,15 +40,16 @@ class VulkanGlobalState {
     std::vector<VkImageView>* GetRefSwapChainImageViews() {
         return &m_swapChainImageViews;
     }
+    // TODO: Move this to SwapChainHandler
     VkFormat GetSwapChainImageFormat() { return m_swapChainImageFormat; }
+    // TODO: Move this to SwapChainHandler
     VkSwapchainKHR* GetRefSwapChain() { return &m_swapChain; }
+    // TODO: Move this to SwapChainHandler
     std::vector<VkImage>* GetRefSwapChainImages() { return &m_swapChainImages; }
-    VkRenderPass* GetRefRenderPass() { return &m_renderPass; }
     VkExtent2D GetSwapChainExtent() { return m_swapChainExtent; }
+    // TODO: Replace all getters with direct access to member variables
     VkSurfaceKHR GetSurface() { return m_surface; }
     VkImageView GetDepthImageView() { return m_renderPassDepthImageView; }
-
-    std::vector<Mesh3D> GetMeshList() { return m_meshList; }
 
     void SetSwapChainImageFormat(VkFormat surfaceFormat) {
         this->m_swapChainImageFormat = surfaceFormat;
@@ -63,6 +66,7 @@ class VulkanGlobalState {
 
     // VkInstance m_vulkanInstance = 0;
     VulkanContext* m_vulkanContext = 0;
+    ERenderingMode m_renderingMode = ERenderingMode::Standard;
 
     VkSwapchainKHR m_swapChain = nullptr;
     std::vector<VkImage> m_swapChainImages = {};

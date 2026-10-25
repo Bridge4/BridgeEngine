@@ -30,4 +30,6 @@ struct LoadedObject {
     ObjProperties objProperties;
     std::unordered_map<MaterialEnums, TextureProperties> textureProperties;
 };
+
+enum ERenderingMode { Standard, Bindless };
 #endif

@@ -3,6 +3,7 @@
 #include <cassert>
 
 #include "Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
+#include "Source/Renderer/Renderer.h"
 #include "config.h"
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -39,8 +40,8 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
 
-void VulkanContext::InitVulkan() {
-    m_vulkanGlobalState = new VulkanGlobalState(this);
+void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
+    m_vulkanGlobalState = new VulkanGlobalState(this, renderingMode);
 
     m_deviceHandler = new DeviceHandler(m_vulkanGlobalState);
     m_descriptorSetHandler =
@@ -211,7 +212,9 @@ void VulkanContext::RenderFrame(std::vector<LoadedObject> objectsToRender,
     ImGui::End();
 
     ImGui::Render();
+
     m_cameraController->HandleInputOrbit(deltaTime);
+
     memcpy(m_vulkanGlobalState
                ->m_lightUBOMapped[m_vulkanGlobalState->m_currentFrame],
            &m_vulkanGlobalState->m_lights,
@@ -220,8 +223,6 @@ void VulkanContext::RenderFrame(std::vector<LoadedObject> objectsToRender,
         m_vulkanGlobalState->m_currentFrame, deltaTime);
 
     DrawFrame(deltaTime);
-
-    //}
 }
 
 void VulkanContext::LoadSceneObjects() {

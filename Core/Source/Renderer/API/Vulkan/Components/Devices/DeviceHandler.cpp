@@ -1,5 +1,7 @@
 #include "DeviceHandler.h"
 
+#include <vulkan/vulkan_core.h>
+
 #include <array>
 #include <cstdint>  // Necessary for uint32_t
 #include <iostream>
@@ -9,6 +11,7 @@
 #include "../Window/WindowingBackend.h"
 // CORE FUNCTIONS
 #include "../../VulkanContext.h"
+#include "Source/Renderer/RendererTypes.h"
 
 void DeviceHandler::Initialize() {
     InitializePhysicalDevice();
@@ -89,6 +92,17 @@ void DeviceHandler::InitializeLogicalDevice() {
     }
     VkPhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.samplerAnisotropy = VK_TRUE;
+    VkPhysicalDeviceVulkan12Features vulkan12Features{
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
+    if (this->m_vulkanGlobalState->m_renderingMode ==
+        ERenderingMode::Bindless) {
+        vulkan12Features.descriptorIndexing = VK_TRUE;
+        vulkan12Features.descriptorIndexing = VK_TRUE;
+        vulkan12Features.runtimeDescriptorArray = VK_TRUE;
+        vulkan12Features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+        vulkan12Features.descriptorBindingPartiallyBound = VK_TRUE;
+        vulkan12Features.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+    }
 
     // Creating logical device
     VkDeviceCreateInfo createInfo{};
