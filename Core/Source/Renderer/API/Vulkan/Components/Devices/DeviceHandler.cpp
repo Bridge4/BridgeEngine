@@ -106,6 +106,7 @@ void DeviceHandler::InitializeLogicalDevice() {
 
     // Creating logical device
     VkDeviceCreateInfo createInfo{};
+    createInfo.pNext = &vulkan12Features;
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.queueCreateInfoCount =
         static_cast<uint32_t>(queueCreateInfos.size());

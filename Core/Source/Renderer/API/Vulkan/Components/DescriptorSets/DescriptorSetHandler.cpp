@@ -7,6 +7,7 @@
 
 #include "Source/Renderer/API/Vulkan/Components/Devices/DeviceHandler.h"
 #include "Source/Renderer/API/Vulkan/Components/VulkanGlobalState/VulkanGlobalState.h"
+#include "Source/Renderer/RendererTypes.h"
 
 void DescriptorSetHandler::CreateDescriptorPool() {
     // Get number of descriptor sets
@@ -36,6 +37,59 @@ void DescriptorSetHandler::CreateDescriptorPool() {
             m_deviceHandler->LogicalDevice, &poolInfo, nullptr,
             &m_vulkanGlobalState->m_descriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
+    }
+}
+void DescriptorSetHandler::CreateDescriptorPoolBindless() {
+    std::array<VkDescriptorPoolSize, 1> poolSizes{};
+
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[0].descriptorCount = 10000;
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    poolInfo.pPoolSizes = poolSizes.data();
+    poolInfo.maxSets = 10000 * 2;
+
+    if (vkCreateDescriptorPool(
+            m_deviceHandler->LogicalDevice, &poolInfo, nullptr,
+            &m_vulkanGlobalState->m_descriptorPoolBindless) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool!");
+    }
+}
+
+void DescriptorSetHandler::CreateDescriptorSetLayoutBindless() {
+    // Combined Image Samplers
+    VkDescriptorSetLayoutBinding samplers{};
+    samplers.binding = 0;
+    samplers.descriptorCount = 10000;
+    samplers.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplers.pImmutableSamplers = nullptr;
+    samplers.stageFlags = VK_SHADER_STAGE_ALL;
+    VkDescriptorBindingFlags flags =
+        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flagsInfo{
+        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO};
+    flagsInfo.bindingCount = 1;
+    flagsInfo.pBindingFlags = &flags;
+
+    std::array<VkDescriptorSetLayoutBinding, 1> bindings = {samplers};
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.flags =
+        VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+    layoutInfo.pNext = &flagsInfo;
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
+
+    if (vkCreateDescriptorSetLayout(
+            m_deviceHandler->LogicalDevice, &layoutInfo, nullptr,
+            &m_vulkanGlobalState->m_bindlessDescriptorSetLayout) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
     }
 }
 
@@ -136,7 +190,12 @@ void DescriptorSetHandler::CreateSceneDescriptorSets() {
         m_vulkanGlobalState->m_sceneDescriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = m_vulkanGlobalState->m_descriptorPool;
+    if (m_vulkanGlobalState->m_renderingMode == ERenderingMode::Bindless) {
+        allocInfo.descriptorPool =
+            m_vulkanGlobalState->m_descriptorPoolBindless;
+    } else {
+        allocInfo.descriptorPool = m_vulkanGlobalState->m_descriptorPool;
+    }
     allocInfo.descriptorSetCount =
         static_cast<uint32_t>(m_vulkanGlobalState->m_maxFramesInFlight);
     allocInfo.pSetLayouts = layouts.data();
@@ -445,46 +504,6 @@ void DescriptorSetHandler::CreateTexturedPBRDescriptorSets(Mesh3D* mesh) {
         vkUpdateDescriptorSets(
             m_deviceHandler->LogicalDevice, (uint32_t)descriptorWrites.size(),
             descriptorWrites.data(), descriptorCopyCount, nullptr);
-    }
-}
-void DescriptorSetHandler::CreateDescriptorSetLayoutBindless() {
-    // Uniform Buffers
-    // Combined Image Samplers
-    VkDescriptorSetLayoutBinding ubos{};
-    ubos.binding = 0;
-    ubos.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    ubos.descriptorCount = 1024;
-    ubos.stageFlags = VK_SHADER_STAGE_ALL;
-
-    VkDescriptorSetLayoutBinding samplers{};
-    samplers.binding = 1;
-    samplers.descriptorCount = 1024;
-    samplers.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplers.pImmutableSamplers = nullptr;
-    samplers.stageFlags = VK_SHADER_STAGE_ALL;
-    VkDescriptorBindingFlags flags =
-        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
-        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
-
-    VkDescriptorSetLayoutBindingFlagsCreateInfo flagsInfo{
-        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO};
-    flagsInfo.bindingCount = 1;
-    flagsInfo.pBindingFlags = &flags;
-
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {ubos, samplers};
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.flags =
-        VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-    layoutInfo.pNext = &flagsInfo;
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-    layoutInfo.pBindings = bindings.data();
-
-    if (vkCreateDescriptorSetLayout(
-            m_deviceHandler->LogicalDevice, &layoutInfo, nullptr,
-            &m_vulkanGlobalState->m_texturedPBRDescriptorSetLayout) !=
-        VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor set layout!");
     }
 }
 

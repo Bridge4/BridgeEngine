@@ -4,6 +4,7 @@
 
 #include "Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
 #include "Source/Renderer/Renderer.h"
+#include "Source/Renderer/RendererTypes.h"
 #include "config.h"
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -80,8 +81,11 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
     CreateCommandPool();
     m_renderPassHandler->CreateRenderPassFrameBuffers();
 
+    if (ERenderingMode::Bindless) {
+        m_descriptorSetHandler->CreateDescriptorPoolBindless();
+        m_descriptorSetHandler->CreateDescriptorSetLayoutBindless();
+    }
     m_descriptorSetHandler->CreateDescriptorPool();
-    m_descriptorSetHandler->CreateDescriptorSetLayoutBindless();
     // SceneDescriptorSets
     m_descriptorSetHandler->CreateSceneDescriptorSetLayout();
     m_bufferHandler->CreateCameraUBO();
