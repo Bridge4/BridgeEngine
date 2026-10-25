@@ -29,6 +29,9 @@ class DescriptorSetHandler {
     void CreateTexturedPBRDescriptorSetLayout();
     void CreateTexturedPBRDescriptorSets(Mesh3D* mesh);
 
+    // === BINDLESS === //
+    void CreateDescriptorSetLayoutBindless();
+
    private:
     VulkanGlobalState* m_vulkanGlobalState = nullptr;
     DeviceHandler* m_deviceHandler = nullptr;

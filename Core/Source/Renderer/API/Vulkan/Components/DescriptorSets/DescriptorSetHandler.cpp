@@ -447,6 +447,46 @@ void DescriptorSetHandler::CreateTexturedPBRDescriptorSets(Mesh3D* mesh) {
             descriptorWrites.data(), descriptorCopyCount, nullptr);
     }
 }
+void DescriptorSetHandler::CreateDescriptorSetLayoutBindless() {
+    // Uniform Buffers
+    // Combined Image Samplers
+    VkDescriptorSetLayoutBinding ubos{};
+    ubos.binding = 0;
+    ubos.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    ubos.descriptorCount = 1024;
+    ubos.stageFlags = VK_SHADER_STAGE_ALL;
+
+    VkDescriptorSetLayoutBinding samplers{};
+    samplers.binding = 1;
+    samplers.descriptorCount = 1024;
+    samplers.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplers.pImmutableSamplers = nullptr;
+    samplers.stageFlags = VK_SHADER_STAGE_ALL;
+    VkDescriptorBindingFlags flags =
+        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flagsInfo{
+        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO};
+    flagsInfo.bindingCount = 1;
+    flagsInfo.pBindingFlags = &flags;
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {ubos, samplers};
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.flags =
+        VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+    layoutInfo.pNext = &flagsInfo;
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
+
+    if (vkCreateDescriptorSetLayout(
+            m_deviceHandler->LogicalDevice, &layoutInfo, nullptr,
+            &m_vulkanGlobalState->m_texturedPBRDescriptorSetLayout) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+}
 
 void DescriptorSetHandler::CreateShadowPassDescriptorSet() {
     std::vector<VkDescriptorSetLayout> layouts(

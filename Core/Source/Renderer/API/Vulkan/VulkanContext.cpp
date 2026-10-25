@@ -81,6 +81,7 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
     m_renderPassHandler->CreateRenderPassFrameBuffers();
 
     m_descriptorSetHandler->CreateDescriptorPool();
+    m_descriptorSetHandler->CreateDescriptorSetLayoutBindless();
     // SceneDescriptorSets
     m_descriptorSetHandler->CreateSceneDescriptorSetLayout();
     m_bufferHandler->CreateCameraUBO();
