@@ -245,6 +245,8 @@ void CameraController::HandleInputOrbit(float deltaTime) {
 
     glm::mat4 lightViewProj = lightProj * lightView;
 
+    // m_vulkanGlobalState->m_fragShaderPushConstantsBindless.lightViewProj =
+    //     lightViewProj;
     m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj =
         lightViewProj;
 

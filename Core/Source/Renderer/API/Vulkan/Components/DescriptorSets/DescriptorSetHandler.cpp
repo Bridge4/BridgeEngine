@@ -86,6 +86,33 @@ void DescriptorSetHandler::CreateDescriptorPoolBindlessScene() {
     }
 }
 
+void DescriptorSetHandler::CreateDescriptorPoolPerMeshBindless() {
+    // Get number of descriptor sets
+    // Create array poolSizes = # of descriptor types
+    // Need list of descriptor types used across all sets
+    // Need number of each type used
+    // Need number of frames in flight
+    std::array<VkDescriptorPoolSize, 1> poolSizes{};
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes[0].descriptorCount =
+        (2 * m_vulkanGlobalState->m_maxFramesInFlight) +
+        (2 * m_vulkanGlobalState->m_maxMeshes);
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    poolInfo.pPoolSizes = poolSizes.data();
+    poolInfo.maxSets = m_vulkanGlobalState->m_maxFramesInFlight *
+                       m_vulkanGlobalState->m_maxMeshes;
+
+    if (vkCreateDescriptorPool(
+            m_deviceHandler->LogicalDevice, &poolInfo, nullptr,
+            &m_vulkanGlobalState->m_descriptorPoolPerMeshBindless) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool!");
+    }
+}
+
 void DescriptorSetHandler::CreateDescriptorSetLayoutBindless() {
     // Combined Image Samplers
     VkDescriptorSetLayoutBinding samplers{};
@@ -375,6 +402,28 @@ void DescriptorSetHandler::CreateTexturedMeshDescriptorSets(Mesh3D* mesh) {
     }
 }
 
+void DescriptorSetHandler::CreateTexturedPBRDescriptorSetLayoutBindless() {
+    VkDescriptorSetLayoutBinding modelUBO{};
+    modelUBO.binding = 0;
+    modelUBO.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    modelUBO.descriptorCount = 1;
+    modelUBO.stageFlags =
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    modelUBO.pImmutableSamplers = nullptr;  // Optional
+
+    std::array<VkDescriptorSetLayoutBinding, 1> bindings = {modelUBO};
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
+
+    if (vkCreateDescriptorSetLayout(
+            m_deviceHandler->LogicalDevice, &layoutInfo, nullptr,
+            &m_vulkanGlobalState->m_texturedPBRDescriptorSetLayoutBindless) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+}
 void DescriptorSetHandler::CreateTexturedPBRDescriptorSetLayout() {
     VkDescriptorSetLayoutBinding modelUBO{};
     modelUBO.binding = 0;
@@ -446,6 +495,49 @@ void DescriptorSetHandler::CreateTexturedPBRDescriptorSetLayout() {
             &m_vulkanGlobalState->m_texturedPBRDescriptorSetLayout) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
+    }
+}
+
+void DescriptorSetHandler::CreateTexturedPBRDescriptorSetsBindless(
+    Mesh3D* mesh) {
+    std::vector<VkDescriptorSetLayout> layouts(
+        m_vulkanGlobalState->m_maxFramesInFlight,
+        m_vulkanGlobalState->m_texturedPBRDescriptorSetLayoutBindless);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool =
+        m_vulkanGlobalState->m_descriptorPoolPerMeshBindless;
+    allocInfo.descriptorSetCount =
+        static_cast<uint32_t>(m_vulkanGlobalState->m_maxFramesInFlight);
+    allocInfo.pSetLayouts = layouts.data();
+
+    mesh->m_descriptorSets.resize(m_vulkanGlobalState->m_maxFramesInFlight);
+    if (vkAllocateDescriptorSets(m_deviceHandler->LogicalDevice, &allocInfo,
+                                 mesh->m_descriptorSets.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor sets!");
+    }
+
+    for (size_t i = 0; i < m_vulkanGlobalState->m_maxFramesInFlight; i++) {
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = mesh->m_uniformBuffers[i];
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(ModelUBO);
+
+        std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = mesh->m_descriptorSets[i];
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].dstArrayElement = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+        int j = 1;
+
+        uint32_t descriptorCopyCount = 0;
+        vkUpdateDescriptorSets(
+            m_deviceHandler->LogicalDevice, (uint32_t)descriptorWrites.size(),
+            descriptorWrites.data(), descriptorCopyCount, nullptr);
     }
 }
 void DescriptorSetHandler::CreateTexturedPBRDescriptorSets(Mesh3D* mesh) {

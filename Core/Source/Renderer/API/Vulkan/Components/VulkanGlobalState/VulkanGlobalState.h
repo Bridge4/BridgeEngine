@@ -12,7 +12,6 @@
 
 struct VertexShaderPushConstants {
     glm::mat4 lightViewProj;
-    glm::mat4 model;
 };
 
 struct ShadowPassPushConstants {
@@ -25,8 +24,7 @@ struct PBRPushConstants {
     glm::vec4 bias;
     glm::vec4 hasEmissive;
 };
-struct PBRPushConstantsBindless {
-    glm::mat4 lightViewProj;
+struct FragShaderPushConstantsBindless {
     glm::vec4 bias;
     uint32_t albedoIdx;
     uint32_t metallicIdx;
@@ -103,6 +101,8 @@ class VulkanGlobalState {
     VkRenderPass m_shadowPass;
     ShadowPassPushConstants m_shadowPassPushConstants;
     PBRPushConstants m_pbrPushConstants;
+    VertexShaderPushConstants m_vertexShaderPushConstants;
+    FragShaderPushConstantsBindless m_fragShaderPushConstantsBindless;
 
     glm::vec4 m_shadowBias;
     VkSurfaceKHR m_surface;
@@ -121,6 +121,9 @@ class VulkanGlobalState {
     VkDescriptorPool m_descriptorPoolBindlessScene;
     VkDescriptorSetLayout m_bindlessDescriptorSetLayout;
     VkDescriptorSetLayout m_bindlessFrameBindingDescriptorSetLayout;
+    VkDescriptorPool m_descriptorPoolPerMeshBindless;
+    // Per mesh model matrix
+    VkDescriptorSetLayout m_texturedPBRDescriptorSetLayoutBindless;
     VkDescriptorSet m_globalBindlessDescriptorSet;
 
     std::vector<VkDescriptorSetLayout> m_texturedMeshDescriptorSetLayouts;

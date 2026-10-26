@@ -84,6 +84,7 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
     if (m_vulkanGlobalState->m_renderingMode == ERenderingMode::Bindless) {
         m_descriptorSetHandler->CreateDescriptorPoolBindless();
         m_descriptorSetHandler->CreateDescriptorPoolBindlessScene();
+        m_descriptorSetHandler->CreateDescriptorPoolPerMeshBindless();
         m_descriptorSetHandler->CreateDescriptorSetLayoutBindless();
         m_descriptorSetHandler->CreateDescriptorSetBindless();
     } else {
@@ -109,6 +110,7 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
         std::vector<char> vertScene = ReadFile(SHADERS_DIR "scene.spv");
         std::vector<char> fragTextured =
             ReadFile(SHADERS_DIR "pbr_bindless.spv");
+        m_descriptorSetHandler->CreateTexturedPBRDescriptorSetLayoutBindless();
         CreatePBRPipelineBindless(vertScene, fragTextured,
                                   &m_vulkanGlobalState->m_pbrPipeline);
     } else {
@@ -306,6 +308,14 @@ void VulkanContext::LoadSceneObjects() {
                                          .m_materials[matType]
                                          .m_textureSampler);
             }
+
+            // Create Mesh Uniform Buffers
+            m_bufferHandler->CreateModelUBO(
+                &m_vulkanGlobalState->m_meshList[meshCount]);
+            meshCount++;
+            xPos += 5.0f;
+            m_descriptorSetHandler->CreateTexturedPBRDescriptorSetsBindless(
+                &m_vulkanGlobalState->m_meshList[meshCount - 1]);
         } else {
             for (auto& matType : materialTypes) {
                 CreateTextureImage(obj.textureProperties[matType],
@@ -318,13 +328,13 @@ void VulkanContext::LoadSceneObjects() {
                 m_descriptorSetHandler->CreateTexturedPBRDescriptorSets(
                     &m_vulkanGlobalState->m_meshList[meshCount]);
             }
-        }
 
-        // Create Mesh Uniform Buffers
-        m_bufferHandler->CreateModelUBO(
-            &m_vulkanGlobalState->m_meshList[meshCount]);
-        meshCount++;
-        xPos += 5.0f;
+            // Create Mesh Uniform Buffers
+            m_bufferHandler->CreateModelUBO(
+                &m_vulkanGlobalState->m_meshList[meshCount]);
+            meshCount++;
+            xPos += 5.0f;
+        }
     }
     m_bufferHandler->CreateVertexBuffer(m_vertices);
     m_bufferHandler->CreateIndexBuffer(m_indices);
@@ -955,15 +965,15 @@ void VulkanContext::CreatePBRPipelineBindless(std::vector<char> vertShaderCode,
     colorBlending.blendConstants[2] = 0.0f;  // Optional
     colorBlending.blendConstants[3] = 0.0f;  // Optional
 
-    VkPushConstantRange fragPushConstantRange{};
-    fragPushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragPushConstantRange.offset = 0;
-    fragPushConstantRange.size = sizeof(PBRPushConstantsBindless);
-
     VkPushConstantRange vertPushConstantRange{};
     vertPushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     vertPushConstantRange.offset = 0;
     vertPushConstantRange.size = sizeof(VertexShaderPushConstants);
+
+    VkPushConstantRange fragPushConstantRange{};
+    fragPushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragPushConstantRange.offset = 64;
+    fragPushConstantRange.size = sizeof(FragShaderPushConstantsBindless);
 
     std::array<VkPushConstantRange, 2> pushConstantRanges;
     pushConstantRanges[0] = vertPushConstantRange;
@@ -974,6 +984,8 @@ void VulkanContext::CreatePBRPipelineBindless(std::vector<char> vertShaderCode,
     std::vector<VkDescriptorSetLayout> bindlessDescriptorSetLayouts;
     bindlessDescriptorSetLayouts.push_back(
         m_vulkanGlobalState->m_sceneDescriptorSetLayout);
+    bindlessDescriptorSetLayouts.push_back(
+        m_vulkanGlobalState->m_texturedPBRDescriptorSetLayoutBindless);
     bindlessDescriptorSetLayouts.push_back(
         m_vulkanGlobalState->m_bindlessDescriptorSetLayout);
     pipelineLayoutInfo.setLayoutCount = bindlessDescriptorSetLayouts.size();
@@ -1449,168 +1461,291 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
     if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
         throw std::runtime_error("failed to begin recording command buffer!");
     }
-    // We set the viewport and scissor state as dynamic in the pipeline
-    // We need to set those up in the command buffer now
-    VkViewport viewport{};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = static_cast<float>(m_vulkanGlobalState->m_shadowMapWidth);
-    viewport.height =
-        static_cast<float>(m_vulkanGlobalState->m_shadowMapHeight);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+    if (m_vulkanGlobalState->m_renderingMode == ERenderingMode::Bindless) {
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width =
+            static_cast<float>(m_vulkanGlobalState->GetSwapChainExtent().width);
+        viewport.height = static_cast<float>(
+            m_vulkanGlobalState->GetSwapChainExtent().height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
-    VkExtent2D shadowMapExtent = {
-        static_cast<uint32_t>(m_vulkanGlobalState->m_shadowMapWidth),
-        static_cast<uint32_t>(m_vulkanGlobalState->m_shadowMapHeight)};
-    VkRect2D scissor{};
-    scissor.offset = {0, 0};
-    scissor.extent = shadowMapExtent;
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+        VkRect2D scissor{};
+        scissor.offset = {0, 0};
+        scissor.extent = m_vulkanGlobalState->GetSwapChainExtent();
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    VkRenderPassBeginInfo shadowPassInfo{};
-    shadowPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    shadowPassInfo.renderPass = m_vulkanGlobalState->m_shadowPass;
-    shadowPassInfo.renderArea.offset = {0, 0};
-    shadowPassInfo.renderArea.extent = shadowMapExtent;
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = m_vulkanGlobalState->m_renderPass;
+        // DEBUG
+        // printf("imageIndex DEBUG: %d\n", imageIndex);
+        renderPassInfo.framebuffer =
+            m_vulkanGlobalState->m_renderPassFrameBuffers[imageIndex];
+        renderPassInfo.renderArea.offset = {0, 0};
+        renderPassInfo.renderArea.extent =
+            m_vulkanGlobalState->GetSwapChainExtent();
 
-    // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
-    std::array<VkClearValue, 1> shadowPassClearValues{};
-    shadowPassClearValues[0].depthStencil = {1.0f, 0};
-    shadowPassInfo.clearValueCount = 1;
-    shadowPassInfo.pClearValues = shadowPassClearValues.data();
-    // for (auto& light : m_vulkanGlobalState->m_lights.lights) {
-    // WARN: HARDCODING SHADOWPASS FRAMEBBUFFERS.
-    // THIS SHOULD BE CHANGED IF MORE THAN 1 SHADOW CASTER
-    shadowPassInfo.framebuffer =
-        m_vulkanGlobalState->m_shadowPassFrameBuffers[0];
-    vkCmdBeginRenderPass(commandBuffer, &shadowPassInfo,
-                         VK_SUBPASS_CONTENTS_INLINE);
+        // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
+        std::array<VkClearValue, 2> clearValues{};
+        clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+        clearValues[1].depthStencil = {1.0f, 0};
+        renderPassInfo.clearValueCount =
+            static_cast<uint32_t>(clearValues.size());
+        renderPassInfo.pClearValues = clearValues.data();
 
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                      m_vulkanGlobalState->m_shadowPassPipeline);
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
+                             VK_SUBPASS_CONTENTS_INLINE);
 
-    if (!m_vulkanGlobalState->m_meshList.empty()) {
-        VkBuffer vertexBuffers[] = {m_bufferHandler->VertexBuffer};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+        // BIND SCENE DESCRIPTOR SET
+        vkCmdBindDescriptorSets(
+            commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            m_vulkanGlobalState->m_pbrPipelineLayout, 0, 1,
+            &m_vulkanGlobalState
+                 ->m_sceneDescriptorSets[m_vulkanGlobalState->m_currentFrame],
+            0, nullptr);
+        vkCmdBindDescriptorSets(
+            commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            m_vulkanGlobalState->m_pbrPipelineLayout, 2, 1,
+            &m_vulkanGlobalState->m_globalBindlessDescriptorSet, 0, nullptr);
+        std::vector<VkDescriptorSet> descriptorSetsToBind;
+        if (!m_vulkanGlobalState->m_meshList.empty()) {
+            VkBuffer vertexBuffers[] = {m_bufferHandler->VertexBuffer};
+            VkDeviceSize offsets[] = {0};
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-        vkCmdBindIndexBuffer(commandBuffer, m_bufferHandler->IndexBuffer, 0,
-                             VK_INDEX_TYPE_UINT32);
-        for (auto& mesh : m_vulkanGlobalState->m_meshList) {
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-            model = glm::rotate(model, -glm::radians(90.0f),
-                                glm::vec3(0.0f, 1.0f, 0.0f));
-            model = glm::scale(model, glm::vec3(0.05f, 0.05f, 0.05f));
+            vkCmdBindIndexBuffer(commandBuffer, m_bufferHandler->IndexBuffer, 0,
+                                 VK_INDEX_TYPE_UINT32);
+            for (auto& mesh : m_vulkanGlobalState->m_meshList) {
+                mesh.m_scale = glm::vec3(0.01f, 0.01f, 0.01f);
+                // Binding the graphics pipeline
+                if (mesh.MeshType == TEXTURED) {
+                    vkCmdBindPipeline(commandBuffer,
+                                      VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                      m_vulkanGlobalState->m_pbrPipeline);
+                    // BIND PER MESH DESCRIPTOR SET
+                    vkCmdBindDescriptorSets(
+                        commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        m_vulkanGlobalState->m_pbrPipelineLayout, 1, 1,
+                        &mesh.m_descriptorSets[m_vulkanGlobalState
+                                                   ->m_currentFrame],
+                        0, nullptr);
+                    // vkCmdBindDescriptorSets(
+                    //     commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    //     m_vulkanGlobalState->m_pbrPipelineLayout, 1, 1,
+                    //     &mesh.m_descriptorSets[m_vulkanGlobalState
+                    //                                ->m_currentFrame],
+                    //     0, nullptr);
+                }
 
-            m_vulkanGlobalState->m_shadowPassPushConstants.model = model;
+                m_vulkanGlobalState->m_fragShaderPushConstantsBindless
+                    .albedoIdx =
+                    mesh.m_materialsBindless[MaterialEnums::ALBEDO];
+                m_vulkanGlobalState->m_fragShaderPushConstantsBindless
+                    .metallicIdx =
+                    mesh.m_materialsBindless[MaterialEnums::METALLIC];
+                m_vulkanGlobalState->m_fragShaderPushConstantsBindless
+                    .roughnessIdx =
+                    mesh.m_materialsBindless[MaterialEnums::ROUGHNESS];
+                m_vulkanGlobalState->m_fragShaderPushConstantsBindless.aoIdx =
+                    mesh.m_materialsBindless[MaterialEnums::AO];
+                m_vulkanGlobalState->m_fragShaderPushConstantsBindless
+                    .normalIdx =
+                    mesh.m_materialsBindless[MaterialEnums::NORMAL];
+                m_vulkanGlobalState->m_fragShaderPushConstantsBindless
+                    .emissiveIdx =
+                    mesh.m_materialsBindless[MaterialEnums::EMISSIVE];
 
-            vkCmdPushConstants(
-                commandBuffer, m_vulkanGlobalState->m_shadowPassPipelineLayout,
-                VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShadowPassPushConstants),
-                &m_vulkanGlobalState->m_shadowPassPushConstants);
-            vkCmdDrawIndexed(commandBuffer,
-                             static_cast<uint32_t>(mesh.m_indexCount), 1,
-                             mesh.m_indexBufferStartIndex, 0, 0);
-        }
-    }
-    vkCmdEndRenderPass(commandBuffer);
-    //}
+                vkCmdPushConstants(
+                    commandBuffer, m_vulkanGlobalState->m_pbrPipelineLayout,
+                    VK_SHADER_STAGE_VERTEX_BIT, 0,
+                    sizeof(VertexShaderPushConstants),
+                    &m_vulkanGlobalState->m_vertexShaderPushConstants);
+                vkCmdPushConstants(
+                    commandBuffer, m_vulkanGlobalState->m_pbrPipelineLayout,
+                    VK_SHADER_STAGE_FRAGMENT_BIT, 64,
+                    sizeof(FragShaderPushConstantsBindless),
+                    &m_vulkanGlobalState->m_fragShaderPushConstantsBindless);
 
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width =
-        static_cast<float>(m_vulkanGlobalState->GetSwapChainExtent().width);
-    viewport.height =
-        static_cast<float>(m_vulkanGlobalState->GetSwapChainExtent().height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
-    scissor.offset = {0, 0};
-    scissor.extent = m_vulkanGlobalState->GetSwapChainExtent();
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = m_vulkanGlobalState->m_renderPass;
-    // DEBUG
-    // printf("imageIndex DEBUG: %d\n", imageIndex);
-    renderPassInfo.framebuffer =
-        m_vulkanGlobalState->m_renderPassFrameBuffers[imageIndex];
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent =
-        m_vulkanGlobalState->GetSwapChainExtent();
-
-    // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
-    std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-    clearValues[1].depthStencil = {1.0f, 0};
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
-
-    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
-                         VK_SUBPASS_CONTENTS_INLINE);
-
-    vkCmdBindDescriptorSets(
-        commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        m_vulkanGlobalState->m_pbrPipelineLayout, 0, 1,
-        &m_vulkanGlobalState
-             ->m_sceneDescriptorSets[m_vulkanGlobalState->m_currentFrame],
-        0, nullptr);
-    std::vector<VkDescriptorSet> descriptorSetsToBind;
-    if (!m_vulkanGlobalState->m_meshList.empty()) {
-        VkBuffer vertexBuffers[] = {m_bufferHandler->VertexBuffer};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-
-        vkCmdBindIndexBuffer(commandBuffer, m_bufferHandler->IndexBuffer, 0,
-                             VK_INDEX_TYPE_UINT32);
-        for (auto& mesh : m_vulkanGlobalState->m_meshList) {
-            mesh.m_scale = glm::vec3(0.01f, 0.01f, 0.01f);
-            // Binding the graphics pipeline
-            if (mesh.MeshType == TEXTURED) {
-                vkCmdBindPipeline(commandBuffer,
-                                  VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                  m_vulkanGlobalState->m_pbrPipeline);
-                vkCmdBindDescriptorSets(
-                    commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    m_vulkanGlobalState->m_pbrPipelineLayout, 1, 1,
-                    &mesh.m_descriptorSets[m_vulkanGlobalState->m_currentFrame],
-                    0, nullptr);
+                vkCmdDrawIndexed(commandBuffer,
+                                 static_cast<uint32_t>(mesh.m_indexCount), 1,
+                                 mesh.m_indexBufferStartIndex, 0, 0);
             }
-            /*
-                vkCmdDraw(VkCommandBuffer, vertexCount, instanceCount,
-               firstVertex, firstInstance) vertexCount: Even though we don't
-               have a vertex buffer, we technically still have 3 vertices to
-               draw. instanceCount: Used for instanced rendering, use 1 if
-               you're not doing that. firstVertex: Used as an offset into the
-               vertex buffer, defines the lowest value of gl_VertexIndex.
-                firstInstance: Used as an offset for instanced rendering,
-               defines the lowest value of gl_InstanceIndex.
-            */
-            // vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()),
-            // 1, 0, 0);
-            // m_vulkanGlobalState->m_pbrPushConstants = {
-            //    m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj,
-            //    m_vulkanGlobalState->m_shadowBias};
+        }
+    } else {
+        // We set the viewport and scissor state as dynamic in the pipeline
+        // We need to set those up in the command buffer now
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width =
+            static_cast<float>(m_vulkanGlobalState->m_shadowMapWidth);
+        viewport.height =
+            static_cast<float>(m_vulkanGlobalState->m_shadowMapHeight);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
-            m_vulkanGlobalState->m_pbrPushConstants.lightViewProj =
-                m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj;
+        VkExtent2D shadowMapExtent = {
+            static_cast<uint32_t>(m_vulkanGlobalState->m_shadowMapWidth),
+            static_cast<uint32_t>(m_vulkanGlobalState->m_shadowMapHeight)};
+        VkRect2D scissor{};
+        scissor.offset = {0, 0};
+        scissor.extent = shadowMapExtent;
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-            m_vulkanGlobalState->m_pbrPushConstants.bias =
-                m_vulkanGlobalState->m_shadowBias;
+        VkRenderPassBeginInfo shadowPassInfo{};
+        shadowPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        shadowPassInfo.renderPass = m_vulkanGlobalState->m_shadowPass;
+        shadowPassInfo.renderArea.offset = {0, 0};
+        shadowPassInfo.renderArea.extent = shadowMapExtent;
 
-            vkCmdPushConstants(
-                commandBuffer, m_vulkanGlobalState->m_pbrPipelineLayout,
-                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                sizeof(PBRPushConstants),
-                &m_vulkanGlobalState->m_pbrPushConstants);
-            vkCmdDrawIndexed(commandBuffer,
-                             static_cast<uint32_t>(mesh.m_indexCount), 1,
-                             mesh.m_indexBufferStartIndex, 0, 0);
+        // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
+        std::array<VkClearValue, 1> shadowPassClearValues{};
+        shadowPassClearValues[0].depthStencil = {1.0f, 0};
+        shadowPassInfo.clearValueCount = 1;
+        shadowPassInfo.pClearValues = shadowPassClearValues.data();
+        // for (auto& light : m_vulkanGlobalState->m_lights.lights) {
+        // WARN: HARDCODING SHADOWPASS FRAMEBBUFFERS.
+        // THIS SHOULD BE CHANGED IF MORE THAN 1 SHADOW CASTER
+        shadowPassInfo.framebuffer =
+            m_vulkanGlobalState->m_shadowPassFrameBuffers[0];
+        vkCmdBeginRenderPass(commandBuffer, &shadowPassInfo,
+                             VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          m_vulkanGlobalState->m_shadowPassPipeline);
+
+        if (!m_vulkanGlobalState->m_meshList.empty()) {
+            VkBuffer vertexBuffers[] = {m_bufferHandler->VertexBuffer};
+            VkDeviceSize offsets[] = {0};
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+            vkCmdBindIndexBuffer(commandBuffer, m_bufferHandler->IndexBuffer, 0,
+                                 VK_INDEX_TYPE_UINT32);
+            for (auto& mesh : m_vulkanGlobalState->m_meshList) {
+                glm::mat4 model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+                model = glm::rotate(model, -glm::radians(90.0f),
+                                    glm::vec3(0.0f, 1.0f, 0.0f));
+                model = glm::scale(model, glm::vec3(0.05f, 0.05f, 0.05f));
+
+                m_vulkanGlobalState->m_shadowPassPushConstants.model = model;
+
+                vkCmdPushConstants(
+                    commandBuffer,
+                    m_vulkanGlobalState->m_shadowPassPipelineLayout,
+                    VK_SHADER_STAGE_VERTEX_BIT, 0,
+                    sizeof(ShadowPassPushConstants),
+                    &m_vulkanGlobalState->m_shadowPassPushConstants);
+                vkCmdDrawIndexed(commandBuffer,
+                                 static_cast<uint32_t>(mesh.m_indexCount), 1,
+                                 mesh.m_indexBufferStartIndex, 0, 0);
+            }
+        }
+        vkCmdEndRenderPass(commandBuffer);
+        //}
+
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width =
+            static_cast<float>(m_vulkanGlobalState->GetSwapChainExtent().width);
+        viewport.height = static_cast<float>(
+            m_vulkanGlobalState->GetSwapChainExtent().height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+        scissor.offset = {0, 0};
+        scissor.extent = m_vulkanGlobalState->GetSwapChainExtent();
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = m_vulkanGlobalState->m_renderPass;
+        // DEBUG
+        // printf("imageIndex DEBUG: %d\n", imageIndex);
+        renderPassInfo.framebuffer =
+            m_vulkanGlobalState->m_renderPassFrameBuffers[imageIndex];
+        renderPassInfo.renderArea.offset = {0, 0};
+        renderPassInfo.renderArea.extent =
+            m_vulkanGlobalState->GetSwapChainExtent();
+
+        // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
+        std::array<VkClearValue, 2> clearValues{};
+        clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+        clearValues[1].depthStencil = {1.0f, 0};
+        renderPassInfo.clearValueCount =
+            static_cast<uint32_t>(clearValues.size());
+        renderPassInfo.pClearValues = clearValues.data();
+
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
+                             VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindDescriptorSets(
+            commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            m_vulkanGlobalState->m_pbrPipelineLayout, 0, 1,
+            &m_vulkanGlobalState
+                 ->m_sceneDescriptorSets[m_vulkanGlobalState->m_currentFrame],
+            0, nullptr);
+        std::vector<VkDescriptorSet> descriptorSetsToBind;
+        if (!m_vulkanGlobalState->m_meshList.empty()) {
+            VkBuffer vertexBuffers[] = {m_bufferHandler->VertexBuffer};
+            VkDeviceSize offsets[] = {0};
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+            vkCmdBindIndexBuffer(commandBuffer, m_bufferHandler->IndexBuffer, 0,
+                                 VK_INDEX_TYPE_UINT32);
+            for (auto& mesh : m_vulkanGlobalState->m_meshList) {
+                mesh.m_scale = glm::vec3(0.01f, 0.01f, 0.01f);
+                // Binding the graphics pipeline
+                if (mesh.MeshType == TEXTURED) {
+                    vkCmdBindPipeline(commandBuffer,
+                                      VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                      m_vulkanGlobalState->m_pbrPipeline);
+                    vkCmdBindDescriptorSets(
+                        commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        m_vulkanGlobalState->m_pbrPipelineLayout, 1, 1,
+                        &mesh.m_descriptorSets[m_vulkanGlobalState
+                                                   ->m_currentFrame],
+                        0, nullptr);
+                }
+                /*
+                    vkCmdDraw(VkCommandBuffer, vertexCount, instanceCount,
+                   firstVertex, firstInstance) vertexCount: Even though we don't
+                   have a vertex buffer, we technically still have 3 vertices to
+                   draw. instanceCount: Used for instanced rendering, use 1 if
+                   you're not doing that. firstVertex: Used as an offset into
+                   the vertex buffer, defines the lowest value of
+                   gl_VertexIndex. firstInstance: Used as an offset for
+                   instanced rendering, defines the lowest value of
+                   gl_InstanceIndex.
+                */
+                // vkCmdDraw(commandBuffer,
+                // static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+                // m_vulkanGlobalState->m_pbrPushConstants = {
+                //    m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj,
+                //    m_vulkanGlobalState->m_shadowBias};
+
+                m_vulkanGlobalState->m_pbrPushConstants.lightViewProj =
+                    m_vulkanGlobalState->m_shadowPassPushConstants
+                        .lightViewProj;
+
+                m_vulkanGlobalState->m_pbrPushConstants.bias =
+                    m_vulkanGlobalState->m_shadowBias;
+
+                vkCmdPushConstants(
+                    commandBuffer, m_vulkanGlobalState->m_pbrPipelineLayout,
+                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                    0, sizeof(PBRPushConstants),
+                    &m_vulkanGlobalState->m_pbrPushConstants);
+                vkCmdDrawIndexed(commandBuffer,
+                                 static_cast<uint32_t>(mesh.m_indexCount), 1,
+                                 mesh.m_indexBufferStartIndex, 0, 0);
+            }
         }
     }
 

@@ -19,13 +19,17 @@ layout(set = 0, binding = 1) uniform LightUBO {
     ivec4 numLights;
 } lightData;
 
-layout(set = 1, binding = 0) uniform sampler2D textures[];
+
+layout(set = 1, binding = 0) uniform ModelUBO {
+    mat4 model;
+} modelData;
+
+layout(set = 2, binding = 0) uniform sampler2D textures[];
 
 //layout(set = 1, binding = 7) uniform sampler2D shadowMap;
 
 layout(push_constant) uniform PushConstants {
-    mat4 lightViewProj;
-    vec4 bias; // x as bias
+    layout(offset = 64) vec4 bias; // x as bias
     int albedoIdx;
     int metallicIdx;
     int roughnessIdx;
