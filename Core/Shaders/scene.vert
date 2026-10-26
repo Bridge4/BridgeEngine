@@ -6,12 +6,10 @@ layout(set = 0, binding = 0) uniform CameraUBO {
     vec4 cameraPos;
 } camera;
 
-layout(set = 1, binding = 0) uniform ModelUBO {
-    mat4 model;
-} modelData;
 
 layout(push_constant) uniform PushConstants {
     mat4 lightViewProj;
+    mat4 model;           // per-object model matrix
 } pc;
 
 layout(location = 0) in vec3 inPosition;
@@ -30,9 +28,9 @@ const mat4 bias = mat4(
   0.0, 0.0, 1.0, 0.0,
   0.5, 0.5, 0.0, 1.0 );
 void main() {
-    vec4 worldPos = modelData.model * vec4(inPosition, 1.0);
+    vec4 worldPos = pc.model * vec4(inPosition, 1.0);
     fragPos = worldPos.xyz;
-    fragNormal = normalize(mat3(transpose(inverse(modelData.model))) * inNormal);
+    fragNormal = normalize(mat3(transpose(inverse(pc.model))) * inNormal);
     fragTexCoord = inTexCoord;
     vec3 offsetPos = worldPos.xyz + fragNormal * 0.001; // tune to scene scale
     fragPosLightSpace = pc.lightViewProj * vec4(offsetPos, 1.0);

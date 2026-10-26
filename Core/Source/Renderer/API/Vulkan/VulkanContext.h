@@ -93,8 +93,8 @@ class VulkanContext {
     void Destroy();
     void DescribeScene(std::vector<LoadedObject> objectsToRender,
                        std::vector<Light> lightsToRender);
-    void RegisterTexture(VkImageView textureImageView,
-                         VkSampler textureSampler);
+    uint32_t RegisterTexture(VkImageView* textureImageView,
+                             VkSampler* textureSampler);
 
    private:
     // DeviceHandler* m_deviceHandler;
@@ -129,6 +129,13 @@ class VulkanContext {
     void CreateShadowPassPipeline(std::vector<char> vertShaderCode,
                                   std::vector<char> fragShaderCode,
                                   VkPipeline* pipeline);
+    // === BINDLESS === //
+    void CreatePBRPipelineBindless(std::vector<char> vertShaderCode,
+                                   std::vector<char> fragShaderCode,
+                                   VkPipeline* pipeline);
+    void CreateShadowPassPipelineBindless(std::vector<char> vertShaderCode,
+                                          std::vector<char> fragShaderCode,
+                                          VkPipeline* pipeline);
     // COMMAND POOL
     /*
         Command pools manage the memory used to store command buffers

@@ -93,7 +93,7 @@ void DescriptorSetHandler::CreateDescriptorSetLayoutBindless() {
     samplers.descriptorCount = 10000;
     samplers.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     samplers.pImmutableSamplers = nullptr;
-    samplers.stageFlags = VK_SHADER_STAGE_ALL;
+    samplers.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     VkDescriptorBindingFlags flags =
         VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
         VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |

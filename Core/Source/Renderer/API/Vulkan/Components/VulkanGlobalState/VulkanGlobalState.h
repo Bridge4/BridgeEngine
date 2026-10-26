@@ -10,6 +10,11 @@
 #include "Source/Renderer/Mesh/Mesh3D.h"
 #include "vulkan/vulkan.h"
 
+struct VertexShaderPushConstants {
+    glm::mat4 lightViewProj;
+    glm::mat4 model;
+};
+
 struct ShadowPassPushConstants {
     glm::mat4 lightViewProj;
     glm::mat4 model;
@@ -20,6 +25,17 @@ struct PBRPushConstants {
     glm::vec4 bias;
     glm::vec4 hasEmissive;
 };
+struct PBRPushConstantsBindless {
+    glm::mat4 lightViewProj;
+    glm::vec4 bias;
+    uint32_t albedoIdx;
+    uint32_t metallicIdx;
+    uint32_t roughnessIdx;
+    uint32_t aoIdx;
+    uint32_t normalIdx;
+    uint32_t emissiveIdx;
+};
+
 class VulkanGlobalState {
    public:
     // The VulkanGlobalState will hold the resources created by the various
