@@ -291,22 +291,27 @@ void VulkanContext::LoadSceneObjects() {
                                                     AO,     NORMAL,   EMISSIVE};
         if (m_vulkanGlobalState->m_renderingMode == ERenderingMode::Bindless) {
             for (auto& matType : materialTypes) {
-                CreateTextureImage(obj.textureProperties[matType],
-                                   &m_vulkanGlobalState->m_meshList[meshCount],
-                                   matType);
-                CreateTextureImageView(
-                    &m_vulkanGlobalState->m_meshList[meshCount], matType);
-                CreateTextureSampler(
-                    &m_vulkanGlobalState->m_meshList[meshCount], matType);
+                if (obj.textureProperties.contains(matType)) {
+                    CreateTextureImage(
+                        obj.textureProperties[matType],
+                        &m_vulkanGlobalState->m_meshList[meshCount], matType);
+                    CreateTextureImageView(
+                        &m_vulkanGlobalState->m_meshList[meshCount], matType);
+                    CreateTextureSampler(
+                        &m_vulkanGlobalState->m_meshList[meshCount], matType);
 
-                m_vulkanGlobalState->m_meshList[meshCount]
-                    .m_materialsBindless[matType] =
-                    RegisterTexture(&m_vulkanGlobalState->m_meshList[meshCount]
-                                         .m_materials[matType]
-                                         .m_textureImageView,
-                                    &m_vulkanGlobalState->m_meshList[meshCount]
-                                         .m_materials[matType]
-                                         .m_textureSampler);
+                    m_vulkanGlobalState->m_meshList[meshCount]
+                        .m_materialsBindless[matType] = RegisterTexture(
+                        &m_vulkanGlobalState->m_meshList[meshCount]
+                             .m_materials[matType]
+                             .m_textureImageView,
+                        &m_vulkanGlobalState->m_meshList[meshCount]
+                             .m_materials[matType]
+                             .m_textureSampler);
+                } else {
+                    m_vulkanGlobalState->m_meshList[meshCount]
+                        .m_materialsBindless[matType] = -1;
+                }
             }
 
             // Create Mesh Uniform Buffers

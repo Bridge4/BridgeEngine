@@ -11,18 +11,36 @@ class FileLoader {
     static LoadedObject LoadObject(UnloadedObject objectToLoad) {
         LoadedObject loadedObject;
         loadedObject.objProperties = LoadObjFile(objectToLoad.objFilePath);
-        loadedObject.textureProperties[ALBEDO] =
-            LoadTextureFile(objectToLoad.materialTexFilePaths[ALBEDO]);
-        loadedObject.textureProperties[METALLIC] =
-            LoadTextureFile(objectToLoad.materialTexFilePaths[METALLIC]);
-        loadedObject.textureProperties[ROUGHNESS] =
-            LoadTextureFile(objectToLoad.materialTexFilePaths[ROUGHNESS]);
-        loadedObject.textureProperties[AO] =
-            LoadTextureFile(objectToLoad.materialTexFilePaths[AO]);
-        loadedObject.textureProperties[NORMAL] =
-            LoadTextureFile(objectToLoad.materialTexFilePaths[NORMAL]);
-        loadedObject.textureProperties[EMISSIVE] =
-            LoadTextureFile(objectToLoad.materialTexFilePaths[EMISSIVE]);
+        std::string albedoTextureFilePath =
+            objectToLoad.materialTexFilePaths[ALBEDO];
+        std::string metallicTextureFilePath =
+            objectToLoad.materialTexFilePaths[METALLIC];
+        std::string roughnessTextureFilePath =
+            objectToLoad.materialTexFilePaths[ROUGHNESS];
+        std::string aoTextureFilePath = objectToLoad.materialTexFilePaths[AO];
+        std::string normalTextureFilePath =
+            objectToLoad.materialTexFilePaths[NORMAL];
+        std::string emissiveTextureFilePath =
+            objectToLoad.materialTexFilePaths[EMISSIVE];
+
+        if (!albedoTextureFilePath.empty())
+            loadedObject.textureProperties[ALBEDO] =
+                LoadTextureFile(albedoTextureFilePath);
+        if (!metallicTextureFilePath.empty())
+            loadedObject.textureProperties[METALLIC] =
+                LoadTextureFile(metallicTextureFilePath);
+        if (!roughnessTextureFilePath.empty())
+            loadedObject.textureProperties[ROUGHNESS] =
+                LoadTextureFile(roughnessTextureFilePath);
+        if (!aoTextureFilePath.empty())
+            loadedObject.textureProperties[AO] =
+                LoadTextureFile(aoTextureFilePath);
+        if (!normalTextureFilePath.empty())
+            loadedObject.textureProperties[NORMAL] =
+                LoadTextureFile(normalTextureFilePath);
+        if (!emissiveTextureFilePath.empty())
+            loadedObject.textureProperties[EMISSIVE] =
+                LoadTextureFile(emissiveTextureFilePath);
         return loadedObject;
     }
 

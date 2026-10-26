@@ -106,15 +106,36 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness){
 //
 //    return shadow;
 //}
-
+bool has(int idx) { return idx >= 0; }
 
 void main() {
-    vec3 albedo     = pow(texture(textures[pc.albedoIdx], fragTexCoord).rgb, vec3(2.2));
-    vec3 normal     = texture(textures[pc.normalIdx], fragTexCoord).rgb;
-    float metallic  = texture(textures[pc.metallicIdx], fragTexCoord).r;
-    float roughness = texture(textures[pc.roughnessIdx], fragTexCoord).r;
-    float ao        = texture(textures[pc.aoIdx], fragTexCoord).r;
-    vec3 emissive   = texture(textures[pc.emissiveIdx], fragTexCoord).rgb;
+    vec3  albedo    = vec3(1.0);   // white, or a base color factor
+    float metallic  = 0.0;
+    float roughness = 1.0;
+    float ao        = 1.0;
+    vec3  emissive  = vec3(0.0);
+
+    if (has(pc.albedoIdx))
+        albedo = pow(texture(textures[pc.albedoIdx], fragTexCoord).rgb, vec3(2.2));
+
+    if (has(pc.metallicIdx))
+        metallic = texture(textures[pc.metallicIdx], fragTexCoord).r;
+
+    if (has(pc.roughnessIdx))
+        roughness = texture(textures[pc.roughnessIdx], fragTexCoord).r;
+
+    if (has(pc.aoIdx))
+        ao = texture(textures[pc.aoIdx], fragTexCoord).r;
+
+    if (has(pc.emissiveIdx))
+        emissive = texture(textures[pc.emissiveIdx], fragTexCoord).rgb;
+
+    //vec3 albedo     = pow(texture(textures[pc.albedoIdx], fragTexCoord).rgb, vec3(2.2));
+    //vec3 normal     = texture(textures[pc.normalIdx], fragTexCoord).rgb;
+    //float metallic  = texture(textures[pc.metallicIdx], fragTexCoord).r;
+    //float roughness = texture(textures[pc.roughnessIdx], fragTexCoord).r;
+    //float ao        = texture(textures[pc.aoIdx], fragTexCoord).r;
+    //vec3 emissive   = texture(textures[pc.emissiveIdx], fragTexCoord).rgb;
     // Normalize inputs
     vec3 N = normalize(fragNormal);
     vec3 V = normalize(camera.cameraPos.xyz - fragPos);
