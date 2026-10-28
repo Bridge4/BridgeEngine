@@ -2,22 +2,21 @@
 
 #include <vulkan/vulkan.h>
 
-#include <chrono>
-
 #include "../../VulkanContext.h"
 #include "../Devices/DeviceHandler.h"
 #include "../SwapChain/SwapChainHandler.h"
 #include "../VulkanGlobalState/VulkanGlobalState.h"
+#include "Source/Renderer/Lights/Lights.h"
 #include "Source/Renderer/Mesh/Mesh3D.h"
 
 /*
     *   STAGED BUFFER CREATION
     *
-    *   Goal is to take data from sourceDataObject and put it into a destination
-buffer
+    *   Goal is to take data from sourceDataObject and put it into a
+destination buffer
     *
-    *   1 - Create a staging buffer with size = sizeof(sourceDataObject[0]) *
-sourceDataObject.size()
+    *   1 - Create a staging buffer with size = sizeof(sourceDataObject[0])
+* sourceDataObject.size()
     *   2 - Map data into a VkDeviceMemory stagingBufferMemory
     *   3 - Copy data from sourceDataObject to a void* data object
     *   4 - Unmap stagingBufferMemory
@@ -27,8 +26,8 @@ sourceDataObject.size()
     *   8 - Free stagingBufferMemory
     *
     *   UNSTAGED BUFFER CREATION
-    *   1 - Create a destination buffer with size = sizeof(sourceDataObject) ||
-size = sizeof(sourceDataObject[0]) * sourceDataObject.size()
+    *   1 - Create a destination buffer with size = sizeof(sourceDataObject)
+|| size = sizeof(sourceDataObject[0]) * sourceDataObject.size()
     *   2 - Map memory
     *
 STAGED example:
@@ -41,8 +40,8 @@ VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 stagingBuffer, stagingBufferMemory);
 
     void* data;
-    vkMapMemory(devices->LogicalDevice, stagingBufferMemory, 0, bufferSize, 0,
-&data); memcpy(data, m_indices.data(), (size_t)bufferSize);
+    vkMapMemory(devices->LogicalDevice, stagingBufferMemory, 0, bufferSize,
+0, &data); memcpy(data, m_indices.data(), (size_t)bufferSize);
     vkUnmapMemory(devices->LogicalDevice, stagingBufferMemory);
 
     createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT |

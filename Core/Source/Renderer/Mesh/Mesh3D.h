@@ -4,11 +4,12 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
-#include <../glm/glm.hpp>
-#include <../glm/gtc/matrix_transform.hpp>
-#include <../glm/gtx/hash.hpp>
+// #include <../glm/glm.hpp>
+// #include <../glm/gtc/matrix_transform.hpp>
+// #include <../glm/gtx/hash.hpp>
 #include <unordered_map>
 
+#include "Source/Math/Math.h"
 #include "Source/Renderer/RendererTypes.h"
 
 struct TextureData {

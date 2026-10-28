@@ -3,9 +3,10 @@
 // Source:
 // https://www.mbsoftworks.sk/tutorials/opengl4/026-camera-pt3-orbit-camera/#:~:text=Orbit%20camera%20(also%20known%20as,just%20floating%20around%20the%20sphere.
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <../glm/glm.hpp>
+// #define GLM_FORCE_RADIANS
+// #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+// #include <../glm/glm.hpp>
+#include "Source/Math/Math.h"
 class OrbitCamera {
    public:
     OrbitCamera(const glm::vec3& center, const glm::vec3& upVector,

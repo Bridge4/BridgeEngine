@@ -3,20 +3,14 @@
 #include "Source/Renderer/API/Vulkan/Components/VulkanGlobalState/VulkanGlobalState.h"
 // GLM INCLUDES
 
-#include "Source/Renderer/API/Vulkan/Components/SwapChain/SwapChainHandler.h"
-// #include <glm/glm.hpp>
 #include <../imgui/imgui.h>
 
-#include <../glm/gtc/matrix_transform.hpp>
-#include <../glm/gtx/hash.hpp>
-#include <../glm/gtx/rotate_vector.hpp>
-#include <../glm/gtx/string_cast.hpp>
-#include <../glm/gtx/transform.hpp>
-#include <../glm/gtx/vector_angle.hpp>
 #include <format>
 #include <iostream>
 
 #include "GLFW/glfw3.h"
+#include "Source/Math/Math.h"
+#include "Source/Renderer/API/Vulkan/Components/SwapChain/SwapChainHandler.h"
 #include "Source/Renderer/Camera/OrbitCamera.h"
 #include "Source/Window/WindowingBackend.h"
 

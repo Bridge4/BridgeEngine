@@ -1,13 +1,11 @@
 #ifndef VKTYPES_H
 #define VKTYPES_H
-#include <optional>
-#define GLM_ENABLE_EXPERIMENTAL
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <../glm/glm.hpp>
 #include <array>
+#include <optional>
 
-#include "../glm/gtx/hash.hpp"
+// #include "../glm/gtx/hash.hpp"
+#include "Source/Math/Math.h"
+#include "Source/Renderer/Lights/Lights.h"
 #include "vulkan/vulkan.h"
 
 struct Vertex {
@@ -91,25 +89,6 @@ struct hash<Vertex> {
     }
 };
 }  // namespace std
-
-// Scene-Wide Data
-struct CameraUBO {
-    alignas(16) glm::mat4 view;       // 64 bytes
-    alignas(16) glm::mat4 proj;       // 64 bytes
-    alignas(16) glm::vec4 cameraPos;  // 16 bytes (use xyz, ignore w)
-};
-
-struct Light {
-    alignas(16) glm::vec4 position;   // xyz used, w ignored
-    alignas(16) glm::vec4 color;      // rgb used, w ignored
-    alignas(16) glm::vec4 intensity;  // x for intensity
-    alignas(16) glm::vec4 lightDir;
-};
-
-struct LightUBO {
-    alignas(16) Light lights[16];
-    alignas(16) glm::ivec4 numLights;  // x for numLights
-};
 
 // Per-Mesh Data
 struct ModelUBO {

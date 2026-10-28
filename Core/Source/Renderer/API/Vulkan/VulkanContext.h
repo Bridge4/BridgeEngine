@@ -9,32 +9,33 @@
 #include "Source/Renderer/API/Vulkan/Components/RenderPass/RenderPassHandler.h"
 #include "Source/Renderer/Camera/CameraController.h"
 #include "Source/Renderer/Mesh/Mesh3D.h"
-#include "VkTypes.h"
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif  // !VK_USE_PLATFORM_WIN32_KHR
 
-// GLM FORCE USE RADIANS
-#ifndef GLM_FORCE_RADIANS
-#define GLM_FORCE_RADIANS
-#endif  // !GLM_FORCE_RADIANS
-
-// GLM VULKAN DATA ALIGNMENT
-#ifndef GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-#endif  // !GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-
-#ifndef GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#endif  // !GLM_FORCE_DEPTH_ZERO_TO_ONE
+//// GLM FORCE USE RADIANS
+// #ifndef GLM_FORCE_RADIANS
+// #define GLM_FORCE_RADIANS
+// #endif  // !GLM_FORCE_RADIANS
+//
+//// GLM VULKAN DATA ALIGNMENT
+// #ifndef GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+// #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+// #endif  // !GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+//
+// #ifndef GLM_FORCE_DEPTH_ZERO_TO_ONE
+// #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+// #endif  // !GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 // VULKAN INCLUDE
+
+//// GLM INCLUDES
+// #include <../glm/glm.hpp>
+// #include <../glm/gtc/matrix_transform.hpp>
+// #include <../glm/gtx/hash.hpp>
 #include <vulkan/vulkan.h>
 
-// GLM INCLUDES
-#include <../glm/glm.hpp>
-#include <../glm/gtc/matrix_transform.hpp>
-#include <../glm/gtx/hash.hpp>
+#include "Source/Math/Math.h"
 
 // C++ STANDARD INCLUDES
 #include <cstdint>  // Necessary for uint32_t

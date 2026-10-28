@@ -36,7 +36,6 @@
 #include "Source/Renderer/Camera/CameraController.h"
 #include "Source/Renderer/Mesh/Mesh3D.h"
 #include "Source/Window/WindowingBackend.h"
-#include "VkTypes.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
