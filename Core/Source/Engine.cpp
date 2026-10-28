@@ -5,10 +5,8 @@
 #include <cstdio>
 
 #include "Renderer/API/Vulkan/VulkanContext.h"
-#include "Window/WindowingBackend.h"
-// TODO: Move FileLoader.h out of the renderer
-#include "FileSystem/FileLoader.h"
 #include "Source/Renderer/RendererTypes.h"
+#include "Window/WindowingBackend.h"
 
 void Engine::Construct(ERenderingMode renderingMode) {
     this->m_vulkanContext = new VulkanContext();

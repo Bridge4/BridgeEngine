@@ -202,9 +202,9 @@ void VulkanContext::DescribeScene(std::vector<LoadedObject> objectsToRender,
     // need create a shadowpass framebuffer per shadow casting light
     m_renderPassHandler->CreateShadowPassFrameBuffers();
     LoadSceneObjects();
-    m_vulkanGlobalState->m_shadowBias = glm::vec4(0.0005f, 0.0f, 0.0f, 0.0f);
-    m_vulkanGlobalState->m_pbrPushConstants = {
-        glm::mat4(1.0f), m_vulkanGlobalState->m_shadowBias};
+    // m_vulkanGlobalState->m_shadowBias = glm::vec4(0.0005f, 0.0f, 0.0f, 0.0f);
+    // m_vulkanGlobalState->m_pbrPushConstants = {
+    //     glm::mat4(1.0f), m_vulkanGlobalState->m_shadowBias};
 }
 // Returns the index of the registered texture so it can be accessed in the
 // bindless shader

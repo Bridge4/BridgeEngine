@@ -167,10 +167,6 @@ VkExtent2D SwapChainHandler::ChooseSwapExtent(
         return capabilities.currentExtent;
     }
 
-    // TODO: Framebuffer Size should be updated at the Renderer level
-    // m_windowHandler->GetFramebufferSize(&frameBufferWidth,
-    // &frameBufferHeight);
-
     VkExtent2D actualExtent = {static_cast<uint32_t>(frameBufferWidth),
                                static_cast<uint32_t>(frameBufferHeight)};
 
