@@ -4,11 +4,11 @@
 // VULKAN PLATFORM DEFINITION
 #include <iostream>
 
+#include "Source/Engine.h"
 #include "Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
 #include "Source/Renderer/API/Vulkan/Components/RenderPass/RenderPassHandler.h"
 #include "Source/Renderer/Camera/CameraController.h"
 #include "Source/Renderer/Mesh/Mesh3D.h"
-#include "Source/Renderer/Renderer.h"
 #include "VkTypes.h"
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR

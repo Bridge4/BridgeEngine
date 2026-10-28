@@ -2,13 +2,11 @@
 
 #include <vulkan/vulkan_core.h>
 
-#include <array>
 #include <cstdint>  // Necessary for uint32_t
 #include <iostream>
 #include <set>
 
 #include "../VulkanGlobalState/VulkanGlobalState.h"
-#include "../Window/WindowingBackend.h"
 // CORE FUNCTIONS
 #include "../../VulkanContext.h"
 #include "Source/Renderer/RendererTypes.h"

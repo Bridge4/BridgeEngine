@@ -17,9 +17,8 @@
 #include <iostream>
 
 #include "GLFW/glfw3.h"
-#include "Source/Renderer/API/Vulkan/Components/Window/WindowingBackend.h"
-#include "Source/Renderer/API/Vulkan/Components/WindowVK/WindowHandlerVK.h"
 #include "Source/Renderer/Camera/OrbitCamera.h"
+#include "Source/Window/WindowingBackend.h"
 
 glm::mat4 CameraController::GetViewMatrix() {
     m_viewDirection = glm::normalize(m_viewDirection);

@@ -12,6 +12,6 @@ target_link_libraries(App PUBLIC Core)
 
 target_include_directories(App PUBLIC
         "${PROJECT_BINARY_DIR}"
-        "${PROJECT_SOURCE_DIR}/Core/Source/Renderer"
+        "${PROJECT_SOURCE_DIR}/Core/Source/"
 )
 #target_include_directories(App Core)

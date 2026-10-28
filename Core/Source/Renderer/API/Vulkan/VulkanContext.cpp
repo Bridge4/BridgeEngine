@@ -2,8 +2,8 @@
 
 #include <cassert>
 
+#include "Source/Engine.h"
 #include "Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
-#include "Source/Renderer/Renderer.h"
 #include "Source/Renderer/RendererTypes.h"
 #include "config.h"
 #define GLFW_INCLUDE_VULKAN
@@ -33,9 +33,9 @@
 #include "Components/RenderPass/RenderPassHandler.h"
 #include "Components/SwapChain/SwapChainHandler.h"
 #include "Components/VulkanGlobalState/VulkanGlobalState.h"
-#include "Components/Window/WindowingBackend.h"
 #include "Source/Renderer/Camera/CameraController.h"
 #include "Source/Renderer/Mesh/Mesh3D.h"
+#include "Source/Window/WindowingBackend.h"
 #include "VkTypes.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"

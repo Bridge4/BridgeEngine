@@ -43,9 +43,11 @@ target_include_directories(imgui PUBLIC
 )
 
 target_sources(Core PRIVATE
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Renderer.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Renderer.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/FileLoader.h"
+               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Engine.cpp"
+               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Engine.h"
+               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Window/WindowingBackend.h"
+               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Window/WindowingBackend.cpp"
+               "${CMAKE_CURRENT_SOURCE_DIR}/Source/FileSystem/FileLoader.h"
                "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/RendererTypes.h"
                "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Camera/CameraController.h"
                "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Camera/CameraController.cpp"
@@ -71,8 +73,6 @@ target_sources(Core PRIVATE
                "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/SwapChain/SwapChainHandler.cpp"
                "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/VulkanGlobalState/VulkanGlobalState.h"
                "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/VulkanGlobalState/VulkanGlobalState.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Window/WindowingBackend.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Window/WindowingBackend.cpp"
                "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/WindowVK/WindowHandlerVK.h"
                "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/WindowVK/WindowHandlerVK.cpp")
 

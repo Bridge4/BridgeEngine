@@ -1,20 +1,21 @@
-#include "Renderer.h"
+#include "Engine.h"
 
 #include <imgui.h>
 
 #include <cstdio>
 
-#include "API/Vulkan/Components/Window/WindowingBackend.h"
-#include "API/Vulkan/VulkanContext.h"
-#include "FileLoader.h"
+#include "Renderer/API/Vulkan/VulkanContext.h"
+#include "Window/WindowingBackend.h"
+// TODO: Move FileLoader.h out of the renderer
+#include "FileSystem/FileLoader.h"
 #include "Source/Renderer/RendererTypes.h"
 
-void Renderer::Construct(ERenderingMode renderingMode) {
+void Engine::Construct(ERenderingMode renderingMode) {
     this->m_vulkanContext = new VulkanContext();
     this->m_renderingMode = renderingMode;
 }
 
-void Renderer::InitRenderingAPI() {
+void Engine::InitRenderingAPI() {
     if (m_vulkanContext->m_windowingBackend == nullptr) {
         printf("no windowing backend set, cannot init rendering api");
         return;
@@ -23,11 +24,11 @@ void Renderer::InitRenderingAPI() {
     m_vulkanContext->InitVulkan(ERenderingMode::Bindless);
 }
 
-void Renderer::RenderFrame(float deltaTime) {
+void Engine::RenderFrame(float deltaTime) {
     m_vulkanContext->RenderFrame(m_loadedObjects, deltaTime);
 }
 
-void Renderer::SetWindowingBackend(WindowingBackend* windowingBackend) {
+void Engine::SetWindowingBackend(WindowingBackend* windowingBackend) {
     m_vulkanContext->m_windowingBackend = windowingBackend;
 }
-void Renderer::Destroy() { m_vulkanContext->Destroy(); }
+void Engine::Destroy() { m_vulkanContext->Destroy(); }

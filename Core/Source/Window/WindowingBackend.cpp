@@ -3,10 +3,6 @@
 
 #include <GLFW/glfw3.h>
 
-#include <iostream>
-
-#include "../../VulkanContext.h"
-#include "../VulkanGlobalState/VulkanGlobalState.h"
 // Create Surface
 // 1. Get reference to API
 // 2. Call API-specific windowing setup
@@ -16,11 +12,6 @@ VkResult WindowingBackend::CreateSurfaceVkGLFW(VkInstance instance,
                                                VkSurfaceKHR* surface) {
     return glfwCreateWindowSurface(instance, m_window, nullptr, surface);
 }
-
-// void key_callback(GLFWwindow* m_window, int key, int scancode, int action,
-// int mods)
-//{
-// }
 
 void WindowingBackend::CreateWindowVkGLFW(uint32_t w, uint32_t h) {
     m_width = w, m_height = h;
@@ -48,9 +39,6 @@ void WindowingBackend::PollWindowNotMinimizedGLFW() {
         glfwGetFramebufferSize(m_window, &w, &h);
         glfwWaitEvents();
     }
-
-    // TODO: Call renderer window minimization handling code here
-    // WindowHandler -> Renderer -> Vulkan/DirectX/OpenGL/etc
 }
 
 void WindowingBackend::GetFramebufferSizeGLFW(int* width, int* height) {

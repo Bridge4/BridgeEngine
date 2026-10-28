@@ -1,5 +1,4 @@
 #pragma once
-#include "../ComponentDeclarations.h"
 // class VulkanContext;
 #include "vulkan/vulkan.h"
 struct GLFWwindow;

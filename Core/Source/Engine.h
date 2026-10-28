@@ -1,14 +1,14 @@
 #pragma once
 #include <vector>
 
-#include "RendererTypes.h"
+#include "Renderer/RendererTypes.h"
 #include "config.h"
 class WindowingBackend;
 class VulkanContext;
 
-class Renderer {
+class Engine {
    public:
-    Renderer() { Construct(); }
+    Engine() { Construct(); }
     // API Context
     VulkanContext* m_vulkanContext = 0;
     std::vector<LoadedObject> m_loadedObjects = {};
