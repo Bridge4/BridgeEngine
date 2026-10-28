@@ -3,19 +3,18 @@
 #include <imgui.h>
 
 #include "Renderer/API/Vulkan/VulkanContext.h"
+#include "Source/Renderer/Renderer.h"
 #include "Source/Renderer/RendererTypes.h"
 #include "Window/WindowingBackend.h"
 
 void Engine::StartUp(ERenderingMode renderingMode,
                      WindowingBackend* windowingBackend) {
-    this->m_vulkanContext = new VulkanContext();
-    m_vulkanContext->m_windowingBackend = windowingBackend;
-    this->m_renderingMode = renderingMode;
-    m_vulkanContext->InitVulkan(renderingMode);
+    m_renderer = new Renderer();
+    m_renderer->StartUp(renderingMode, windowingBackend);
 }
 
-void Engine::RenderFrame(float deltaTime) {
-    m_vulkanContext->RenderFrame(m_loadedObjects, deltaTime);
+void Engine::Tick(float deltaTime) {
+    m_renderer->RenderFrame(m_loadedObjects, deltaTime);
 }
 
-void Engine::Destroy() { m_vulkanContext->Destroy(); }
+void Engine::Destroy() { m_renderer->Destroy(); }

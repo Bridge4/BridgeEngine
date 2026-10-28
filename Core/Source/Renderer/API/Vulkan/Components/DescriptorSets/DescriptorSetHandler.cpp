@@ -566,43 +566,45 @@ void DescriptorSetHandler::CreateTexturedPBRDescriptorSets(Mesh3D* mesh) {
         VkDescriptorImageInfo albedoImageInfo{};
         albedoImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         albedoImageInfo.imageView =
-            mesh->m_materials[ALBEDO].m_textureImageView;
-        albedoImageInfo.sampler = mesh->m_materials[ALBEDO].m_textureSampler;
+            mesh->m_materialDataMap[ALBEDO].m_textureImageView;
+        albedoImageInfo.sampler =
+            mesh->m_materialDataMap[ALBEDO].m_textureSampler;
 
         VkDescriptorImageInfo metallicImageInfo{};
         metallicImageInfo.imageLayout =
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         metallicImageInfo.imageView =
-            mesh->m_materials[METALLIC].m_textureImageView;
+            mesh->m_materialDataMap[METALLIC].m_textureImageView;
         metallicImageInfo.sampler =
-            mesh->m_materials[METALLIC].m_textureSampler;
+            mesh->m_materialDataMap[METALLIC].m_textureSampler;
 
         VkDescriptorImageInfo roughnessImageInfo{};
         roughnessImageInfo.imageLayout =
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         roughnessImageInfo.imageView =
-            mesh->m_materials[ROUGHNESS].m_textureImageView;
+            mesh->m_materialDataMap[ROUGHNESS].m_textureImageView;
         roughnessImageInfo.sampler =
-            mesh->m_materials[ROUGHNESS].m_textureSampler;
+            mesh->m_materialDataMap[ROUGHNESS].m_textureSampler;
 
         VkDescriptorImageInfo aoImageInfo{};
         aoImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        aoImageInfo.imageView = mesh->m_materials[AO].m_textureImageView;
-        aoImageInfo.sampler = mesh->m_materials[AO].m_textureSampler;
+        aoImageInfo.imageView = mesh->m_materialDataMap[AO].m_textureImageView;
+        aoImageInfo.sampler = mesh->m_materialDataMap[AO].m_textureSampler;
 
         VkDescriptorImageInfo normalImageInfo{};
         normalImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         normalImageInfo.imageView =
-            mesh->m_materials[NORMAL].m_textureImageView;
-        normalImageInfo.sampler = mesh->m_materials[NORMAL].m_textureSampler;
+            mesh->m_materialDataMap[NORMAL].m_textureImageView;
+        normalImageInfo.sampler =
+            mesh->m_materialDataMap[NORMAL].m_textureSampler;
 
         VkDescriptorImageInfo emissiveImageInfo{};
         emissiveImageInfo.imageLayout =
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         emissiveImageInfo.imageView =
-            mesh->m_materials[EMISSIVE].m_textureImageView;
+            mesh->m_materialDataMap[EMISSIVE].m_textureImageView;
         emissiveImageInfo.sampler =
-            mesh->m_materials[EMISSIVE].m_textureSampler;
+            mesh->m_materialDataMap[EMISSIVE].m_textureSampler;
 
         VkDescriptorImageInfo shadowImageInfo{};
         shadowImageInfo.imageLayout =

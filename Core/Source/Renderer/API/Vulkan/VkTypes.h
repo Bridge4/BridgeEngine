@@ -90,11 +90,6 @@ struct hash<Vertex> {
 };
 }  // namespace std
 
-// Per-Mesh Data
-struct ModelUBO {
-    alignas(16) glm::mat4 model;
-};
-
 enum DescriptorSetLayoutType {
     SCENE,
     TEXTURED_MESH,

@@ -19,6 +19,11 @@ struct TextureData {
     VkSampler m_textureSampler;
 };
 
+// Per-Mesh Data
+struct ModelUBO {
+    alignas(16) glm::mat4 model;
+};
+
 class Mesh3D {
    public:
     Mesh3D() {}
@@ -39,8 +44,8 @@ class Mesh3D {
     VkSampler m_textureSampler = VK_NULL_HANDLE;
 
     TextureData m_textureData = {};
-    std::unordered_map<MaterialEnums, TextureData> m_materials = {};
-    std::unordered_map<MaterialEnums, uint32_t> m_materialsBindless = {};
+    std::unordered_map<MaterialEnums, TextureData> m_materialDataMap = {};
+    std::unordered_map<MaterialEnums, uint32_t> m_materialIndices = {};
     std::vector<VkBuffer> m_uniformBuffers = {};
     std::vector<VkDeviceMemory> m_uniformBuffersMemory = {};
     std::vector<void*> m_uniformBuffersMapped = {};

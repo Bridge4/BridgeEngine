@@ -198,9 +198,11 @@ void VulkanContext::DescribeScene(std::vector<LoadedObject> objectsToRender,
     }
 
     m_vulkanGlobalState->m_lights = lightUBO;
-    // need create a shadowpass framebuffer per shadow casting light
-    m_renderPassHandler->CreateShadowPassFrameBuffers();
     LoadSceneObjects();
+    // need create a shadowpass framebuffer per shadow casting light
+    // WARN: when we eventually reimplement shadowmaps for bindless pbr we
+    // will need to flip this dude on
+    // m_renderPassHandler->CreateShadowPassFrameBuffers();
     // m_vulkanGlobalState->m_shadowBias = glm::vec4(0.0005f, 0.0f, 0.0f, 0.0f);
     // m_vulkanGlobalState->m_pbrPushConstants = {
     //     glm::mat4(1.0f), m_vulkanGlobalState->m_shadowBias};
@@ -300,16 +302,16 @@ void VulkanContext::LoadSceneObjects() {
                         &m_vulkanGlobalState->m_meshList[meshCount], matType);
 
                     m_vulkanGlobalState->m_meshList[meshCount]
-                        .m_materialsBindless[matType] = RegisterTexture(
+                        .m_materialIndices[matType] = RegisterTexture(
                         &m_vulkanGlobalState->m_meshList[meshCount]
-                             .m_materials[matType]
+                             .m_materialDataMap[matType]
                              .m_textureImageView,
                         &m_vulkanGlobalState->m_meshList[meshCount]
-                             .m_materials[matType]
+                             .m_materialDataMap[matType]
                              .m_textureSampler);
                 } else {
                     m_vulkanGlobalState->m_meshList[meshCount]
-                        .m_materialsBindless[matType] = -1;
+                        .m_materialIndices[matType] = -1;
                 }
             }
 
@@ -1290,18 +1292,19 @@ void VulkanContext::CreateTextureImage(TextureProperties props, Mesh3D* mesh,
         texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        mesh->m_materials[materialType].m_textureImage,
-        mesh->m_materials[materialType].m_textureImageMemory);
+        mesh->m_materialDataMap[materialType].m_textureImage,
+        mesh->m_materialDataMap[materialType].m_textureImageMemory);
 
     m_imageHandler->TransitionImageLayout(
-        mesh->m_materials[materialType].m_textureImage, VK_FORMAT_R8G8B8A8_SRGB,
-        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        mesh->m_materialDataMap[materialType].m_textureImage,
+        VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     CopyBufferToImage(
-        stagingBuffer, mesh->m_materials[materialType].m_textureImage,
+        stagingBuffer, mesh->m_materialDataMap[materialType].m_textureImage,
         static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
     m_imageHandler->TransitionImageLayout(
-        mesh->m_materials[materialType].m_textureImage, VK_FORMAT_R8G8B8A8_SRGB,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        mesh->m_materialDataMap[materialType].m_textureImage,
+        VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vkDestroyBuffer(m_deviceHandler->LogicalDevice, stagingBuffer, nullptr);
@@ -1311,10 +1314,10 @@ void VulkanContext::CreateTextureImage(TextureProperties props, Mesh3D* mesh,
 // TEXTURE IMAGE VIEW
 void VulkanContext::CreateTextureImageView(Mesh3D* mesh,
                                            MaterialEnums materialType) {
-    mesh->m_materials[materialType].m_textureImageView =
+    mesh->m_materialDataMap[materialType].m_textureImageView =
         m_imageHandler->CreateImageView(
             m_deviceHandler->LogicalDevice,
-            mesh->m_materials[materialType].m_textureImage,
+            mesh->m_materialDataMap[materialType].m_textureImage,
             VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
@@ -1346,8 +1349,9 @@ void VulkanContext::CreateTextureSampler(Mesh3D* mesh,
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    if (vkCreateSampler(m_deviceHandler->LogicalDevice, &samplerInfo, nullptr,
-                        &mesh->m_materials[materialType].m_textureSampler) !=
+    if (vkCreateSampler(
+            m_deviceHandler->LogicalDevice, &samplerInfo, nullptr,
+            &mesh->m_materialDataMap[materialType].m_textureSampler) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
@@ -1546,22 +1550,20 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
                 }
 
                 m_vulkanGlobalState->m_fragShaderPushConstantsBindless
-                    .albedoIdx =
-                    mesh.m_materialsBindless[MaterialEnums::ALBEDO];
+                    .albedoIdx = mesh.m_materialIndices[MaterialEnums::ALBEDO];
                 m_vulkanGlobalState->m_fragShaderPushConstantsBindless
                     .metallicIdx =
-                    mesh.m_materialsBindless[MaterialEnums::METALLIC];
+                    mesh.m_materialIndices[MaterialEnums::METALLIC];
                 m_vulkanGlobalState->m_fragShaderPushConstantsBindless
                     .roughnessIdx =
-                    mesh.m_materialsBindless[MaterialEnums::ROUGHNESS];
+                    mesh.m_materialIndices[MaterialEnums::ROUGHNESS];
                 m_vulkanGlobalState->m_fragShaderPushConstantsBindless.aoIdx =
-                    mesh.m_materialsBindless[MaterialEnums::AO];
+                    mesh.m_materialIndices[MaterialEnums::AO];
                 m_vulkanGlobalState->m_fragShaderPushConstantsBindless
-                    .normalIdx =
-                    mesh.m_materialsBindless[MaterialEnums::NORMAL];
+                    .normalIdx = mesh.m_materialIndices[MaterialEnums::NORMAL];
                 m_vulkanGlobalState->m_fragShaderPushConstantsBindless
                     .emissiveIdx =
-                    mesh.m_materialsBindless[MaterialEnums::EMISSIVE];
+                    mesh.m_materialIndices[MaterialEnums::EMISSIVE];
 
                 vkCmdPushConstants(
                     commandBuffer, m_vulkanGlobalState->m_pbrPipelineLayout,

@@ -1,0 +1,4 @@
+#ifndef MATERIALS_H
+#define MATERIALS_H
+enum MaterialEnums { ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL, EMISSIVE };
+#endif

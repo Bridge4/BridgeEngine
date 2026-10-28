@@ -59,7 +59,7 @@ int main() {
 
     std::chrono::high_resolution_clock::time_point lastFrameTime;
     lastFrameTime = std::chrono::high_resolution_clock::now();
-    engine->m_vulkanContext->DescribeScene(loadedObjects, lightsToRender);
+    engine->m_renderer->DescribeScene(loadedObjects, lightsToRender);
 
     while (!windowingBackend->ShouldCloseGLFW()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
@@ -68,7 +68,7 @@ int main() {
                 .count();
         lastFrameTime = currentFrameTime;
         windowingBackend->PollGLFW();
-        engine->RenderFrame(deltaTime);
+        engine->Tick(deltaTime);
     }
 
     return EXIT_SUCCESS;

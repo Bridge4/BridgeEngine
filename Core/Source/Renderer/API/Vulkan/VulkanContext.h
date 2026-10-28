@@ -4,7 +4,6 @@
 // VULKAN PLATFORM DEFINITION
 #include <iostream>
 
-#include "Source/Engine.h"
 #include "Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
 #include "Source/Renderer/API/Vulkan/Components/RenderPass/RenderPassHandler.h"
 #include "Source/Renderer/Camera/CameraController.h"
@@ -97,6 +96,7 @@ class VulkanContext {
                        std::vector<Light> lightsToRender);
     uint32_t RegisterTexture(VkImageView* textureImageView,
                              VkSampler* textureSampler);
+    std::vector<LoadedObject> m_objectsToRender = {};
 
    private:
     // DeviceHandler* m_deviceHandler;
@@ -111,7 +111,6 @@ class VulkanContext {
 
     uint32_t m_windowWidth = 800;
     uint32_t m_windowHeight = 600;
-    std::vector<LoadedObject> m_objectsToRender = {};
 
     VkDebugUtilsMessengerEXT m_debugMessenger;
     int m_maxFramesInFlight = 2;
