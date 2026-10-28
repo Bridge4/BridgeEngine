@@ -59,6 +59,7 @@ class VulkanContext {
 #else
     const bool enableValidationLayers = true;
 #endif
+    VulkanContext() {};
     void InitVulkan(ERenderingMode renderingMode = ERenderingMode::Standard);
 
     void RenderFrame(std::vector<LoadedObject> objectsToRender,

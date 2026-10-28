@@ -1,11 +1,11 @@
 #include <GLFW/glfw3.h>
 
 #include <chrono>
-#include <iostream>
 
 #include "Engine.h"
 #include "FileSystem/FileLoader.h"
 #include "Renderer/API/Vulkan/VulkanContext.h"
+#include "Renderer/RendererTypes.h"
 #include "Window/WindowingBackend.h"
 
 int main() {
@@ -13,6 +13,9 @@ int main() {
     windowingBackend->CreateWindowVkGLFW(1920, 1080);
 
     Engine* engine = new Engine();
+    engine->StartUp(ERenderingMode::Bindless, windowingBackend);
+    // engine->SetWindowingBackend(windowingBackend);
+    // engine->InitRenderingAPI();
 
     // TODO:
     // renderer->SetWindowContext();
@@ -25,8 +28,6 @@ int main() {
     //  width and height are > 0 to determine if the window is still minimized
     //    What can we do to get a better api for this?
     // 2.
-    engine->SetWindowingBackend(windowingBackend);
-    engine->InitRenderingAPI();
 
     // windowingBackend->SetApiContext(renderer->m_vulkanContext);
     std::vector<UnloadedObject> objectsToLoad;

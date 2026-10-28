@@ -8,17 +8,17 @@ class VulkanContext;
 
 class Engine {
    public:
-    Engine() { Construct(); }
+    Engine() {}
     // API Context
     VulkanContext* m_vulkanContext = 0;
     std::vector<LoadedObject> m_loadedObjects = {};
 
-    void Construct(ERenderingMode renderingMode = ERenderingMode::Standard);
-    void InitRenderingAPI();
+    void StartUp(ERenderingMode renderingMode,
+                 WindowingBackend* windowingBackend);
+
     // void SetWindowRef(WindowHandler* window);
     void RenderFrame(float deltaTime);
     void Destroy();
-    void SetWindowingBackend(WindowingBackend* windowingBackend);
     ERenderingMode m_renderingMode;
 
    private:
