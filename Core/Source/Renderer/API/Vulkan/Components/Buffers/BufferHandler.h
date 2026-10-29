@@ -29,6 +29,9 @@ class BufferHandler {
 
     void CreateCameraUBO();
 
+    template <typename T>
+    void CreateUBO(T BufferType);
+
     void CreateLightUBO();
 
     void CreateModelUBO(Mesh3D* mesh);
@@ -55,9 +58,10 @@ class BufferHandler {
 
     void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 
+    DeviceHandler* m_deviceHandler;
+
    private:
     VulkanGlobalState* m_vulkanGlobalState = nullptr;
-    DeviceHandler* m_deviceHandler;
     void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     // COPY BUFFER
 

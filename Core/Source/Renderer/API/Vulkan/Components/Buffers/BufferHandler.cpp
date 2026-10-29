@@ -140,6 +140,9 @@ void BufferHandler::CreateIndexBuffer(std::vector<uint32_t> indices) {
     vkFreeMemory(m_deviceHandler->LogicalDevice, stagingBufferMemory, nullptr);
 }
 
+template <typename T>
+void BufferHandler::CreateUBO(T BufferType) {}
+
 void BufferHandler::CreateCameraUBO() {
     VkDeviceSize bufferSize = sizeof(CameraUBO);
 
