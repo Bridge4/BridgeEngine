@@ -52,6 +52,7 @@ class CameraController {
     bool m_lookActive = false;
     bool m_lookToggled = false;
     double m_prevMouseX, m_prevMouseY = 0.0;
+    double m_mouseXBeforeLook, m_mouseYBeforeLook = 0.0;
 };
 
 #endif  // !CAMERACONTROLLER_H

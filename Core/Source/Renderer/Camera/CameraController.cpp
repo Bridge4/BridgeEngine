@@ -39,6 +39,9 @@ void CameraController::Initialize() {
         m_lookActive = false;
         m_lookToggled = false;
     }
+
+    glfwGetCursorPos(m_windowingBackend->m_window, &m_mouseXBeforeLook,
+                     &m_mouseYBeforeLook);
 }
 
 void CameraController::HandleInputNoClip(float deltaTime) {
@@ -92,17 +95,17 @@ void CameraController::HandleInputNoClip(float deltaTime) {
     if (glfwGetMouseButton(m_windowingBackend->m_window, GLFW_MOUSE_BUTTON_2) ==
         GLFW_PRESS) {
         if (!m_lookActive) {
-            glfwSetCursorPos(
-                m_windowingBackend->m_window,
-                (m_swapChainHandler->m_swapChainExtent.width / 2.0f),
-                (m_swapChainHandler->m_swapChainExtent.height / 2.0f));
+            // glfwSetCursorPos(
+            //     m_windowingBackend->m_window,
+            //     (m_swapChainHandler->m_swapChainExtent.width / 2.0f),
+            //     (m_swapChainHandler->m_swapChainExtent.height / 2.0f));
             m_lookToggled = true;
         }
         m_lookActive = true;
     }
     if (glfwGetMouseButton(m_windowingBackend->m_window, GLFW_MOUSE_BUTTON_2) ==
         GLFW_RELEASE) {
-        m_lookActive = false;
+        if (m_lookActive) m_lookActive = false;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_L)) {
         // cameraViewMatrix = glm::translate(cameraViewMatrix, glm::vec3(0.001f,
@@ -140,9 +143,10 @@ void CameraController::HandleInputNoClip(float deltaTime) {
         }
         m_prevMouseX = xPos;
         m_prevMouseY = yPos;
-    } else if (!m_lookActive &&
+    } else if (!m_lookActive/* &&
                glfwGetInputMode(m_windowingBackend->m_window, GLFW_CURSOR) ==
-                   GLFW_CURSOR_HIDDEN) {
+                   GLFW_CURSOR_HIDDEN*/) {
+        std::cout << "DISABLED" << "\n";
         glfwSetInputMode(m_windowingBackend->m_window, GLFW_CURSOR,
                          GLFW_CURSOR_NORMAL);
     }
@@ -156,16 +160,59 @@ void CameraController::HandleInputOrbit(float deltaTime) {
     if (glfwGetMouseButton(m_windowingBackend->m_window, GLFW_MOUSE_BUTTON_2) ==
         GLFW_PRESS) {
         if (!m_lookActive) {
-            glfwSetCursorPos(
-                m_windowingBackend->m_window,
-                m_swapChainHandler->m_swapChainExtent.width / 2.0,
-                m_swapChainHandler->m_swapChainExtent.height / 2.0);
+            glfwGetCursorPos(m_windowingBackend->m_window, &m_mouseXBeforeLook,
+                             &m_mouseYBeforeLook);
+            // glfwSetCursorPos(
+            //     m_windowingBackend->m_window,
+            //     m_swapChainHandler->m_swapChainExtent.width / 2.0,
+            //     m_swapChainHandler->m_swapChainExtent.height / 2.0);
+
+            glfwSetCursorPos(m_windowingBackend->m_window, m_mouseXBeforeLook,
+                             m_mouseYBeforeLook);
+
             m_lookToggled = true;
         }
         m_lookActive = true;
-    } else if (glfwGetMouseButton(m_windowingBackend->m_window,
-                                  GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE) {
+        glfwSetInputMode(m_windowingBackend->m_window, GLFW_CURSOR,
+                         GLFW_CURSOR_DISABLED);
+    }
+    if (glfwGetMouseButton(m_windowingBackend->m_window, GLFW_MOUSE_BUTTON_2) ==
+            GLFW_RELEASE &&
+        m_lookActive) {
+        std::cout << "shouldnt be here" << std::endl;
         m_lookActive = false;
+        glfwSetInputMode(m_windowingBackend->m_window, GLFW_CURSOR,
+                         GLFW_CURSOR_NORMAL);
+        glfwSetCursorPos(m_windowingBackend->m_window, m_mouseXBeforeLook,
+                         m_mouseYBeforeLook);
+    }
+
+    if (m_lookActive) {
+        double xPos, yPos;
+        glfwGetCursorPos(m_windowingBackend->m_window, &xPos, &yPos);
+
+        float deltaX, deltaY;
+        // deltaX = (xPos - m_mouseXBeforeLook) * m_cameraSpeed;
+        deltaX = (xPos - m_prevMouseX) * m_cameraSpeed;
+        if (m_invertHorizontal) deltaX = -deltaX;
+        // deltaY = (yPos - m_mouseYBeforeLook) * m_cameraSpeed;
+        deltaY = (yPos - m_prevMouseY) * m_cameraSpeed;
+        if (!m_lookToggled) {
+            if (deltaX != 0 || deltaY != 0) {
+                orbitCam->RotateAzimuth(deltaX);
+                orbitCam->RotatePolar(deltaY);
+            }
+        } else {
+            m_lookToggled = false;
+        }
+        glfwSetCursorPos(m_windowingBackend->m_window, m_mouseXBeforeLook,
+                         m_mouseYBeforeLook);
+        m_prevMouseX = m_mouseXBeforeLook;
+        m_prevMouseY = m_mouseYBeforeLook;
+    } else {
+        // std::cout << "DISABLEDDD\n";
+        // glfwSetInputMode(m_windowingBackend->m_window, GLFW_CURSOR,
+        //                  GLFW_CURSOR_NORMAL);
     }
 
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_P)) {
@@ -181,16 +228,16 @@ void CameraController::HandleInputOrbit(float deltaTime) {
             100.0f * deltaTime;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_H)) {
-        m_vulkanGlobalState->m_lights.lights[0].position.x -= 10.0f * deltaTime;
+        m_vulkanGlobalState->m_lights.lights[0].position.x -= 2.0f * deltaTime;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_L)) {
-        m_vulkanGlobalState->m_lights.lights[0].position.x += 10.0f * deltaTime;
+        m_vulkanGlobalState->m_lights.lights[0].position.x += 2.0f * deltaTime;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_J)) {
-        m_vulkanGlobalState->m_lights.lights[0].position.y -= 10.0f * deltaTime;
+        m_vulkanGlobalState->m_lights.lights[0].position.y -= 2.0f * deltaTime;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_K)) {
-        m_vulkanGlobalState->m_lights.lights[0].position.y += 10.0f * deltaTime;
+        m_vulkanGlobalState->m_lights.lights[0].position.y += 2.0f * deltaTime;
     }
 
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_Q)) {
@@ -225,56 +272,7 @@ void CameraController::HandleInputOrbit(float deltaTime) {
     }
     glm::vec3 camPos = orbitCam->GetEye();
 
-    // glm::vec3 lightPos = m_vulkanGlobalState->m_lights.lights[0].position;
-    // m_vulkanGlobalState->m_lights.lights[0].lightDir =
-    //     glm::vec4(glm::normalize(-lightPos), 1.0f);
-
-    // glm::mat4 lightView =
-    //     glm::lookAt(glm::vec3(m_vulkanGlobalState->m_lights.lights[0].position),
-    //                 glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f,
-    //                 0.0f));
-
     float orthoSize = 500.0f;
-    // glm::mat4 lightProj = glm::orthoRH_ZO(-orthoSize, orthoSize, -orthoSize,
-    //                                     orthoSize, 1.0f, 1000.0f);
-
-    // glm::mat4 lightViewProj = lightProj
-    // * lightView;
-
-    // m_vulkanGlobalState->m_fragShaderPushConstantsBindless.lightViewProj
-    // =
-    //     lightViewProj;
-    // m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj
-    // =
-    //    lightViewProj;
-
-    if (m_lookActive) {
-        double xPos, yPos;
-        glfwGetCursorPos(m_windowingBackend->m_window, &xPos, &yPos);
-
-        float deltaX, deltaY;
-        glfwSetInputMode(m_windowingBackend->m_window, GLFW_CURSOR,
-                         GLFW_CURSOR_HIDDEN);
-        deltaX = (xPos - m_prevMouseX) * m_cameraSpeed;
-        if (m_invertHorizontal) deltaX = -deltaX;
-        deltaY = (yPos - m_prevMouseY) * m_cameraSpeed;
-        if (!m_lookToggled) {
-            if (deltaX != 0 || deltaY != 0) {
-                orbitCam->RotateAzimuth(deltaX);
-                orbitCam->RotatePolar(deltaY);
-            }
-        } else {
-            m_lookToggled = false;
-        }
-        glfwSetCursorPos(m_windowingBackend->m_window,
-                         m_vulkanGlobalState->m_swapChainExtent.width / 2.0,
-                         m_vulkanGlobalState->m_swapChainExtent.height / 2.0);
-        m_prevMouseX = m_vulkanGlobalState->m_swapChainExtent.width / 2.0;
-        m_prevMouseY = m_vulkanGlobalState->m_swapChainExtent.height / 2.0;
-    } else {
-        glfwSetInputMode(m_windowingBackend->m_window, GLFW_CURSOR,
-                         GLFW_CURSOR_NORMAL);
-    }
 }
 
 void CameraController::UpdateCameraPosition(uint32_t currentImage,
