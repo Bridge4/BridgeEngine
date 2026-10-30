@@ -11,6 +11,9 @@
 struct Vertex;
 struct LightUBO;
 
+// TODO: Move buffer stuff to this namespace rather than using singleton
+namespace BufferVk {}
+
 class BufferHandler {
    public:
     BufferHandler(VulkanGlobalState* VulkanGlobalState,
