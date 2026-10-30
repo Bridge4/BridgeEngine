@@ -287,6 +287,29 @@ void VulkanContext::RenderFrame(std::vector<LoadedObject> objectsToRender,
     m_cameraController->UpdateCameraPosition(
         m_vulkanGlobalState->m_currentFrame, deltaTime);
 
+    if (!m_vulkanGlobalState->m_meshList.empty()) {
+        int count = 0;
+        for (auto& mesh : m_vulkanGlobalState->m_meshList) {
+            ModelUBO modelUBO{};
+            modelUBO.model = glm::mat4(1.0f);
+            modelUBO.model =
+                glm::translate(modelUBO.model, glm::vec3(0.0f, 0.0f, 0.0f));
+            modelUBO.model = glm::rotate(modelUBO.model, -glm::radians(90.0f),
+                                         glm::vec3(0.0f, 1.0f, 0.0f));
+            modelUBO.model =
+                glm::scale(modelUBO.model, glm::vec3(10.1f, 10.1f, 10.1f));
+            // glm::scale(modelUBO.model, glm::vec3(00.1f, 00.1f, 00.1f));
+            if (glfwGetMouseButton(m_windowingBackend->m_window,
+                                   GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
+            }
+
+            memcpy(mesh.m_uniformBuffersMapped[m_vulkanGlobalState
+                                                   ->m_currentFrame],
+                   &modelUBO, sizeof(modelUBO));
+            count++;
+        }
+    }
+
     DrawFrame(deltaTime);
 }
 
