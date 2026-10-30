@@ -22,6 +22,7 @@ class FileLoader {
             objectToLoad.materialTexFilePaths[NORMAL];
         std::string emissiveTextureFilePath =
             objectToLoad.materialTexFilePaths[EMISSIVE];
+        std::string ormTextureFilePath = objectToLoad.materialTexFilePaths[ORM];
 
         if (!albedoTextureFilePath.empty())
             loadedObject.textureProperties[ALBEDO] =
@@ -41,6 +42,9 @@ class FileLoader {
         if (!emissiveTextureFilePath.empty())
             loadedObject.textureProperties[EMISSIVE] =
                 LoadTextureFile(emissiveTextureFilePath);
+        if (!ormTextureFilePath.empty())
+            loadedObject.textureProperties[ORM] =
+                LoadTextureFile(ormTextureFilePath);
         return loadedObject;
     }
 

@@ -304,6 +304,7 @@ void CameraController::UpdateCameraPosition(uint32_t currentImage,
                                          glm::vec3(0.0f, 1.0f, 0.0f));
             modelUBO.model =
                 glm::scale(modelUBO.model, glm::vec3(10.1f, 10.1f, 10.1f));
+            // glm::scale(modelUBO.model, glm::vec3(00.1f, 00.1f, 00.1f));
             if (glfwGetMouseButton(m_windowingBackend->m_window,
                                    GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
             }

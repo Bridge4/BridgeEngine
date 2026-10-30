@@ -107,7 +107,7 @@ class VulkanContext {
     DescriptorSetHandler* m_descriptorSetHandler;
 
     ImageHandler* m_imageHandler;
-    int m_textureHeap[22000];
+    int m_textureHeap[22000] = {0};
 
     uint32_t m_windowWidth = 800;
     uint32_t m_windowHeight = 600;
@@ -168,10 +168,10 @@ class VulkanContext {
     void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
                            uint32_t height);
 
-    void LoadMesh(ObjProperties props,
-                  glm::vec3 scenePosition = glm::vec3(1.0f, 1.0f, 1.0f),
-                  glm::vec3 objectRotation = glm::vec3(0.0f, 0.0f, 0.0f),
-                  glm::vec3 objectScale = glm::vec3(1.0f, 1.0f, 1.0f));
+    Mesh3D LoadMesh(ObjProperties props,
+                    glm::vec3 scenePosition = glm::vec3(1.0f, 1.0f, 1.0f),
+                    glm::vec3 objectRotation = glm::vec3(0.0f, 0.0f, 0.0f),
+                    glm::vec3 objectScale = glm::vec3(1.0f, 1.0f, 1.0f));
 
     // COPY BUFFER
     void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);

@@ -45,7 +45,7 @@ class Mesh3D {
 
     TextureData m_textureData = {};
     std::unordered_map<MaterialEnums, TextureData> m_materialDataMap = {};
-    std::unordered_map<MaterialEnums, uint32_t> m_materialIndices = {};
+    std::unordered_map<MaterialEnums, int32_t> m_materialIndices = {};
     std::vector<VkBuffer> m_uniformBuffers = {};
     std::vector<VkDeviceMemory> m_uniformBuffersMemory = {};
     std::vector<void*> m_uniformBuffersMapped = {};

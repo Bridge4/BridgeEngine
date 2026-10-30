@@ -222,6 +222,8 @@ uint32_t VulkanContext::RegisterTexture(VkImageView* textureImageView,
             break;
         }
     }
+
+    std::cout << "IDX " << idx << "\n";
     // Get free index in our global textures array
     VkDescriptorImageInfo imageInfo{*textureSampler, *textureImageView,
                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
@@ -287,61 +289,51 @@ void VulkanContext::LoadSceneObjects() {
     int meshCount = 0;
     float xPos = 0.0f;
     for (auto& obj : m_objectsToRender) {
-        LoadMesh(obj.objProperties, glm::vec3(xPos, 0.0f, 0.0f),
-                 glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(5.0f, 5.0f, 5.0f));
+        Mesh3D mesh =
+            LoadMesh(obj.objProperties, glm::vec3(xPos, 0.0f, 0.0f),
+                     glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(5.0f, 5.0f, 5.0f));
         std::vector<MaterialEnums> materialTypes = {
             ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL, EMISSIVE, ORM};
         if (m_vulkanGlobalState->m_renderingMode == ERenderingMode::Bindless) {
             for (auto& matType : materialTypes) {
-                if (obj.textureProperties.contains(matType)) {
-                    CreateTextureImage(
-                        obj.textureProperties[matType],
-                        &m_vulkanGlobalState->m_meshList[meshCount], matType);
-                    CreateTextureImageView(
-                        &m_vulkanGlobalState->m_meshList[meshCount], matType);
-                    CreateTextureSampler(
-                        &m_vulkanGlobalState->m_meshList[meshCount], matType);
-
-                    m_vulkanGlobalState->m_meshList[meshCount]
-                        .m_materialIndices[matType] = RegisterTexture(
-                        &m_vulkanGlobalState->m_meshList[meshCount]
-                             .m_materialDataMap[matType]
-                             .m_textureImageView,
-                        &m_vulkanGlobalState->m_meshList[meshCount]
-                             .m_materialDataMap[matType]
-                             .m_textureSampler);
-                } else {
-                    m_vulkanGlobalState->m_meshList[meshCount]
-                        .m_materialIndices[matType] = -1;
+                if (!obj.textureProperties.contains(matType)) {
+                    std::cout << "DOES NOT CONTAIN " << matType << "\n";
+                    mesh.m_materialIndices[matType] = -1;
+                    continue;
                 }
+                CreateTextureImage(obj.textureProperties[matType], &mesh,
+                                   matType);
+                CreateTextureImageView(&mesh, matType);
+                CreateTextureSampler(&mesh, matType);
+
+                std::cout << "REGISTERING " << matType << "\n";
+                mesh.m_materialIndices[matType] = RegisterTexture(
+                    &mesh.m_materialDataMap[matType].m_textureImageView,
+                    &mesh.m_materialDataMap[matType].m_textureSampler);
             }
 
             // Create Mesh Uniform Buffers
-            m_bufferHandler->CreateModelUBO(
-                &m_vulkanGlobalState->m_meshList[meshCount]);
+            m_bufferHandler->CreateModelUBO(&mesh);
             meshCount++;
             xPos += 5.0f;
             m_descriptorSetHandler->CreateTexturedPBRDescriptorSetsBindless(
-                &m_vulkanGlobalState->m_meshList[meshCount - 1]);
+                &mesh);
         } else {
             for (auto& matType : materialTypes) {
-                CreateTextureImage(obj.textureProperties[matType],
-                                   &m_vulkanGlobalState->m_meshList[meshCount],
+                CreateTextureImage(obj.textureProperties[matType], &mesh,
                                    matType);
-                CreateTextureImageView(
-                    &m_vulkanGlobalState->m_meshList[meshCount], matType);
-                CreateTextureSampler(
-                    &m_vulkanGlobalState->m_meshList[meshCount], matType);
-                m_descriptorSetHandler->CreateTexturedPBRDescriptorSets(
-                    &m_vulkanGlobalState->m_meshList[meshCount]);
+                CreateTextureImageView(&mesh, matType);
+                CreateTextureSampler(&mesh, matType);
+                m_descriptorSetHandler->CreateTexturedPBRDescriptorSets(&mesh);
             }
 
             // Create Mesh Uniform Buffers
-            m_bufferHandler->CreateModelUBO(
-                &m_vulkanGlobalState->m_meshList[meshCount]);
+            m_bufferHandler->CreateModelUBO(&mesh);
+
             meshCount++;
             xPos += 5.0f;
         }
+        m_vulkanGlobalState->m_meshList.push_back(mesh);
     }
     m_bufferHandler->CreateVertexBuffer(m_vertices);
     m_bufferHandler->CreateIndexBuffer(m_indices);
@@ -1390,8 +1382,9 @@ void VulkanContext::CreateTextureSamplerShadowPass() {
         throw std::runtime_error("failed to create texture sampler!");
     }
 }
-void VulkanContext::LoadMesh(ObjProperties props, glm::vec3 scenePosition,
-                             glm::vec3 objectRotation, glm::vec3 objectScale) {
+Mesh3D VulkanContext::LoadMesh(ObjProperties props, glm::vec3 scenePosition,
+                               glm::vec3 objectRotation,
+                               glm::vec3 objectScale) {
     std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 
     int indexBufferStartIndex = 0;
@@ -1446,7 +1439,7 @@ void VulkanContext::LoadMesh(ObjProperties props, glm::vec3 scenePosition,
     mesh.m_position = scenePosition;
     mesh.m_rotation = objectRotation;
     mesh.m_scale = glm::vec3(1.0f, 1.0f, 1.0f);
-    m_vulkanGlobalState->m_meshList.push_back(mesh);
+    return mesh;
 }
 
 void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
@@ -1546,6 +1539,9 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
 
                 m_vulkanGlobalState->m_fragShaderPushConstantsBindless
                     .albedoIdx = mesh.m_materialIndices[MaterialEnums::ALBEDO];
+                // std::cout << m_vulkanGlobalState
+                //                  ->m_fragShaderPushConstantsBindless.albedoIdx
+                //           << "\n";
                 m_vulkanGlobalState->m_fragShaderPushConstantsBindless
                     .metallicIdx =
                     mesh.m_materialIndices[MaterialEnums::METALLIC];
@@ -1559,8 +1555,8 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
                 m_vulkanGlobalState->m_fragShaderPushConstantsBindless
                     .emissiveIdx =
                     mesh.m_materialIndices[MaterialEnums::EMISSIVE];
-                m_vulkanGlobalState->m_fragShaderPushConstantsBindless
-                    .emissiveIdx = mesh.m_materialIndices[MaterialEnums::ORM];
+                m_vulkanGlobalState->m_fragShaderPushConstantsBindless.ormIdx =
+                    mesh.m_materialIndices[MaterialEnums::ORM];
 
                 vkCmdPushConstants(
                     commandBuffer, m_vulkanGlobalState->m_pbrPipelineLayout,
