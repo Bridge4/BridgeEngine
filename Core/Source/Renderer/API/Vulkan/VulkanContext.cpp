@@ -40,6 +40,41 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
 
+namespace ContextVk {
+void RenderUI() {
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // bool show_demo_window = true;
+    // ImGui::ShowDemoWindow(&show_demo_window);
+    ImGui::Begin("ImGui Sanity Check");
+
+    // Test static text
+    ImGui::Text("Hello, Vulkan + ImGui!");
+    ImGui::Separator();
+
+    // Test interactivity with a counter
+    static int counter = 0;
+    if (ImGui::Button("Click Me!")) {
+        counter++;
+    }
+    ImGui::SameLine();
+    ImGui::Text("Button clicks = %d", counter);
+
+    // Test value tracking and color manipulation
+    static float color[3] = {0.45f, 0.55f, 0.60f};
+    ImGui::ColorEdit3("Clear Color Picker", color);
+
+    // Test frame rates (verifies NewFrame delta timing is working)
+    ImGui::Text("Performance: %.3f ms/frame (%.1f FPS)",
+                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+    ImGui::End();
+
+    ImGui::Render();
+}
+}  // namespace ContextVk
 void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
     m_vulkanGlobalState = new VulkanGlobalState(this, renderingMode);
 
@@ -241,37 +276,7 @@ uint32_t VulkanContext::RegisterTexture(VkImageView* textureImageView,
 
 void VulkanContext::RenderFrame(std::vector<LoadedObject> objectsToRender,
                                 float deltaTime) {
-    ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-    bool show_demo_window = true;
-    ImGui::ShowDemoWindow(&show_demo_window);
-    ImGui::Begin("ImGui Sanity Check");
-
-    // Test static text
-    ImGui::Text("Hello, Vulkan + ImGui!");
-    ImGui::Separator();
-
-    // Test interactivity with a counter
-    static int counter = 0;
-    if (ImGui::Button("Click Me!")) {
-        counter++;
-    }
-    ImGui::SameLine();
-    ImGui::Text("Button clicks = %d", counter);
-
-    // Test value tracking and color manipulation
-    static float color[3] = {0.45f, 0.55f, 0.60f};
-    ImGui::ColorEdit3("Clear Color Picker", color);
-
-    // Test frame rates (verifies NewFrame delta timing is working)
-    ImGui::Text("Performance: %.3f ms/frame (%.1f FPS)",
-                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-
-    ImGui::End();
-
-    ImGui::Render();
+    ContextVk::RenderUI();
 
     m_cameraController->HandleInputOrbit(deltaTime);
 

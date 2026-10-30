@@ -52,6 +52,10 @@ class CameraController;
 class VulkanGlobalState;
 class Mesh3D;
 
+namespace ContextVk {
+void RenderUI();
+}  // namespace ContextVk
+
 class VulkanContext {
    public:
 #ifdef NDEBUG
