@@ -289,4 +289,25 @@ void CameraController::UpdateCameraPosition(uint32_t currentImage,
     memcpy(m_vulkanGlobalState
                ->m_cameraUBOMapped[m_vulkanGlobalState->m_currentFrame],
            &m_cameraUBO, sizeof(m_cameraUBO));
+    if (!m_vulkanGlobalState->m_meshList.empty()) {
+        int count = 0;
+        for (auto& mesh : m_vulkanGlobalState->m_meshList) {
+            ModelUBO modelUBO{};
+            modelUBO.model = glm::mat4(1.0f);
+            modelUBO.model =
+                glm::translate(modelUBO.model, glm::vec3(0.0f, 0.0f, 0.0f));
+            modelUBO.model = glm::rotate(modelUBO.model, -glm::radians(90.0f),
+                                         glm::vec3(0.0f, 1.0f, 0.0f));
+            modelUBO.model =
+                glm::scale(modelUBO.model, glm::vec3(0.1f, 0.1f, 0.1f));
+            if (glfwGetMouseButton(m_windowingBackend->m_window,
+                                   GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
+            }
+
+            memcpy(mesh.m_uniformBuffersMapped[m_vulkanGlobalState
+                                                   ->m_currentFrame],
+                   &modelUBO, sizeof(modelUBO));
+            count++;
+        }
+    }
 }
