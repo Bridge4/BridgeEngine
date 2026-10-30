@@ -192,6 +192,7 @@ void VulkanContext::DescribeScene(std::vector<LoadedObject> objectsToRender,
     LightUBO lightUBO;
     int i = 0;
     for (auto light : lightsToRender) {
+        light.position = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
         lightUBO.lights[i] = light;
         i++;
         lightUBO.numLights.x = i;
@@ -288,8 +289,8 @@ void VulkanContext::LoadSceneObjects() {
     for (auto& obj : m_objectsToRender) {
         LoadMesh(obj.objProperties, glm::vec3(xPos, 0.0f, 0.0f),
                  glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(5.0f, 5.0f, 5.0f));
-        std::vector<MaterialEnums> materialTypes = {ALBEDO, METALLIC, ROUGHNESS,
-                                                    AO,     NORMAL,   EMISSIVE};
+        std::vector<MaterialEnums> materialTypes = {
+            ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL, EMISSIVE, ORM};
         if (m_vulkanGlobalState->m_renderingMode == ERenderingMode::Bindless) {
             for (auto& matType : materialTypes) {
                 if (obj.textureProperties.contains(matType)) {
@@ -1528,7 +1529,7 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
             vkCmdBindIndexBuffer(commandBuffer, m_bufferHandler->IndexBuffer, 0,
                                  VK_INDEX_TYPE_UINT32);
             for (auto& mesh : m_vulkanGlobalState->m_meshList) {
-                mesh.m_scale = glm::vec3(0.01f, 0.01f, 0.01f);
+                mesh.m_scale = glm::vec3(100.0f, 100.0f, 100.0f);
                 // Binding the graphics pipeline
                 if (mesh.MeshType == TEXTURED) {
                     vkCmdBindPipeline(commandBuffer,
@@ -1541,12 +1542,6 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
                         &mesh.m_descriptorSets[m_vulkanGlobalState
                                                    ->m_currentFrame],
                         0, nullptr);
-                    // vkCmdBindDescriptorSets(
-                    //     commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    //     m_vulkanGlobalState->m_pbrPipelineLayout, 1, 1,
-                    //     &mesh.m_descriptorSets[m_vulkanGlobalState
-                    //                                ->m_currentFrame],
-                    //     0, nullptr);
                 }
 
                 m_vulkanGlobalState->m_fragShaderPushConstantsBindless
@@ -1564,6 +1559,8 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
                 m_vulkanGlobalState->m_fragShaderPushConstantsBindless
                     .emissiveIdx =
                     mesh.m_materialIndices[MaterialEnums::EMISSIVE];
+                m_vulkanGlobalState->m_fragShaderPushConstantsBindless
+                    .emissiveIdx = mesh.m_materialIndices[MaterialEnums::ORM];
 
                 vkCmdPushConstants(
                     commandBuffer, m_vulkanGlobalState->m_pbrPipelineLayout,

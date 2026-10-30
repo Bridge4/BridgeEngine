@@ -170,15 +170,15 @@ void CameraController::HandleInputOrbit(float deltaTime) {
 
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_P)) {
         m_vulkanGlobalState->m_lights.lights[0].intensity.x +=
-            1000.0f * deltaTime;
+            100.0f * deltaTime;
         m_vulkanGlobalState->m_lights.lights[2].intensity.x +=
-            1000.0f * deltaTime;
+            100.0f * deltaTime;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_O)) {
         m_vulkanGlobalState->m_lights.lights[0].intensity.x -=
-            1000.0f * deltaTime;
+            100.0f * deltaTime;
         m_vulkanGlobalState->m_lights.lights[2].intensity.x -=
-            1000.0f * deltaTime;
+            100.0f * deltaTime;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_H)) {
         m_vulkanGlobalState->m_lights.lights[0].position.x -= 10.0f * deltaTime;
@@ -225,24 +225,28 @@ void CameraController::HandleInputOrbit(float deltaTime) {
     }
     glm::vec3 camPos = orbitCam->GetEye();
 
-    glm::vec3 lightPos = m_vulkanGlobalState->m_lights.lights[0].position;
-    m_vulkanGlobalState->m_lights.lights[0].lightDir =
-        glm::vec4(glm::normalize(-lightPos), 1.0f);
+    // glm::vec3 lightPos = m_vulkanGlobalState->m_lights.lights[0].position;
+    // m_vulkanGlobalState->m_lights.lights[0].lightDir =
+    //     glm::vec4(glm::normalize(-lightPos), 1.0f);
 
-    glm::mat4 lightView =
-        glm::lookAt(glm::vec3(m_vulkanGlobalState->m_lights.lights[0].position),
-                    glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    // glm::mat4 lightView =
+    //     glm::lookAt(glm::vec3(m_vulkanGlobalState->m_lights.lights[0].position),
+    //                 glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f,
+    //                 0.0f));
 
     float orthoSize = 500.0f;
-    glm::mat4 lightProj = glm::orthoRH_ZO(-orthoSize, orthoSize, -orthoSize,
-                                          orthoSize, 1.0f, 1000.0f);
+    // glm::mat4 lightProj = glm::orthoRH_ZO(-orthoSize, orthoSize, -orthoSize,
+    //                                     orthoSize, 1.0f, 1000.0f);
 
-    glm::mat4 lightViewProj = lightProj * lightView;
+    // glm::mat4 lightViewProj = lightProj
+    // * lightView;
 
-    // m_vulkanGlobalState->m_fragShaderPushConstantsBindless.lightViewProj =
+    // m_vulkanGlobalState->m_fragShaderPushConstantsBindless.lightViewProj
+    // =
     //     lightViewProj;
-    m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj =
-        lightViewProj;
+    // m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj
+    // =
+    //    lightViewProj;
 
     if (m_lookActive) {
         double xPos, yPos;
@@ -299,7 +303,7 @@ void CameraController::UpdateCameraPosition(uint32_t currentImage,
             modelUBO.model = glm::rotate(modelUBO.model, -glm::radians(90.0f),
                                          glm::vec3(0.0f, 1.0f, 0.0f));
             modelUBO.model =
-                glm::scale(modelUBO.model, glm::vec3(0.1f, 0.1f, 0.1f));
+                glm::scale(modelUBO.model, glm::vec3(10.1f, 10.1f, 10.1f));
             if (glfwGetMouseButton(m_windowingBackend->m_window,
                                    GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
             }

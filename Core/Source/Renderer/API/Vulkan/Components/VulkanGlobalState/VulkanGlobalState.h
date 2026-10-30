@@ -32,6 +32,7 @@ struct FragShaderPushConstantsBindless {
     uint32_t aoIdx;
     uint32_t normalIdx;
     uint32_t emissiveIdx;
+    uint32_t ormIdx;
 };
 
 class VulkanGlobalState {

@@ -36,6 +36,7 @@ layout(push_constant) uniform PushConstants {
     int aoIdx;
     int normalIdx;
     int emissiveIdx;
+    int ormIdx;
 } pc;
 
 layout(location = 0) in vec3 fragPos;     // world-space position
@@ -116,7 +117,7 @@ void main() {
     vec3  emissive  = vec3(0.0);
 
     if (has(pc.albedoIdx))
-        albedo = pow(texture(textures[pc.albedoIdx], fragTexCoord).rgb, vec3(2.2));
+        albedo = texture(textures[pc.albedoIdx], fragTexCoord).rgb;
 
     if (has(pc.metallicIdx))
         metallic = texture(textures[pc.metallicIdx], fragTexCoord).r;
@@ -130,6 +131,14 @@ void main() {
     if (has(pc.emissiveIdx))
         emissive = texture(textures[pc.emissiveIdx], fragTexCoord).rgb;
 
+    if (has(pc.ormIdx)) {
+        ao = texture(textures[pc.ormIdx], fragTexCoord).r;
+        metallic = texture(textures[pc.ormIdx], fragTexCoord).g;
+        roughness = texture(textures[pc.ormIdx], fragTexCoord).b;
+    }
+
+
+    roughness = clamp(roughness, 0.04, 1.0);
     //vec3 albedo     = pow(texture(textures[pc.albedoIdx], fragTexCoord).rgb, vec3(2.2));
     //vec3 normal     = texture(textures[pc.normalIdx], fragTexCoord).rgb;
     //float metallic  = texture(textures[pc.metallicIdx], fragTexCoord).r;
@@ -139,18 +148,6 @@ void main() {
     // Normalize inputs
     vec3 N = normalize(fragNormal);
     vec3 V = normalize(camera.cameraPos.xyz - fragPos);
-
-    //if (pc.hasRoughness.x != 1.0) {
-    //    roughness = 1.0;
-    //}
-
-    //if (pc.hasMetallic.x != 1.0) {
-    //    metallic = 1.0;
-    //}
-
-    //if (pc.hasAO.x != 1.0) {
-    //    ao = 1.0;
-    //}
 
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
@@ -162,10 +159,10 @@ void main() {
         float distance = length(lightData.lights[i].position.xyz - fragPos);
         float attenuation = 1.0 / (distance * distance );
 
-        vec3 radiance = lightData.lights[i].color.rgb * 1.0 * lightData.lights[i].intensity.x;
+        vec3 radiance = lightData.lights[i].color.rgb * 1.0 * lightData.lights[i].intensity.x * attenuation;
 
         float NDF = DistributionGGX(N, H, roughness);
-        float G = GeometrySmith(N, N, L, roughness);
+        float G = GeometrySmith(N, V, L, roughness);
         vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
         vec3 numerator = NDF * G * F;

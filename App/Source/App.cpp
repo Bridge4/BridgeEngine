@@ -33,13 +33,15 @@ int main() {
     std::vector<UnloadedObject> objectsToLoad;
 
     UnloadedObject testObj2;
-    testObj2.objFilePath = MODELS_DIR "axe/axe.obj";
-    testObj2.materialTexFilePaths[ALBEDO] = MODELS_DIR "axe/albedo.png";
-    testObj2.materialTexFilePaths[METALLIC] = MODELS_DIR "axe/metallic.png";
-    testObj2.materialTexFilePaths[ROUGHNESS] = MODELS_DIR "axe/roughness.png";
-    testObj2.materialTexFilePaths[AO] = MODELS_DIR "axe/ao.png";
-    testObj2.materialTexFilePaths[NORMAL] = MODELS_DIR "axe/normals.png";
-    testObj2.materialTexFilePaths[EMISSIVE] = MODELS_DIR "axe/emissive.png";
+    testObj2.objFilePath = MODELS_DIR "dwarf_sword/dwarf.obj";
+    testObj2.materialTexFilePaths[ALBEDO] = MODELS_DIR "dwarf_sword/dwarf.png";
+    // testObj2.materialTexFilePaths[METALLIC] = MODELS_DIR
+    // "dwarf_sword/metallic.png";
+    testObj2.materialTexFilePaths[ORM] = MODELS_DIR "dwarf_sword/rough.png";
+    // testObj2.materialTexFilePaths[AO] = MODELS_DIR "axe/ao.png";
+    // testObj2.materialTexFilePaths[NORMAL] = MODELS_DIR
+    // "dwarf_sword/norm.png";
+    // testObj2.materialTexFilePaths[EMISSIVE] = MODELS_DIR "axe/emissive.png";
     objectsToLoad.push_back(testObj2);
     // This is how we submit loaded objects objectsToLoad.push_back(testObj2);
 
@@ -51,9 +53,9 @@ int main() {
     }
     engine->m_loadedObjects = loadedObjects;
     Light light0;
-    light0.position = glm::vec4(10.0f, 20.0f, 10.0f, 1.0f);
+    light0.position = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    light0.intensity.x = 10000.0f;
+    light0.intensity.x = 100.0f;
     std::vector<Light> lightsToRender;
     lightsToRender.push_back(light0);
 

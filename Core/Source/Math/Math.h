@@ -16,12 +16,12 @@
 #endif  // !GLM_FORCE_DEPTH_ZERO_TO_ONE
         //
         // GLM INCLUDES
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/hash.hpp>
-#include <glm/gtx/rotate_vector.hpp>
-#include <glm/gtx/string_cast.hpp>
-#include <glm/gtx/transform.hpp>
-#include <glm/gtx/vector_angle.hpp>
+#include <../glm/glm.hpp>
+#include <../glm/gtc/matrix_transform.hpp>
+#include <../glm/gtx/hash.hpp>
+#include <../glm/gtx/rotate_vector.hpp>
+#include <../glm/gtx/string_cast.hpp>
+#include <../glm/gtx/transform.hpp>
+#include <../glm/gtx/vector_angle.hpp>
 
 #endif
