@@ -66,7 +66,7 @@ class VulkanContext {
     VulkanContext() {};
     void InitVulkan(ERenderingMode renderingMode = ERenderingMode::Standard);
 
-    void Tick(std::vector<LoadedObject> objectsToRender, float deltaTime);
+    void Tick(std::vector<ObjResource> objectsToRender, float deltaTime);
 
     void LoadSceneObjects();
 
@@ -95,11 +95,11 @@ class VulkanContext {
     DeviceHandler* m_deviceHandler;
     // CLEANUP
     void Destroy();
-    void DescribeScene(std::vector<LoadedObject> objectsToRender,
+    void DescribeScene(std::vector<ObjResource> objectsToRender,
                        std::vector<Light> lightsToRender);
     uint32_t RegisterTexture(VkImageView* textureImageView,
                              VkSampler* textureSampler);
-    std::vector<LoadedObject> m_objectsToRender = {};
+    std::vector<ObjResource> m_objectsToRender = {};
 
    private:
     // DeviceHandler* m_deviceHandler;
@@ -152,7 +152,7 @@ class VulkanContext {
     // VkImageTiling tiling, VkFormatFeatureFlags features);
 
     // TEXTURE IMAGE
-    void CreateTextureImage(TextureProperties props, Mesh3D* mesh,
+    void CreateTextureImage(TextureResource props, Mesh3D* mesh,
                             MaterialEnums materialType);
 
     // TEXTURE IMAGE VIEW

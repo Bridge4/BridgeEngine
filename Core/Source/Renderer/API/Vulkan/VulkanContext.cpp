@@ -220,7 +220,7 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
     ImGui_ImplVulkan_Init(&init_info);
 }
 
-void VulkanContext::DescribeScene(std::vector<LoadedObject> objectsToRender,
+void VulkanContext::DescribeScene(std::vector<ObjResource> objectsToRender,
                                   std::vector<Light> lightsToRender) {
     m_objectsToRender = objectsToRender;
 
@@ -274,7 +274,7 @@ uint32_t VulkanContext::RegisterTexture(VkImageView* textureImageView,
     return idx;  // store in the material
 }
 
-void VulkanContext::Tick(std::vector<LoadedObject> objectsToRender,
+void VulkanContext::Tick(std::vector<ObjResource> objectsToRender,
                          float deltaTime) {
     ContextVk::RenderUI();
 
@@ -325,12 +325,12 @@ void VulkanContext::LoadSceneObjects() {
             ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL, EMISSIVE, ORM};
         if (m_vulkanGlobalState->m_renderingMode == ERenderingMode::Bindless) {
             for (auto& matType : materialTypes) {
-                if (!obj.textureProperties.contains(matType)) {
+                if (!obj.textureResourceMap.contains(matType)) {
                     std::cout << "DOES NOT CONTAIN " << matType << "\n";
                     mesh.m_materialIndices[matType] = -1;
                     continue;
                 }
-                CreateTextureImage(obj.textureProperties[matType], &mesh,
+                CreateTextureImage(obj.textureResourceMap[matType], &mesh,
                                    matType);
                 CreateTextureImageView(&mesh, matType);
                 CreateTextureSampler(&mesh, matType);
@@ -349,7 +349,7 @@ void VulkanContext::LoadSceneObjects() {
                 &mesh);
         } else {
             for (auto& matType : materialTypes) {
-                CreateTextureImage(obj.textureProperties[matType], &mesh,
+                CreateTextureImage(obj.textureResourceMap[matType], &mesh,
                                    matType);
                 CreateTextureImageView(&mesh, matType);
                 CreateTextureSampler(&mesh, matType);
@@ -1281,7 +1281,7 @@ void VulkanContext::CreateCommandPool() {
 }
 
 // Pass in the Model3D's texture path
-void VulkanContext::CreateTextureImage(TextureProperties props, Mesh3D* mesh,
+void VulkanContext::CreateTextureImage(TextureResource props, Mesh3D* mesh,
                                        MaterialEnums materialType) {
     auto pixels = props.pixels;
     int texChannels = props.texChannels;

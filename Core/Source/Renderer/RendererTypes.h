@@ -17,14 +17,14 @@ struct ObjProperties {
     std::vector<tinyobj::material_t> materials;
 };
 
-struct UnloadedObject {
+struct ObjAsset {
     std::string objFilePath;
     std::unordered_map<MaterialEnums, std::string> materialTexFilePaths;
 };
 
-struct LoadedObject {
+struct ObjResource {
     ObjProperties objProperties;
-    std::unordered_map<MaterialEnums, TextureProperties> textureProperties;
+    std::unordered_map<MaterialEnums, TextureResource> textureResourceMap;
 };
 
 enum ERenderingMode { Standard, Bindless };

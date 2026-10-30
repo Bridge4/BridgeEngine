@@ -10,7 +10,7 @@ class Engine {
    public:
     Engine() {}
     Renderer* m_renderer = 0;
-    std::vector<LoadedObject> m_loadedObjects = {};
+    std::vector<ObjResource> m_loadedObjects = {};
 
     void StartUp(ERenderingMode renderingMode,
                  WindowingBackend* windowingBackend);

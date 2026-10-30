@@ -162,13 +162,6 @@ void CameraController::HandleInputOrbit(float deltaTime) {
         if (!m_lookActive) {
             glfwGetCursorPos(m_windowingBackend->m_window, &m_mouseXBeforeLook,
                              &m_mouseYBeforeLook);
-            // glfwSetCursorPos(
-            //     m_windowingBackend->m_window,
-            //     m_swapChainHandler->m_swapChainExtent.width / 2.0,
-            //     m_swapChainHandler->m_swapChainExtent.height / 2.0);
-
-            glfwSetCursorPos(m_windowingBackend->m_window, m_mouseXBeforeLook,
-                             m_mouseYBeforeLook);
 
             m_lookToggled = true;
         }

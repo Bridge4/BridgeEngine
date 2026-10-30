@@ -8,8 +8,8 @@
 
 class FileLoader {
    public:
-    static LoadedObject LoadObject(UnloadedObject objectToLoad) {
-        LoadedObject loadedObject;
+    static ObjResource LoadObject(ObjAsset objectToLoad) {
+        ObjResource loadedObject;
         loadedObject.objProperties = LoadObjFile(objectToLoad.objFilePath);
         std::string albedoTextureFilePath =
             objectToLoad.materialTexFilePaths[ALBEDO];
@@ -25,37 +25,37 @@ class FileLoader {
         std::string ormTextureFilePath = objectToLoad.materialTexFilePaths[ORM];
 
         if (!albedoTextureFilePath.empty())
-            loadedObject.textureProperties[ALBEDO] =
+            loadedObject.textureResourceMap[ALBEDO] =
                 LoadTextureFile(albedoTextureFilePath);
         if (!metallicTextureFilePath.empty())
-            loadedObject.textureProperties[METALLIC] =
+            loadedObject.textureResourceMap[METALLIC] =
                 LoadTextureFile(metallicTextureFilePath);
         if (!roughnessTextureFilePath.empty())
-            loadedObject.textureProperties[ROUGHNESS] =
+            loadedObject.textureResourceMap[ROUGHNESS] =
                 LoadTextureFile(roughnessTextureFilePath);
         if (!aoTextureFilePath.empty())
-            loadedObject.textureProperties[AO] =
+            loadedObject.textureResourceMap[AO] =
                 LoadTextureFile(aoTextureFilePath);
         if (!normalTextureFilePath.empty())
-            loadedObject.textureProperties[NORMAL] =
+            loadedObject.textureResourceMap[NORMAL] =
                 LoadTextureFile(normalTextureFilePath);
         if (!emissiveTextureFilePath.empty())
-            loadedObject.textureProperties[EMISSIVE] =
+            loadedObject.textureResourceMap[EMISSIVE] =
                 LoadTextureFile(emissiveTextureFilePath);
         if (!ormTextureFilePath.empty())
-            loadedObject.textureProperties[ORM] =
+            loadedObject.textureResourceMap[ORM] =
                 LoadTextureFile(ormTextureFilePath);
         return loadedObject;
     }
 
    private:
-    static TextureProperties LoadTextureFile(std::string filePath) {
+    static TextureResource LoadTextureFile(std::string filePath) {
         int texWidth, texHeight, texChannels;
 
         stbi_uc* pixels = stbi_load(filePath.c_str(), &texWidth, &texHeight,
                                     &texChannels, STBI_rgb_alpha);
 
-        TextureProperties props;
+        TextureResource props;
         props.texWidth = texWidth;
         props.texHeight = texHeight;
         props.texChannels = texChannels;

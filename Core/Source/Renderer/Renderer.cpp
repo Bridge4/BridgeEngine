@@ -8,11 +8,11 @@ void Renderer::StartUp(ERenderingMode renderingMode,
     m_vulkanContext->InitVulkan(renderingMode);
 }
 
-void Renderer::Tick(std::vector<LoadedObject> loadedObjects, float deltaTime) {
+void Renderer::Tick(std::vector<ObjResource> loadedObjects, float deltaTime) {
     m_vulkanContext->Tick(m_loadedObjects, deltaTime);
 }
 
-void Renderer::DescribeScene(std::vector<LoadedObject> objectsToRender,
+void Renderer::DescribeScene(std::vector<ObjResource> objectsToRender,
                              std::vector<Light> lightsToRender) {
     m_vulkanContext->DescribeScene(objectsToRender, lightsToRender);
 }

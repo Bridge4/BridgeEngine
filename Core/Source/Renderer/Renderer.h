@@ -10,13 +10,13 @@ class Renderer {
     void StartUp(ERenderingMode renderingMode,
                  WindowingBackend* windowingBackend);
 
-    void DescribeScene(std::vector<LoadedObject> objectsToRender,
+    void DescribeScene(std::vector<ObjResource> objectsToRender,
                        std::vector<Light> lightsToRender);
 
-    void Tick(std::vector<LoadedObject> loadedObjects, float deltaTime);
+    void Tick(std::vector<ObjResource> loadedObjects, float deltaTime);
     void Destroy();
     ERenderingMode m_renderingMode;
-    std::vector<LoadedObject> m_loadedObjects = {};
+    std::vector<ObjResource> m_loadedObjects = {};
 
     // API Context
     VulkanContext* m_vulkanContext = 0;

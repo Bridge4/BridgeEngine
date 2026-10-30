@@ -14,27 +14,15 @@ int main() {
 
     Engine* engine = new Engine();
     engine->StartUp(ERenderingMode::Bindless, windowingBackend);
-    // engine->SetWindowingBackend(windowingBackend);
-    // engine->InitRenderingAPI();
 
-    // TODO:
-    // renderer->SetWindowContext();
-    //
-    //
-    // NOTE: What does our graphics API backend need from our windowing system?
-    // 1. SwapchainHandler needs it for HandleMinimization function call so it
-    // can rebuild swapchain
-    //  a. HandleMinimization runs a while loop that repeatedly checks if the
-    //  width and height are > 0 to determine if the window is still minimized
-    //    What can we do to get a better api for this?
-    // 2.
+    std::vector<ObjAsset> objectsToLoad;
 
-    // windowingBackend->SetApiContext(renderer->m_vulkanContext);
-    std::vector<UnloadedObject> objectsToLoad;
-
-    UnloadedObject testObj2;
+    ObjAsset testObj2;
     testObj2.objFilePath = MODELS_DIR "dwarf_sword/dwarf.obj";
-    testObj2.materialTexFilePaths[ALBEDO] = MODELS_DIR "dwarf_sword/dwarf.png";
+    // testObj2.materialTexFilePaths[ALBEDO] = MODELS_DIR
+    // "dwarf_sword/dwarf.png";
+    testObj2.materialTexFilePaths[ALBEDO] =
+        MODELS_DIR "EngineDefault/DefaultTile.png";
     // testObj2.materialTexFilePaths[METALLIC] = MODELS_DIR
     // "dwarf_sword/metallic.png";
     testObj2.materialTexFilePaths[ORM] = MODELS_DIR "dwarf_sword/rough.png";
@@ -45,10 +33,10 @@ int main() {
     objectsToLoad.push_back(testObj2);
     // This is how we submit loaded objects objectsToLoad.push_back(testObj2);
 
-    std::vector<LoadedObject> loadedObjects = {};
+    std::vector<ObjResource> loadedObjects = {};
     // Load Models
     for (auto& obj : objectsToLoad) {
-        LoadedObject loadedObject = FileLoader::LoadObject(obj);
+        ObjResource loadedObject = FileLoader::LoadObject(obj);
         loadedObjects.push_back(loadedObject);
     }
     engine->m_loadedObjects = loadedObjects;
@@ -61,6 +49,14 @@ int main() {
 
     std::chrono::high_resolution_clock::time_point lastFrameTime;
     lastFrameTime = std::chrono::high_resolution_clock::now();
+    // Right now we are describing a scene and then rendering it, we cannot
+    // change it after we describe it
+    // The intention is to be able to modify any scene we are in, meaning we
+    // need to be able to add or delete meshes, lights, etc
+    // At the moment we can only load meshes from files but we want to be able
+    // to programmatically describe meshes
+    // We will need primitives that we can programmatically modify
+    // TODO: Paramaterized Perlin Noise landscape generation vertex shader
     engine->m_renderer->DescribeScene(loadedObjects, lightsToRender);
 
     while (!windowingBackend->ShouldCloseGLFW()) {

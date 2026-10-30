@@ -1,8 +1,10 @@
 #ifndef TEXTURES_H
 #define TEXTURES_H
 
-struct TextureProperties {
-    int texWidth, texHeight, texChannels;
+struct TextureResource {
+    int texWidth;
+    int texHeight;
+    int texChannels;
 
     unsigned char* pixels;
 };
