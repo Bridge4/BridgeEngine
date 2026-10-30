@@ -14,7 +14,7 @@ void Engine::StartUp(ERenderingMode renderingMode,
 }
 
 void Engine::Tick(float deltaTime) {
-    m_renderer->RenderFrame(m_loadedObjects, deltaTime);
+    m_renderer->Tick(m_loadedObjects, deltaTime);
 }
 
 void Engine::Destroy() { m_renderer->Destroy(); }

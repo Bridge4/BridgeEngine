@@ -13,7 +13,7 @@ class Renderer {
     void DescribeScene(std::vector<LoadedObject> objectsToRender,
                        std::vector<Light> lightsToRender);
 
-    void RenderFrame(std::vector<LoadedObject> loadedObjects, float deltaTime);
+    void Tick(std::vector<LoadedObject> loadedObjects, float deltaTime);
     void Destroy();
     ERenderingMode m_renderingMode;
     std::vector<LoadedObject> m_loadedObjects = {};

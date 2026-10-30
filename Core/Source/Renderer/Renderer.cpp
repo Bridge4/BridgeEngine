@@ -8,9 +8,8 @@ void Renderer::StartUp(ERenderingMode renderingMode,
     m_vulkanContext->InitVulkan(renderingMode);
 }
 
-void Renderer::RenderFrame(std::vector<LoadedObject> loadedObjects,
-                           float deltaTime) {
-    m_vulkanContext->RenderFrame(m_loadedObjects, deltaTime);
+void Renderer::Tick(std::vector<LoadedObject> loadedObjects, float deltaTime) {
+    m_vulkanContext->Tick(m_loadedObjects, deltaTime);
 }
 
 void Renderer::DescribeScene(std::vector<LoadedObject> objectsToRender,

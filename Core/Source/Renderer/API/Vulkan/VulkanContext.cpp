@@ -274,8 +274,8 @@ uint32_t VulkanContext::RegisterTexture(VkImageView* textureImageView,
     return idx;  // store in the material
 }
 
-void VulkanContext::RenderFrame(std::vector<LoadedObject> objectsToRender,
-                                float deltaTime) {
+void VulkanContext::Tick(std::vector<LoadedObject> objectsToRender,
+                         float deltaTime) {
     ContextVk::RenderUI();
 
     m_cameraController->HandleInputOrbit(deltaTime);
@@ -284,6 +284,7 @@ void VulkanContext::RenderFrame(std::vector<LoadedObject> objectsToRender,
                ->m_lightUBOMapped[m_vulkanGlobalState->m_currentFrame],
            &m_vulkanGlobalState->m_lights,
            sizeof(m_vulkanGlobalState->m_lights));
+
     m_cameraController->UpdateCameraPosition(
         m_vulkanGlobalState->m_currentFrame, deltaTime);
 

@@ -66,8 +66,7 @@ class VulkanContext {
     VulkanContext() {};
     void InitVulkan(ERenderingMode renderingMode = ERenderingMode::Standard);
 
-    void RenderFrame(std::vector<LoadedObject> objectsToRender,
-                     float deltaTime);
+    void Tick(std::vector<LoadedObject> objectsToRender, float deltaTime);
 
     void LoadSceneObjects();
 
