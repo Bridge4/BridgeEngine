@@ -39,6 +39,7 @@ To run the exe, go into Binaries/App/Debug/App.exe
 - Multithreading
 
 # 31-10-2026
+Compute shader pipeline setup complete. Going to be using it to generate high-resolution procedural landmasses. Allegedly.
 <img width="318" height="86" alt="image" src="https://github.com/user-attachments/assets/414f9890-5ce9-480a-ad0e-f1aab3469a84" />
 
 # 26-10-2026
