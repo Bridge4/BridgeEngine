@@ -232,17 +232,45 @@ void DescriptorSetHandler::CreateSceneDescriptorSetLayout() {
     }
 }
 
+VkDescriptorPool DescriptorSetHandler::CreateDescriptorPoolCompute(
+    VkDevice& logicalDevice) {
+    VkDescriptorPool descriptorPool;
+    std::array<VkDescriptorPoolSize, 2> poolSizes{};
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    poolSizes[0].descriptorCount = 2;
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.pPoolSizes = poolSizes.data();
+    poolInfo.maxSets = 1;
+    poolInfo.poolSizeCount = 1;
+
+    if (vkCreateDescriptorPool(logicalDevice, &poolInfo, nullptr,
+                               &descriptorPool) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool!");
+    }
+    return descriptorPool;
+}
+
 VkDescriptorSetLayout DescriptorSetHandler::CreateComputeDescriptorSetLayout(
     VkDevice& logicalDevice) {
     VkDescriptorSetLayout layout;
-    // Binding 0 = CameraUBO
-    VkDescriptorSetLayoutBinding ssbo{};
-    ssbo.binding = 0;
-    ssbo.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    ssbo.descriptorCount = 1;
-    ssbo.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    // Binding 0 = InputBuffer
+    VkDescriptorSetLayoutBinding inputBuffer{};
+    inputBuffer.binding = 0;
+    inputBuffer.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    inputBuffer.descriptorCount = 1;
+    inputBuffer.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    // Binding 1 = OutputBuffer
+    VkDescriptorSetLayoutBinding outputBuffer{};
+    outputBuffer.binding = 1;
+    outputBuffer.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    outputBuffer.descriptorCount = 1;
+    outputBuffer.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
-    std::array<VkDescriptorSetLayoutBinding, 1> bindings = {ssbo};
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {inputBuffer,
+                                                            outputBuffer};
+
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -272,6 +300,33 @@ VkDescriptorSet DescriptorSetHandler::CreateDescriptorSetCompute(
         VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
+
+    VkDescriptorBufferInfo inInfo{};
+    inInfo.buffer = m_vulkanGlobalState->m_computeInputBuffer;
+    inInfo.offset = 0;
+    inInfo.range = VK_WHOLE_SIZE;
+
+    VkDescriptorBufferInfo outInfo{};
+    outInfo.buffer = m_vulkanGlobalState->m_computeOutputBuffer;
+    outInfo.offset = 0;
+    outInfo.range = VK_WHOLE_SIZE;
+
+    std::array<VkWriteDescriptorSet, 2> writes{};
+
+    writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes[0].dstSet = descriptorSet;
+    writes[0].dstBinding = 0;
+    writes[0].dstArrayElement = 0;
+    writes[0].descriptorCount = 1;
+    writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    writes[0].pBufferInfo = &inInfo;
+
+    writes[1] = writes[0];
+    writes[1].dstBinding = 1;
+    writes[1].pBufferInfo = &outInfo;
+
+    vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()),
+                           writes.data(), 0, nullptr);
 
     return descriptorSet;
 }

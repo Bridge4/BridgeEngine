@@ -216,6 +216,32 @@ void BufferHandler::CreateModelUBO(Mesh3D* mesh) {
     }
 }
 
+void BufferHandler::CreateCommandBuffersCompute(VkDevice& logicalDevice,
+                                                VkCommandPool& commandPool) {
+    m_vulkanGlobalState->m_commandBuffersCompute.resize(
+        m_vulkanGlobalState->m_maxFramesInFlight);
+
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = commandPool;
+    /*
+        VK_COMMAND_BUFFER_LEVEL_PRIMARY: Can be submitted to a queue for
+       execution, but cannot be called from other command buffers.
+        VK_COMMAND_BUFFER_LEVEL_SECONDARY: Cannot be submitted directly, but can
+       be called from primary command buffers.
+    */
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount =
+        (uint32_t)m_vulkanGlobalState->m_commandBuffersCompute.size();
+
+    if (vkAllocateCommandBuffers(
+            logicalDevice, &allocInfo,
+            m_vulkanGlobalState->m_commandBuffersCompute.data()) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate command buffers!");
+    }
+}
+
 void BufferHandler::CreateCommandBuffers() {
     m_vulkanGlobalState->m_commandBuffers.resize(
         m_vulkanGlobalState->m_maxFramesInFlight);

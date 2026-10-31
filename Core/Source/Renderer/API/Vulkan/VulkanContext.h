@@ -6,6 +6,7 @@
 
 #include "Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
 #include "Source/Renderer/API/Vulkan/Components/RenderPass/RenderPassHandler.h"
+#include "Source/Renderer/API/Vulkan/VkTypes.h"
 #include "Source/Renderer/Camera/CameraController.h"
 #include "Source/Renderer/Mesh/Mesh3D.h"
 #ifndef VK_USE_PLATFORM_WIN32_KHR
@@ -54,6 +55,12 @@ class Mesh3D;
 
 namespace ContextVk {
 void RenderUI();
+
+VkPipeline CreateComputePipeline(
+    std::vector<char> shader, VkDevice& logicalDevice,
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts,
+    VkPipelineLayout& pipelineLayout);
+
 }  // namespace ContextVk
 
 class VulkanContext {
@@ -99,7 +106,28 @@ class VulkanContext {
                        std::vector<Light> lightsToRender);
     uint32_t RegisterTexture(VkImageView* textureImageView,
                              VkSampler* textureSampler);
+
+    void RunComputeShader();
     std::vector<ObjResource> m_objectsToRender = {};
+
+    // Reading in SPIRV shaders
+    static std::vector<char> ReadFile(const std::string& fileName) {
+        std::ifstream file(fileName, std::ios::ate | std::ios::binary);
+
+        if (!file.is_open()) {
+            throw std::runtime_error("failed to open file!");
+        }
+
+        size_t fileSize = (size_t)file.tellg();
+        std::vector<char> buffer(fileSize);
+
+        file.seekg(0);
+        file.read(buffer.data(), fileSize);
+
+        file.close();
+
+        return buffer;
+    }
 
    private:
     // DeviceHandler* m_deviceHandler;
@@ -147,6 +175,8 @@ class VulkanContext {
        available together in the buffers
     */
     void CreateCommandPool();
+    VkCommandPool CreateCommandPoolCompute(
+        VkDevice& logicalDevice, QueueFamilyIndices queueFamilyIndices);
 
     // VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates,
     // VkImageTiling tiling, VkFormatFeatureFlags features);
@@ -185,6 +215,11 @@ class VulkanContext {
     void RecordCommandBuffer(VkCommandBuffer commandBuffer,
                              uint32_t imageIndex);
 
+    void RecordCommandBufferCompute(VkCommandBuffer commandBuffer,
+                                    VkPipeline pipeline,
+                                    VkPipelineLayout pipelineLayout,
+                                    VkDescriptorSet* descriptorSet);
+
     void RecordCommandBufferGeneric(VkCommandBuffer commandBuffer,
                                     uint32_t imageIndex,
                                     std::vector<BrVkRenderPass> renderPasses);
@@ -199,24 +234,5 @@ class VulkanContext {
 
     // SHADER MODULES
     VkShaderModule CreateShaderModule(const std::vector<char>& code);
-
-    // Reading in SPIRV shaders
-    static std::vector<char> ReadFile(const std::string& fileName) {
-        std::ifstream file(fileName, std::ios::ate | std::ios::binary);
-
-        if (!file.is_open()) {
-            throw std::runtime_error("failed to open file!");
-        }
-
-        size_t fileSize = (size_t)file.tellg();
-        std::vector<char> buffer(fileSize);
-
-        file.seekg(0);
-        file.read(buffer.data(), fileSize);
-
-        file.close();
-
-        return buffer;
-    }
 };
 #endif  // !VULKANCONTEXT_H

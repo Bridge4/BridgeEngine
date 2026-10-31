@@ -4,6 +4,7 @@
 
 #include "Source/Engine.h"
 #include "Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
+#include "Source/Renderer/API/Vulkan/VkTypes.h"
 #include "Source/Renderer/RendererTypes.h"
 #include "config.h"
 #define GLFW_INCLUDE_VULKAN
@@ -95,31 +96,21 @@ VkShaderModule CreateShaderModule(const std::vector<char>& code,
 VkPipeline CreateComputePipeline(
     std::vector<char> shader, VkDevice& logicalDevice,
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts,
-    VkPipelineLayout pipelineLayout) {
+    VkPipelineLayout& pipelineLayout) {
     VkPipeline pipeline;
     VkShaderModule computeShader = CreateShaderModule(shader, logicalDevice);
 
-    VkPipelineShaderStageCreateInfo shaderStageCreateInfo;
+    VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
     shaderStageCreateInfo.sType =
         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shaderStageCreateInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     shaderStageCreateInfo.module = computeShader;
     shaderStageCreateInfo.pName = "main";
 
-    VkPushConstantRange computePushConstantRange{};
-    computePushConstantRange.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-    computePushConstantRange.offset = 0;
-    computePushConstantRange.size = sizeof(HighResQuadComputePushConstants);
-
-    std::array<VkPushConstantRange, 1> pushConstantRanges;
-    pushConstantRanges[0] = computePushConstantRange;
-
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
     pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
-    pipelineLayoutInfo.pushConstantRangeCount = 1;
-    pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
 
     if (vkCreatePipelineLayout(logicalDevice, &pipelineLayoutInfo, nullptr,
                                &pipelineLayout) != VK_SUCCESS) {
@@ -184,6 +175,12 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
     m_renderPassHandler->CreateShadowPass();
 
     CreateCommandPool();
+
+    QueueFamilyIndices queueFamilyIndices =
+        m_deviceHandler->FindQueueFamilies(m_deviceHandler->PhysicalDevice);
+    m_vulkanGlobalState->m_commandPoolCompute = CreateCommandPoolCompute(
+        m_deviceHandler->LogicalDevice, queueFamilyIndices);
+
     m_renderPassHandler->CreateRenderPassFrameBuffers();
 
     if (m_vulkanGlobalState->m_renderingMode == ERenderingMode::Bindless) {
@@ -228,6 +225,9 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
     }
 
     m_bufferHandler->CreateCommandBuffers();
+    m_bufferHandler->CreateCommandBuffersCompute(
+        m_deviceHandler->LogicalDevice,
+        m_vulkanGlobalState->m_commandPoolCompute);
     CreateSyncObjects();
 
     IMGUI_CHECKVERSION();
@@ -263,8 +263,6 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
     init_info.PhysicalDevice = m_deviceHandler->PhysicalDevice;
     init_info.Device = m_deviceHandler->LogicalDevice;
 
-    QueueFamilyIndices queueFamilyIndices =
-        m_deviceHandler->FindQueueFamilies(m_deviceHandler->PhysicalDevice);
     init_info.QueueFamily = queueFamilyIndices.graphicsFamily.value();
     init_info.Queue = m_vulkanGlobalState->m_graphicsQueue;
     init_info.PipelineCache = VK_NULL_HANDLE;
@@ -289,6 +287,8 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
             return vkGetInstanceProcAddr(instance, function_name);
         });
     ImGui_ImplVulkan_Init(&init_info);
+
+    RunComputeShader();
 }
 
 void VulkanContext::DescribeScene(std::vector<ObjResource> objectsToRender,
@@ -1351,6 +1351,26 @@ void VulkanContext::CreateCommandPool() {
     }
 }
 
+VkCommandPool VulkanContext::CreateCommandPoolCompute(
+    VkDevice& logicalDevice, QueueFamilyIndices queueFamilyIndices) {
+    VkCommandPool commandPool;
+    // QueueFamilyIndices queueFamilyIndices =
+    //     m_deviceHandler->FindQueueFamilies(m_deviceHandler->PhysicalDevice);
+
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    // Selecting graphicsFamily in order to issue draw commands in this command
+    // pool
+    poolInfo.queueFamilyIndex = queueFamilyIndices.computeFamily.value();
+
+    if (vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, &commandPool) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to create command pool!");
+    }
+    return commandPool;
+}
+
 // Pass in the Model3D's texture path
 void VulkanContext::CreateTextureImage(TextureResource props, Mesh3D* mesh,
                                        MaterialEnums materialType) {
@@ -1856,6 +1876,26 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
         throw std::runtime_error("failed to record command buffer!");
     }
     ImGui::EndFrame();
+}
+
+void VulkanContext::RecordCommandBufferCompute(VkCommandBuffer commandBuffer,
+                                               VkPipeline pipeline,
+                                               VkPipelineLayout pipelineLayout,
+                                               VkDescriptorSet* descriptorSet) {
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+        throw std::runtime_error(
+            "failed to begin recording compute command buffer!");
+    }
+
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                            pipelineLayout, 0, 1, descriptorSet, 0, NULL);
+
+    vkCmdDispatch(commandBuffer, 128, 1, 1);
 }
 
 void VulkanContext::RecordCommandBufferGeneric(
@@ -2395,4 +2435,27 @@ void VulkanContext::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
 
     vkFreeCommandBuffers(m_deviceHandler->LogicalDevice,
                          m_vulkanGlobalState->m_commandPool, 1, &commandBuffer);
+}
+
+void VulkanContext::RunComputeShader() {
+    // Do compute stuff
+    std::vector<char> computeShaderSpv = ReadFile(SHADERS_DIR "compute.spv");
+    VkDescriptorSetLayout layout =
+        m_descriptorSetHandler->CreateComputeDescriptorSetLayout(
+            m_deviceHandler->LogicalDevice);
+    VkDescriptorPool descriptorPool =
+        m_descriptorSetHandler->CreateDescriptorPoolCompute(
+            m_deviceHandler->LogicalDevice);
+
+    VkDescriptorSet descriptorSet =
+        m_descriptorSetHandler->CreateDescriptorSetCompute(
+            descriptorPool, layout, m_deviceHandler->LogicalDevice);
+    std::vector<VkDescriptorSetLayout> layouts = {};
+    layouts.push_back(layout);
+    VkPipelineLayout pipelineLayout;
+    VkPipeline computePipeline = ContextVk::CreateComputePipeline(
+        computeShaderSpv, m_deviceHandler->LogicalDevice, layouts,
+        pipelineLayout);
+    RecordCommandBufferCompute(m_vulkanGlobalState->m_commandBuffersCompute[0],
+                               computePipeline, pipelineLayout, &descriptorSet);
 }

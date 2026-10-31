@@ -39,6 +39,7 @@ class DescriptorSetHandler {
     void CreateTexturedPBRDescriptorSetsBindless(Mesh3D* mesh);
     void RegisterTexture();
     // === COMPUTE === //
+    VkDescriptorPool CreateDescriptorPoolCompute(VkDevice& logicalDevice);
     VkDescriptorSetLayout CreateComputeDescriptorSetLayout(
         VkDevice& logicalDevice);
     VkDescriptorSet CreateDescriptorSetCompute(VkDescriptorPool& descriptorPool,

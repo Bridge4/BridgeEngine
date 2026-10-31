@@ -1,6 +1,8 @@
 #include "CameraController.h"
 
 #include "Source/Renderer/API/Vulkan/Components/VulkanGlobalState/VulkanGlobalState.h"
+#include "config.h"
+
 // GLM INCLUDES
 
 #include <../imgui/imgui.h>
@@ -12,6 +14,7 @@
 #include "GLFW/glfw3.h"
 #include "Source/Math/Math.h"
 #include "Source/Renderer/API/Vulkan/Components/SwapChain/SwapChainHandler.h"
+#include "Source/Renderer/API/Vulkan/VulkanContext.h"
 #include "Source/Renderer/Camera/OrbitCamera.h"
 #include "Source/Window/WindowingBackend.h"
 
@@ -259,9 +262,8 @@ void CameraController::HandleInputOrbit(float deltaTime) {
         m_vulkanGlobalState->m_pbrPushConstants.bias.x += 0.001;
     }
 
-    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_X)) {
-    }
-    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_Z)) {
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_C)) {
+        // m_vulkanContext->RunComputeShader();
     }
     glm::vec3 camPos = orbitCam->GetEye();
 

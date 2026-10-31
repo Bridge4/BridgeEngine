@@ -280,6 +280,10 @@ QueueFamilyIndices DeviceHandler::FindQueueFamilies(
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphicsFamily = i;
         }
+
+        if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) {
+            indices.computeFamily = i;
+        }
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i,
                                              m_vulkanGlobalState->GetSurface(),
