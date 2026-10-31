@@ -38,6 +38,9 @@ To run the exe, go into Binaries/App/Debug/App.exe
 - Event System to further separate concerns
 - Multithreading
 
+# 31-10-2026
+<img width="318" height="86" alt="image" src="https://github.com/user-attachments/assets/414f9890-5ce9-480a-ad0e-f1aab3469a84" />
+
 # 26-10-2026
 
 Got bindless working after a grueling 3 days tracing validation errors.
