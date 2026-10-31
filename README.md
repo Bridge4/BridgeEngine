@@ -40,7 +40,9 @@ To run the exe, go into Binaries/App/Debug/App.exe
 
 # 31-10-2026
 Compute shader pipeline setup complete. Going to be using it to generate high-resolution procedural landmasses. Allegedly.
-<img width="318" height="86" alt="image" src="https://github.com/user-attachments/assets/414f9890-5ce9-480a-ad0e-f1aab3469a84" />
+
+<img width="284" height="43" alt="image" src="https://github.com/user-attachments/assets/02145c04-825b-487a-96a0-59f0580aa5fe" />
+
 
 # 26-10-2026
 
