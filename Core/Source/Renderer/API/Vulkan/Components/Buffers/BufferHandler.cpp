@@ -1,6 +1,7 @@
 #include "BufferHandler.h"
 
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 #include "../../VulkanContext.h"
 #include "../Devices/DeviceHandler.h"
@@ -174,6 +175,29 @@ void BufferHandler::CreateLightUBO() {
     // Create a uniform buffer per frame in flight
     m_vulkanGlobalState->m_lightUBO.resize(
         m_vulkanGlobalState->m_maxFramesInFlight);
+    m_vulkanGlobalState->m_lightUBOMemory.resize(
+        m_vulkanGlobalState->m_maxFramesInFlight);
+    m_vulkanGlobalState->m_lightUBOMapped.resize(
+        m_vulkanGlobalState->m_maxFramesInFlight);
+
+    for (size_t i = 0; i < m_vulkanGlobalState->m_maxFramesInFlight; i++) {
+        // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i],
+        // m_uniformBuffersMemory[i], UNSTAGED) Create then Map to memory
+        CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     m_vulkanGlobalState->m_lightUBO[i],
+                     m_vulkanGlobalState->m_lightUBOMemory[i]);
+        vkMapMemory(m_deviceHandler->LogicalDevice,
+                    m_vulkanGlobalState->m_lightUBOMemory[i], 0, bufferSize, 0,
+                    &m_vulkanGlobalState->m_lightUBOMapped[i]);
+    }
+}
+
+void BufferHandler::CreateComputeSSBOs() {
+    VkDeviceSize bufferSize = sizeof(InputSSBO);
+
+    // Create a uniform buffer per frame in flight
     m_vulkanGlobalState->m_lightUBOMemory.resize(
         m_vulkanGlobalState->m_maxFramesInFlight);
     m_vulkanGlobalState->m_lightUBOMapped.resize(

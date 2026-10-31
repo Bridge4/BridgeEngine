@@ -213,27 +213,27 @@ void CameraController::HandleInputOrbit(float deltaTime) {
 
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_P)) {
         m_vulkanGlobalState->m_lights.lights[0].intensity.x +=
-            100.0f * deltaTime;
+            1000.0f * deltaTime;
         m_vulkanGlobalState->m_lights.lights[2].intensity.x +=
-            100.0f * deltaTime;
+            1000.0f * deltaTime;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_O)) {
         m_vulkanGlobalState->m_lights.lights[0].intensity.x -=
-            100.0f * deltaTime;
+            1000.0f * deltaTime;
         m_vulkanGlobalState->m_lights.lights[2].intensity.x -=
-            100.0f * deltaTime;
+            1000.0f * deltaTime;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_H)) {
-        m_vulkanGlobalState->m_lights.lights[0].position.x -= 2.0f * deltaTime;
+        m_vulkanGlobalState->m_lights.lights[0].position.x -= 20.0f * deltaTime;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_L)) {
-        m_vulkanGlobalState->m_lights.lights[0].position.x += 2.0f * deltaTime;
+        m_vulkanGlobalState->m_lights.lights[0].position.x += 20.0f * deltaTime;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_J)) {
-        m_vulkanGlobalState->m_lights.lights[0].position.y -= 2.0f * deltaTime;
+        m_vulkanGlobalState->m_lights.lights[0].position.y -= 20.0f * deltaTime;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_K)) {
-        m_vulkanGlobalState->m_lights.lights[0].position.y += 2.0f * deltaTime;
+        m_vulkanGlobalState->m_lights.lights[0].position.y += 20.0f * deltaTime;
     }
 
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_Q)) {

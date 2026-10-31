@@ -37,6 +37,8 @@ class BufferHandler {
 
     void CreateLightUBO();
 
+    void CreateComputeSSBOs();
+
     void CreateModelUBO(Mesh3D* mesh);
 
     void CreateCommandBuffers();

@@ -172,7 +172,14 @@ class VulkanGlobalState {
     // === COMPUTE === //
     VkCommandPool m_commandPoolCompute;
     std::vector<VkCommandBuffer> m_commandBuffersCompute;
+    VkBuffer m_computeInputBuffer;
+    VkDeviceMemory m_computeInputBufferMemory = {};
+    void* m_computeInputBufferMemoryMapped = {};
+    VkBuffer m_computeOutputBuffer;
+    VkDeviceMemory m_computeOutputBufferMemory = {};
+    void* m_computeOutputBufferMemoryMapped = {};
 
+    // === UBOS === //
     std::vector<VkBuffer> m_cameraUBO = {};
     std::vector<VkDeviceMemory> m_cameraUBOMemory = {};
     std::vector<void*> m_cameraUBOMapped = {};
@@ -180,9 +187,6 @@ class VulkanGlobalState {
     std::vector<VkBuffer> m_lightUBO = {};
     std::vector<VkDeviceMemory> m_lightUBOMemory = {};
     std::vector<void*> m_lightUBOMapped = {};
-
-    VkBuffer m_computeInputBuffer;
-    VkBuffer m_computeOutputBuffer;
 
     LightUBO m_lights = {};
 

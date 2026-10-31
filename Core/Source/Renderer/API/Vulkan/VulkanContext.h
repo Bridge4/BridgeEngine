@@ -63,6 +63,13 @@ VkPipeline CreateComputePipeline(
 
 }  // namespace ContextVk
 
+struct InputSSBO {
+    alignas(16) float dataIn[];
+};
+
+struct OutputSSBO {
+    alignas(16) float dataOut[];
+};
 class VulkanContext {
    public:
 #ifdef NDEBUG

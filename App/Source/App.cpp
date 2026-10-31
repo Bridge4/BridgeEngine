@@ -19,12 +19,11 @@ int main() {
 
     ObjAsset testObj2;
     testObj2.objFilePath = MODELS_DIR "dwarf_sword/dwarf.obj";
-    // testObj2.materialTexFilePaths[ALBEDO] = MODELS_DIR
-    // "dwarf_sword/dwarf.png";
-    testObj2.materialTexFilePaths[ALBEDO] =
-        MODELS_DIR "EngineDefault/DefaultTile.png";
-    // testObj2.materialTexFilePaths[METALLIC] = MODELS_DIR
-    // "dwarf_sword/metallic.png";
+    testObj2.materialTexFilePaths[ALBEDO] = MODELS_DIR "dwarf_sword/dwarf.png";
+    // testObj2.materialTexFilePaths[ALBEDO] =
+    //     MODELS_DIR "EngineDefault/DefaultTile.png";
+    //  testObj2.materialTexFilePaths[METALLIC] = MODELS_DIR
+    //  "dwarf_sword/metallic.png";
     testObj2.materialTexFilePaths[ORM] = MODELS_DIR "dwarf_sword/rough.png";
     // testObj2.materialTexFilePaths[AO] = MODELS_DIR "axe/ao.png";
     // testObj2.materialTexFilePaths[NORMAL] = MODELS_DIR
@@ -42,7 +41,7 @@ int main() {
     engine->m_loadedObjects = loadedObjects;
     Light light0;
     light0.position = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    light0.color = glm::vec4(0.93f, 0.21f, 0.55f, 1.0f);
     light0.intensity.x = 100.0f;
     std::vector<Light> lightsToRender;
     lightsToRender.push_back(light0);

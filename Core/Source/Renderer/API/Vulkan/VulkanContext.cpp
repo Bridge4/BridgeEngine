@@ -288,7 +288,8 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
         });
     ImGui_ImplVulkan_Init(&init_info);
 
-    RunComputeShader();
+    // m_vulkanGlobalState->m_computeInputBuffer = {2.0f};
+    // RunComputeShader();
 }
 
 void VulkanContext::DescribeScene(std::vector<ObjResource> objectsToRender,

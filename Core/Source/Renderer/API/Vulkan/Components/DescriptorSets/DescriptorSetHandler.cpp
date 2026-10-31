@@ -325,7 +325,7 @@ VkDescriptorSet DescriptorSetHandler::CreateDescriptorSetCompute(
     writes[1].dstBinding = 1;
     writes[1].pBufferInfo = &outInfo;
 
-    vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()),
+    vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writes.size()),
                            writes.data(), 0, nullptr);
 
     return descriptorSet;
