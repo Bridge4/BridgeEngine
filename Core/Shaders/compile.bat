@@ -1,6 +1,6 @@
 @echo off
 set GLSLC=C:\VulkanSDK\1.3.296.0\Bin\glslc.exe
-set GLSLC_ALT=C:\VulkanSDK\1.3.250.0\Bin\glslc.exe
+set GLSLC_ALT=C:\VulkanSDK\1.3.250.1\Bin\glslc.exe
 
 :: Check if primary GLSLC exists
 if not exist "%GLSLC%" (
@@ -15,9 +15,9 @@ if not exist "%GLSLC%" (
     )
 )
 
-echo Compiling all .vert and .frag shaders in %cd% ...
+echo Compiling all .vert, .frag and .comp shaders in %cd% ...
 
-for %%f in (*.vert *.frag) do (
+for %%f in (*.vert *.frag *.comp) do (
     echo Compiling %%f ...
     "%GLSLC%" %%f -o %%~nf.spv
     if errorlevel 1 (

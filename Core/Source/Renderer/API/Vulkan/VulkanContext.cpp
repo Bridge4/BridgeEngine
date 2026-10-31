@@ -40,6 +40,8 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
 
+// This is our little safe playground to move things away from the vulkan global
+// state
 namespace ContextVk {
 void RenderUI() {
     ImGui_ImplVulkan_NewFrame();
@@ -74,6 +76,75 @@ void RenderUI() {
 
     ImGui::Render();
 }
+
+VkShaderModule CreateShaderModule(const std::vector<char>& code,
+                                  VkDevice& logicalDevice) {
+    VkShaderModuleCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = code.size();
+    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+    VkShaderModule shaderModule;
+    if (vkCreateShaderModule(logicalDevice, &createInfo, nullptr,
+                             &shaderModule) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create shader module!");
+    }
+
+    return shaderModule;
+}
+
+VkPipeline CreateComputePipeline(
+    std::vector<char> shader, VkDevice& logicalDevice,
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts,
+    VkPipelineLayout pipelineLayout) {
+    VkPipeline pipeline;
+    VkShaderModule computeShader = CreateShaderModule(shader, logicalDevice);
+
+    VkPipelineShaderStageCreateInfo shaderStageCreateInfo;
+    shaderStageCreateInfo.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStageCreateInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    shaderStageCreateInfo.module = computeShader;
+    shaderStageCreateInfo.pName = "main";
+
+    VkPushConstantRange computePushConstantRange{};
+    computePushConstantRange.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    computePushConstantRange.offset = 0;
+    computePushConstantRange.size = sizeof(HighResQuadComputePushConstants);
+
+    std::array<VkPushConstantRange, 1> pushConstantRanges;
+    pushConstantRanges[0] = computePushConstantRange;
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
+    pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
+
+    if (vkCreatePipelineLayout(logicalDevice, &pipelineLayoutInfo, nullptr,
+                               &pipelineLayout) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create pipeline layout!");
+    };
+
+    VkComputePipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipelineInfo.layout = pipelineLayout;
+    pipelineInfo.stage = shaderStageCreateInfo;
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
+    pipelineInfo.basePipelineIndex = -1;               // Optional
+
+    VkResult result = vkCreateComputePipelines(
+        logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to create compute pipeline!");
+    }
+
+    vkDestroyShaderModule(logicalDevice, computeShader, nullptr);
+
+    return pipeline;
+}
+
 }  // namespace ContextVk
 void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
     m_vulkanGlobalState = new VulkanGlobalState(this, renderingMode);

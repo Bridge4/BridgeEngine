@@ -14,6 +14,8 @@ struct VertexShaderPushConstants {
     glm::mat4 lightViewProj;
 };
 
+struct HighResQuadComputePushConstants {};
+
 struct ShadowPassPushConstants {
     glm::mat4 lightViewProj;
     glm::mat4 model;

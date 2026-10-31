@@ -38,6 +38,12 @@ class DescriptorSetHandler {
     void CreateTexturedPBRDescriptorSetLayoutBindless();
     void CreateTexturedPBRDescriptorSetsBindless(Mesh3D* mesh);
     void RegisterTexture();
+    // === COMPUTE === //
+    VkDescriptorSetLayout CreateComputeDescriptorSetLayout(
+        VkDevice& logicalDevice);
+    VkDescriptorSet CreateDescriptorSetCompute(VkDescriptorPool& descriptorPool,
+                                               VkDescriptorSetLayout& layout,
+                                               VkDevice& logicalDevice);
 
    private:
     VulkanGlobalState* m_vulkanGlobalState = nullptr;

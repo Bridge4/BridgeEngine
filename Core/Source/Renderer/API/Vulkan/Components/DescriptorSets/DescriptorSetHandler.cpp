@@ -232,6 +232,50 @@ void DescriptorSetHandler::CreateSceneDescriptorSetLayout() {
     }
 }
 
+VkDescriptorSetLayout DescriptorSetHandler::CreateComputeDescriptorSetLayout(
+    VkDevice& logicalDevice) {
+    VkDescriptorSetLayout layout;
+    // Binding 0 = CameraUBO
+    VkDescriptorSetLayoutBinding ssbo{};
+    ssbo.binding = 0;
+    ssbo.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    ssbo.descriptorCount = 1;
+    ssbo.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+    std::array<VkDescriptorSetLayoutBinding, 1> bindings = {ssbo};
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
+
+    if (vkCreateDescriptorSetLayout(logicalDevice, &layoutInfo, nullptr,
+                                    &layout) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+    return layout;
+}
+
+VkDescriptorSet DescriptorSetHandler::CreateDescriptorSetCompute(
+    VkDescriptorPool& descriptorPool, VkDescriptorSetLayout& layout,
+    VkDevice& logicalDevice) {
+    VkDescriptorSet descriptorSet;
+
+    std::vector<VkDescriptorSetLayout> layouts(1, layout);
+
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = layouts.data();
+
+    if (vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSet) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor sets!");
+    }
+
+    return descriptorSet;
+}
+
 void DescriptorSetHandler::CreateShadowPassDescriptorSetLayout() {
     // Binding 0 = LightUBO
     VkDescriptorSetLayoutBinding lightUBO{};
