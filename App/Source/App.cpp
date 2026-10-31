@@ -57,6 +57,7 @@ int main() {
     // to programmatically describe meshes
     // We will need primitives that we can programmatically modify
     // TODO: Paramaterized Perlin Noise landscape generation vertex shader
+    // TODO: Create shape primitives
     engine->m_renderer->DescribeScene(loadedObjects, lightsToRender);
 
     while (!windowingBackend->ShouldCloseGLFW()) {
