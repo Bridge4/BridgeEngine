@@ -133,6 +133,8 @@ void DeviceHandler::InitializeLogicalDevice() {
                      &m_vulkanGlobalState->m_graphicsQueue);
     vkGetDeviceQueue(LogicalDevice, indices.presentFamily.value(), 0,
                      &m_vulkanGlobalState->m_presentQueue);
+    vkGetDeviceQueue(LogicalDevice, indices.computeFamily.value(), 0,
+                     &m_vulkanGlobalState->m_computeQueue);
 }
 
 void DeviceHandler::Destroy() {

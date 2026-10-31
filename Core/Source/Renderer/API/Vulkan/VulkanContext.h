@@ -64,11 +64,11 @@ VkPipeline CreateComputePipeline(
 }  // namespace ContextVk
 
 struct InputSSBO {
-    alignas(16) float dataIn[];
+    float dataIn[268435456];
 };
 
 struct OutputSSBO {
-    alignas(16) float dataOut[];
+    float dataOut[268435456];
 };
 class VulkanContext {
    public:

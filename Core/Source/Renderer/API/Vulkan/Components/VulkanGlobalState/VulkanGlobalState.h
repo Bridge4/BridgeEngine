@@ -111,6 +111,7 @@ class VulkanGlobalState {
     VkSurfaceKHR m_surface;
     VkQueue m_graphicsQueue;
     VkQueue m_presentQueue;
+    VkQueue m_computeQueue;
 
     VkDescriptorSetLayout m_meshDescriptorSetLayout;
     VkDescriptorSetLayout m_lightDescriptorSetLayout;
@@ -199,6 +200,7 @@ class VulkanGlobalState {
     std::vector<VkSemaphore> m_imageAvailableSemaphores;
     std::vector<VkSemaphore> m_renderFinishedSemaphores;
     std::vector<VkFence> m_inFlightFences;
+    VkFence m_computeFence;
     std::vector<Mesh3D> m_meshList = {};
     uint32_t m_currentFrame = 0;
 

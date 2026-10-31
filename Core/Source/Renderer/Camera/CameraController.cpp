@@ -8,6 +8,7 @@
 #include <../imgui/imgui.h>
 #include <stdlib.h>
 
+#include <chrono>
 #include <format>
 #include <iostream>
 
@@ -262,8 +263,62 @@ void CameraController::HandleInputOrbit(float deltaTime) {
         m_vulkanGlobalState->m_pbrPushConstants.bias.x += 0.001;
     }
 
+    constexpr uint32_t N =
+        sizeof(InputSSBO) /
+        sizeof(float);  // must be <= float count in your SSBO structs
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_C)) {
-        // m_vulkanContext->RunComputeShader();
+        float* in = static_cast<float*>(
+            m_vulkanGlobalState->m_computeInputBufferMemoryMapped);
+        float* out = static_cast<float*>(
+            m_vulkanGlobalState->m_computeOutputBufferMemoryMapped);
+
+        for (uint32_t i = 0; i < N; ++i) {
+            in[i] = static_cast<float>(i);
+            out[i] =
+                -1.0f;  // poison value, so you can see if GPU wrote anything
+            // std::cout << out[i];
+        }
+        // std::cout << "INPUT SSBO" << sizeof(InputSSBO) << "\n";
+        // std::cout << "OUTPUT SSBO" << sizeof(OutputSSBO) << "\n";
+
+        auto start = std::chrono::steady_clock::now();
+        m_vulkanContext->RunComputeShader();
+        auto end = std::chrono::steady_clock::now();
+        auto duration =
+            std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        std::cout << " TIME COMPUTE: " << duration << "\n";
+
+        // std::cout << "AFTER:" << "\n";
+        // for (uint32_t i = 0; i < N; ++i) {
+        //     std::cout << out[i] << "\n";
+        // }
+        //  m_vulkanContext->RunComputeShader();
+    }
+
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_X) &&
+        !m_isCalculating) {
+        m_isCalculating = true;
+
+        float* in = static_cast<float*>(
+            m_vulkanGlobalState->m_computeInputBufferMemoryMapped);
+        float* out = static_cast<float*>(
+            m_vulkanGlobalState->m_computeOutputBufferMemoryMapped);
+
+        for (uint32_t i = 0; i < N; ++i) {
+            in[i] = static_cast<float>(i);
+            out[i] =
+                -1.0f;  // poison value, so you can see if GPU wrote anything
+            // std::cout << out[i];
+        }
+        auto start = std::chrono::steady_clock::now();
+        for (uint32_t i = 0; i < N; ++i) {
+            out[i] = in[i] * 2.0;
+        }
+        auto end = std::chrono::steady_clock::now();
+        auto duration =
+            std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        std::cout << " TIME NONCOMPUTE: " << duration << "\n";
+        m_isCalculating = false;
     }
     glm::vec3 camPos = orbitCam->GetEye();
 

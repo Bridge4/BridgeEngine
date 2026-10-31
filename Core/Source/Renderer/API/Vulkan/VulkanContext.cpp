@@ -224,10 +224,12 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
                           &m_vulkanGlobalState->m_pbrPipeline);
     }
 
+    m_bufferHandler->CreateComputeSSBOs();
     m_bufferHandler->CreateCommandBuffers();
     m_bufferHandler->CreateCommandBuffersCompute(
         m_deviceHandler->LogicalDevice,
         m_vulkanGlobalState->m_commandPoolCompute);
+
     CreateSyncObjects();
 
     IMGUI_CHECKVERSION();
@@ -289,7 +291,9 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
     ImGui_ImplVulkan_Init(&init_info);
 
     // m_vulkanGlobalState->m_computeInputBuffer = {2.0f};
-    // RunComputeShader();
+    m_bufferHandler->CreateCommandBuffersCompute(
+        m_deviceHandler->LogicalDevice,
+        m_vulkanGlobalState->m_commandPoolCompute);
 }
 
 void VulkanContext::DescribeScene(std::vector<ObjResource> objectsToRender,
@@ -1896,7 +1900,19 @@ void VulkanContext::RecordCommandBufferCompute(VkCommandBuffer commandBuffer,
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
                             pipelineLayout, 0, 1, descriptorSet, 0, NULL);
 
-    vkCmdDispatch(commandBuffer, 128, 1, 1);
+    vkCmdDispatch(commandBuffer, (32768 + 255) / 128, 1, 1);
+
+    VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    mb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    mb.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+    vkCmdPipelineBarrier(m_vulkanGlobalState->m_commandBuffersCompute[0],
+                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                         VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &mb, 0, nullptr, 0,
+                         nullptr);
+
+    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to record command buffer!");
+    }
 }
 
 void VulkanContext::RecordCommandBufferGeneric(
@@ -2112,6 +2128,11 @@ void VulkanContext::CreateSyncObjects() {
                 VK_SUCCESS) {
             throw std::runtime_error("failed to create semaphores!");
         }
+    }
+
+    if (vkCreateFence(m_deviceHandler->LogicalDevice, &fenceInfo, nullptr,
+                      &m_vulkanGlobalState->m_computeFence) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create compute fence!");
     }
 }
 
@@ -2459,4 +2480,17 @@ void VulkanContext::RunComputeShader() {
         pipelineLayout);
     RecordCommandBufferCompute(m_vulkanGlobalState->m_commandBuffersCompute[0],
                                computePipeline, pipelineLayout, &descriptorSet);
+    VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    si.commandBufferCount = 1;
+    si.pCommandBuffers = &m_vulkanGlobalState->m_commandBuffersCompute[0];
+
+    VkResult r = vkResetFences(m_deviceHandler->LogicalDevice, 1,
+                               &m_vulkanGlobalState->m_computeFence);
+    //   printf("reset = %d\n", r);
+    r = vkQueueSubmit(m_vulkanGlobalState->m_computeQueue, 1, &si,
+                      m_vulkanGlobalState->m_computeFence);
+    //    printf("submit = %d\n", r);
+    // vkDeviceWaitIdle(m_deviceHandler->LogicalDevice);
+    vkWaitForFences(m_deviceHandler->LogicalDevice, 1,
+                    &m_vulkanGlobalState->m_computeFence, VK_TRUE, UINT64_MAX);
 }
