@@ -1900,7 +1900,7 @@ void VulkanContext::RecordCommandBufferCompute(VkCommandBuffer commandBuffer,
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
                             pipelineLayout, 0, 1, descriptorSet, 0, NULL);
 
-    vkCmdDispatch(commandBuffer, (32768 + 255) / 128, 1, 1);
+    vkCmdDispatch(commandBuffer, (268435456 + 1023) / 128, 1, 1);
 
     VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
     mb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
