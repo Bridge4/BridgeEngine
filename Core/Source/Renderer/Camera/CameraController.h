@@ -38,7 +38,8 @@ class CameraController {
     CameraType m_cameraType;
     OrbitCamera* orbitCam = nullptr;
     bool m_invertHorizontal = false;
-    bool m_isCalculating = false;
+    bool m_isCalculatingCPU = false;
+    bool m_isCalculatingGPU = false;
 
    private:
     void Initialize();
