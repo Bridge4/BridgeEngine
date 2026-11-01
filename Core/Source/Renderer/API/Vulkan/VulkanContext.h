@@ -64,12 +64,13 @@ VkPipeline CreateComputePipeline(
 }  // namespace ContextVk
 
 struct InputSSBO {
-    float dataIn[268435456];
+    float dataIn[1024];
 };
 
 struct OutputSSBO {
-    float dataOut[268435456];
+    Vertex dataOut[1024 * 1024];
 };
+
 class VulkanContext {
    public:
 #ifdef NDEBUG
@@ -85,6 +86,8 @@ class VulkanContext {
     void LoadSceneObjects();
 
     void UnloadSceneObjects();
+
+    void NewLandscape();
 
     VulkanGlobalState* m_vulkanGlobalState;
     WindowingBackend* m_windowingBackend = nullptr;
@@ -149,6 +152,7 @@ class VulkanContext {
 
     uint32_t m_windowWidth = 800;
     uint32_t m_windowHeight = 600;
+    float m_timeAccumulator = 0.0f;
 
     VkDebugUtilsMessengerEXT m_debugMessenger;
     int m_maxFramesInFlight = 2;

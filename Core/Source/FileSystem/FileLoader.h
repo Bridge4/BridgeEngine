@@ -48,7 +48,6 @@ class FileLoader {
         return loadedObject;
     }
 
-   private:
     static TextureResource LoadTextureFile(std::string filePath) {
         int texWidth, texHeight, texChannels;
 
@@ -63,6 +62,8 @@ class FileLoader {
 
         return props;
     }
+
+   private:
     static ObjProperties LoadObjFile(std::string filePath) {
         tinyobj::attrib_t attrib;
 

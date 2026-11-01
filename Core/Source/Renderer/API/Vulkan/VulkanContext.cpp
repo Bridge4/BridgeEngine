@@ -1,10 +1,13 @@
 #include <vulkan/vulkan_core.h>
 
 #include <cassert>
+#include <random>
+#include <thread>
 
 #include "Source/Engine.h"
 #include "Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
 #include "Source/Renderer/API/Vulkan/VkTypes.h"
+#include "Source/Renderer/Materials/Materials.h"
 #include "Source/Renderer/RendererTypes.h"
 #include "config.h"
 #define GLFW_INCLUDE_VULKAN
@@ -34,6 +37,7 @@
 #include "Components/RenderPass/RenderPassHandler.h"
 #include "Components/SwapChain/SwapChainHandler.h"
 #include "Components/VulkanGlobalState/VulkanGlobalState.h"
+#include "Source/FileSystem/FileLoader.h"
 #include "Source/Renderer/Camera/CameraController.h"
 #include "Source/Renderer/Mesh/Mesh3D.h"
 #include "Source/Window/WindowingBackend.h"
@@ -136,6 +140,108 @@ VkPipeline CreateComputePipeline(
     return pipeline;
 }
 
+// Courtesy of my code from college :)
+void SetIndex(std::vector<unsigned int>& indices, unsigned int r3,
+              unsigned int r2, unsigned int r1, unsigned int l3,
+              unsigned int l2, unsigned int l1) {
+    indices.push_back(r3);
+    indices.push_back(r2);
+    indices.push_back(r1);
+    indices.push_back(l3);
+    indices.push_back(l2);
+    indices.push_back(l1);
+}
+
+void SetNormal(std::vector<Vertex>& vertices, unsigned int v1, unsigned int v2,
+               unsigned int v3) {
+    /*
+        From khronos website
+        Set Vector U to (Triangle.p2 minus Triangle.p1)
+        Set Vector V to (Triangle.p3 minus Triangle.p1)
+        Set Normal.x to (multiply U.y by V.z) minus (multiply U.z by V.y)
+        Set Normal.y to (multiply U.z by V.x) minus (multiply U.x by V.z)
+        Set Normal.z to (multiply U.x by V.y) minus (multiply U.y by V.x)
+    */
+    glm::vec3 A = vertices[v1].pos;
+    glm::vec3 B = vertices[v2].pos;
+    glm::vec3 C = vertices[v3].pos;
+
+    // From my lighting homework
+
+    //  VECTOR FROM A TO B
+    float dx0 = A.x - B.x;
+    float dy0 = A.y - B.y;
+    float dz0 = A.z - B.z;
+    //  VECTOR FROM C TO A
+    float dx1 = C.x - A.x;
+    float dy1 = C.y - A.y;
+    float dz1 = C.z - A.z;
+    //  Normal
+    float Nx = dy0 * dz1 - dy1 * dz0;
+    float Ny = dz0 * dx1 - dz1 * dx0;
+    float Nz = dx0 * dy1 - dx1 * dy0;
+
+    glm::vec3 normal = glm::vec3(Nx, Ny, Nz);
+    vertices[v1].normal = normal;
+    vertices[v2].normal = normal;
+    vertices[v3].normal = normal;
+}
+
+void SetIndices(std::vector<uint32_t>& indices, Vertex* vertices,
+                int worldHeight, int worldWidth) {
+    // DRAW ORDER OF TRIANGLES
+    // right facing triangle draw order
+    unsigned int r1, r2, r3;
+    r1 = worldWidth;
+    r2 = 0;
+    r3 = 1;
+    // left facing triangle draw order
+    unsigned int l1, l2, l3;
+    l1 = worldWidth + 1;
+    l2 = worldWidth;
+    l3 = 1;
+    // total drawn in current row
+    int inRowRight = 0;
+    int inRowLeft = 0;
+    // total drawn overall
+    int drawnRight = 0;
+    int drawnLeft = 0;
+    // limit of triangles to draw
+    int limit = (worldWidth - 1) * (worldHeight - 1);
+
+    // WARN: worldHeight * worldWidth
+    for (int i = 0; i < worldHeight * worldWidth; i += 1) {
+        if (drawnRight == limit && drawnLeft == limit) break;
+        // Draw order for right-facing and left-facing triangles
+        SetIndex(indices, r3, r2, r1, l3, l2, l1);
+        // SetNormal(vertices, r3, r2, r1);
+        // SetNormal(vertices, l3, l2, l1);
+        inRowLeft++;
+        drawnLeft++;
+        inRowRight++;
+        drawnRight++;
+        if (inRowLeft == worldWidth - 1) {
+            l1 += 2;
+            l2 += 2;
+            l3 += 2;
+            inRowLeft = 0;
+        } else {
+            l1++;
+            l2++;
+            l3++;
+        }
+        if (inRowRight == worldWidth - 1) {
+            r1 += 2;
+            r2 += 2;
+            r3 += 2;
+            inRowRight = 0;
+        } else {
+            r1++;
+            r2++;
+            r3++;
+        }
+    }
+}
 }  // namespace ContextVk
 void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
     m_vulkanGlobalState = new VulkanGlobalState(this, renderingMode);
@@ -352,6 +458,13 @@ uint32_t VulkanContext::RegisterTexture(VkImageView* textureImageView,
 
 void VulkanContext::Tick(std::vector<ObjResource> objectsToRender,
                          float deltaTime) {
+    m_timeAccumulator += deltaTime;
+
+    if (m_timeAccumulator > 5.0f) {
+        std::thread t([this]() { NewLandscape(); });
+        t.detach();
+        m_timeAccumulator = 0.0f;
+    }
     ContextVk::RenderUI();
 
     m_cameraController->HandleInputOrbit(deltaTime);
@@ -367,6 +480,7 @@ void VulkanContext::Tick(std::vector<ObjResource> objectsToRender,
     if (!m_vulkanGlobalState->m_meshList.empty()) {
         int count = 0;
         for (auto& mesh : m_vulkanGlobalState->m_meshList) {
+            if (count > 0) break;
             ModelUBO modelUBO{};
             modelUBO.model = glm::mat4(1.0f);
             modelUBO.model =
@@ -374,7 +488,7 @@ void VulkanContext::Tick(std::vector<ObjResource> objectsToRender,
             modelUBO.model = glm::rotate(modelUBO.model, -glm::radians(90.0f),
                                          glm::vec3(0.0f, 1.0f, 0.0f));
             modelUBO.model =
-                glm::scale(modelUBO.model, glm::vec3(10.1f, 10.1f, 10.1f));
+                glm::scale(modelUBO.model, glm::vec3(0.5f, 0.5f, 0.5f));
             // glm::scale(modelUBO.model, glm::vec3(00.1f, 00.1f, 00.1f));
             if (glfwGetMouseButton(m_windowingBackend->m_window,
                                    GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
@@ -440,8 +554,73 @@ void VulkanContext::LoadSceneObjects() {
         }
         m_vulkanGlobalState->m_meshList.push_back(mesh);
     }
+
+    Mesh3D landscape = Mesh3D();
+    landscape.MeshType = TEXTURED;
+    landscape.m_indexBufferStartIndex = m_indices.size();
+    landscape.m_vertexBufferStartIndex = m_vertices.size();
+    RunComputeShader();
+
+    Vertex* landscapeVertices = static_cast<Vertex*>(
+        m_vulkanGlobalState->m_computeOutputBufferMemoryMapped);
+    ContextVk::SetIndices(m_indices, landscapeVertices, 1024, 1024);
+
+    for (int i : {0, 1, 1023, 1024, 500000})
+        printf("v%d pos %f %f %f  n %f %f %f\n", i, landscapeVertices[i].pos.x,
+               landscapeVertices[i].pos.y, landscapeVertices[i].pos.z,
+               landscapeVertices[i].normal.x, landscapeVertices[i].normal.y,
+               landscapeVertices[i].normal.z);
+
+    m_vertices.insert(m_vertices.end(), landscapeVertices,
+                      landscapeVertices + (1024 * 1024));
+
+    // TODO: Textures in the engine textures folder should be loaded and
+    // accessible through handles that can be passed into the create texture
+    // image functions so we dont have to do filesystem shit in the future
+    TextureResource tex =
+        FileLoader::LoadTextureFile(MODELS_DIR "EngineDefault/DefaultTile.png");
+
+    CreateTextureImage(tex, &landscape, ALBEDO);
+    CreateTextureImageView(&landscape, ALBEDO);
+    CreateTextureSampler(&landscape, ALBEDO);
+
+    landscape.m_materialIndices[ALBEDO] = -1;
+    // RegisterTexture(&landscape.m_materialDataMap[ALBEDO].m_textureImageView,
+    //                 &landscape.m_materialDataMap[ALBEDO].m_textureSampler);
+
+    m_bufferHandler->CreateModelUBO(&landscape);
+
+    m_descriptorSetHandler->CreateTexturedPBRDescriptorSetsBindless(&landscape);
+
+    int vertexBufferEndIndex = m_vertices.size() - 1;
+    int indexBufferEndIndex = m_indices.size() - 1;
+    landscape.m_indexBufferEndIndex = indexBufferEndIndex;
+    landscape.m_vertexBufferEndIndex = vertexBufferEndIndex;
+    landscape.m_indexCount =
+        m_indices.size() - landscape.m_indexBufferStartIndex;
+
+    // Loop through all the vertices spat out by our compute shader and
+    // create indices buffer
+
+    m_vulkanGlobalState->m_meshList.push_back(landscape);
     m_bufferHandler->CreateVertexBuffer(m_vertices);
     m_bufferHandler->CreateIndexBuffer(m_indices);
+}
+
+void VulkanContext::NewLandscape() {
+    RunComputeShader();
+    Vertex* landscapeVertices = static_cast<Vertex*>(
+        m_vulkanGlobalState->m_computeOutputBufferMemoryMapped);
+    std::copy(landscapeVertices, landscapeVertices + (1024 * 1024),
+              m_vertices.begin() +
+                  m_vulkanGlobalState->m_meshList[0].m_vertexBufferStartIndex);
+    vkDeviceWaitIdle(
+        m_deviceHandler
+            ->LogicalDevice);  // GPU must not be reading the old buffer
+    // destroy old vertex buffer + memory here (whatever your cleanup does)
+    m_bufferHandler->CreateVertexBuffer(m_vertices);
+    // m_vertices.assign(&landscapeVertices[0], &landscapeVertices[1024 *
+    // 1024]);
 }
 
 void VulkanContext::UnloadSceneObjects() {
@@ -1900,7 +2079,11 @@ void VulkanContext::RecordCommandBufferCompute(VkCommandBuffer commandBuffer,
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
                             pipelineLayout, 0, 1, descriptorSet, 0, NULL);
 
-    vkCmdDispatch(commandBuffer, (268435456 + 1023) / 128, 1, 1);
+    constexpr uint32_t kLocalSizeX = 1024;  // same as local_size_x in shader
+    constexpr uint32_t kVertexCount = 1024u * 1024u;
+    vkCmdDispatch(commandBuffer, (kVertexCount + kLocalSizeX - 1) / kLocalSizeX,
+                  1, 1);  // 1024 groups
+    // vkCmdDispatch(commandBuffer, ((1024 * 2) + 1023) / 1024, 1, 1);
 
     VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
     mb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
@@ -2478,6 +2661,17 @@ void VulkanContext::RunComputeShader() {
     VkPipeline computePipeline = ContextVk::CreateComputePipeline(
         computeShaderSpv, m_deviceHandler->LogicalDevice, layouts,
         pipelineLayout);
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> dist(0.0f, 200.0f);
+
+    float* in = static_cast<float*>(
+        m_vulkanGlobalState->m_computeInputBufferMemoryMapped);
+    in[0] = dist(gen);
+    in[1] = dist(gen);
+    in[2] = dist(gen) * 0.005f;
+
     RecordCommandBufferCompute(m_vulkanGlobalState->m_commandBuffersCompute[0],
                                computePipeline, pipelineLayout, &descriptorSet);
     VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};

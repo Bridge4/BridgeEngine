@@ -34,10 +34,10 @@ int main() {
 
     std::vector<ObjResource> loadedObjects = {};
     // Load Models
-    for (auto& obj : objectsToLoad) {
-        ObjResource loadedObject = FileLoader::LoadObject(obj);
-        loadedObjects.push_back(loadedObject);
-    }
+    // for (auto& obj : objectsToLoad) {
+    //    ObjResource loadedObject = FileLoader::LoadObject(obj);
+    //    loadedObjects.push_back(loadedObject);
+    //}
     engine->m_loadedObjects = loadedObjects;
     Light light0;
     light0.position = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
