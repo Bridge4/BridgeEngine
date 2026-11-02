@@ -38,6 +38,12 @@ To run the exe, go into Binaries/App/Debug/App.exe
 - Event System to further separate concerns
 - Multithreading
 
+# 02-11-2026
+
+Generating landscapes with perlin noise using compute shader.
+
+<img width="480" height="270" alt="output" src="https://github.com/user-attachments/assets/281aa525-5abd-423a-890b-0370c457b5f4" />
+
 # 31-10-2026
 Compute shader pipeline setup complete. Going to be using it to generate high-resolution procedural landmasses. Allegedly.
 
