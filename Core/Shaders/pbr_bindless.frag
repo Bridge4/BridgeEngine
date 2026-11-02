@@ -111,9 +111,9 @@ bool has(int idx) { return idx >= 0; }
 
 void main() {
     vec3  albedo    = vec3(1.0);   // white, or a base color factor
-    float metallic  = 0.0;
-    float roughness = 1.0;
-    float ao        = 1.0;
+    float metallic  = 1.0;
+    float roughness = 0.5;
+    float ao        = 0.0;
     vec3  emissive  = vec3(0.0);
 
     if (has(pc.albedoIdx))

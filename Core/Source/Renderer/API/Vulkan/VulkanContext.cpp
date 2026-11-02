@@ -460,9 +460,10 @@ void VulkanContext::Tick(std::vector<ObjResource> objectsToRender,
                          float deltaTime) {
     m_timeAccumulator += deltaTime;
 
-    if (m_timeAccumulator > 5.0f) {
-        std::thread t([this]() { NewLandscape(); });
-        t.detach();
+    if (m_timeAccumulator > 1.0f) {
+        // NewLandscape();
+        //  std::thread t([this]() { NewLandscape(); });
+        //  t.detach();
         m_timeAccumulator = 0.0f;
     }
     ContextVk::RenderUI();
@@ -584,7 +585,15 @@ void VulkanContext::LoadSceneObjects() {
     CreateTextureImageView(&landscape, ALBEDO);
     CreateTextureSampler(&landscape, ALBEDO);
 
+    // std::vector<MaterialEnums> materialTypes = {
+    //     ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL, EMISSIVE, ORM};
     landscape.m_materialIndices[ALBEDO] = -1;
+    landscape.m_materialIndices[METALLIC] = -1;
+    landscape.m_materialIndices[ROUGHNESS] = -1;
+    landscape.m_materialIndices[AO] = -1;
+    landscape.m_materialIndices[EMISSIVE] = -1;
+    landscape.m_materialIndices[NORMAL] = -1;
+    landscape.m_materialIndices[ORM] = -1;
     // RegisterTexture(&landscape.m_materialDataMap[ALBEDO].m_textureImageView,
     //                 &landscape.m_materialDataMap[ALBEDO].m_textureSampler);
 
@@ -1633,6 +1642,14 @@ void VulkanContext::CreateTextureSampler(Mesh3D* mesh,
 
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(m_deviceHandler->PhysicalDevice, &properties);
+    std::cout << "MAX COMPUTE WORK GROUP SIZE "
+              << properties.limits.maxComputeWorkGroupSize[0] << "\n"
+              << "MAX COMPUTE WORK GROUP COUNT "
+              << properties.limits.maxComputeWorkGroupCount[0] << "\n"
+              << "MAX COMPUTE WORK GROUP INVOCATIONS "
+              << properties.limits.maxComputeWorkGroupInvocations << "\n"
+              << "DEVICE NAME " << properties.deviceName << "\n"
+              << "DEVICE TYPE " << properties.deviceType << "\n";
     samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 
     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
@@ -2643,6 +2660,11 @@ void VulkanContext::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
 }
 
 void VulkanContext::RunComputeShader() {
+    vkWaitForFences(m_deviceHandler->LogicalDevice, 1,
+                    &m_vulkanGlobalState->m_computeFence, VK_TRUE, UINT64_MAX);
+
+    VkResult r = vkResetFences(m_deviceHandler->LogicalDevice, 1,
+                               &m_vulkanGlobalState->m_computeFence);
     // Do compute stuff
     std::vector<char> computeShaderSpv = ReadFile(SHADERS_DIR "compute.spv");
     VkDescriptorSetLayout layout =
@@ -2665,12 +2687,18 @@ void VulkanContext::RunComputeShader() {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<float> dist(0.0f, 200.0f);
+    std::uniform_real_distribution<float> amplitude(0.0f, 0.99f);
+    std::uniform_real_distribution<float> freq(0.0f, 0.99f);
+    std::uniform_real_distribution<float> octaves(1, 8);
 
     float* in = static_cast<float*>(
         m_vulkanGlobalState->m_computeInputBufferMemoryMapped);
     in[0] = dist(gen);
     in[1] = dist(gen);
     in[2] = dist(gen) * 0.005f;
+    in[3] = amplitude(gen);
+    in[4] = freq(gen);
+    in[5] = int(octaves(gen));
 
     RecordCommandBufferCompute(m_vulkanGlobalState->m_commandBuffersCompute[0],
                                computePipeline, pipelineLayout, &descriptorSet);
@@ -2678,13 +2706,9 @@ void VulkanContext::RunComputeShader() {
     si.commandBufferCount = 1;
     si.pCommandBuffers = &m_vulkanGlobalState->m_commandBuffersCompute[0];
 
-    VkResult r = vkResetFences(m_deviceHandler->LogicalDevice, 1,
-                               &m_vulkanGlobalState->m_computeFence);
     //   printf("reset = %d\n", r);
     r = vkQueueSubmit(m_vulkanGlobalState->m_computeQueue, 1, &si,
                       m_vulkanGlobalState->m_computeFence);
     //    printf("submit = %d\n", r);
     // vkDeviceWaitIdle(m_deviceHandler->LogicalDevice);
-    vkWaitForFences(m_deviceHandler->LogicalDevice, 1,
-                    &m_vulkanGlobalState->m_computeFence, VK_TRUE, UINT64_MAX);
 }

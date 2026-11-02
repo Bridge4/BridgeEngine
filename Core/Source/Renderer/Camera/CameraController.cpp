@@ -263,23 +263,18 @@ void CameraController::HandleInputOrbit(float deltaTime) {
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_B)) {
         m_vulkanGlobalState->m_pbrPushConstants.bias.x += 0.001;
     }
-    //
-    //
-    //
-    //
-    //
 
     constexpr uint32_t N =
-        sizeof(OutputSSBO) /
-        sizeof(Vertex);  // must be <= float count in your SSBO structs
+        sizeof(InputSSBO) /
+        sizeof(float);  // must be <= float count in your SSBO structs
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_C) &&
         !m_isCalculatingGPU) {
         m_isCalculatingGPU = true;
         std::thread t([this]() {
-            float* in = static_cast<float*>(
-                m_vulkanGlobalState->m_computeInputBufferMemoryMapped);
-            Vertex* out = static_cast<Vertex*>(
-                m_vulkanGlobalState->m_computeOutputBufferMemoryMapped);
+            // float* in = static_cast<float*>(
+            //     m_vulkanGlobalState->m_computeInputBufferMemoryMapped);
+            // float* out = static_cast<float*>(
+            //     m_vulkanGlobalState->m_computeOutputBufferMemoryMapped);
 
             // for (uint32_t i = 0; i < N; ++i) {
             //     in[i] = static_cast<float>(i);
@@ -290,60 +285,58 @@ void CameraController::HandleInputOrbit(float deltaTime) {
             //  std::cout << "INPUT SSBO" << sizeof(InputSSBO) << "\n";
             //  std::cout << "OUTPUT SSBO" << sizeof(OutputSSBO) << "\n";
 
-            auto start = std::chrono::steady_clock::now();
             m_vulkanContext->NewLandscape();
-            auto end = std::chrono::steady_clock::now();
-            auto duration =
-                std::chrono::duration_cast<std::chrono::microseconds>(end -
-                                                                      start);
+            // auto start = std::chrono::steady_clock::now();
+            // m_vulkanContext->RunComputeShader();
+            // auto end = std::chrono::steady_clock::now();
+            // auto duration =
+            // std::chrono::duration_cast<std::chrono::milliseconds>(end -
+            // start);
             // NOTE: We get a lag spike when we print the time as the detached
             // thread isnt actually detached, its just that the main thread
             // doesn't wait for it to rejoin. Since the console is a shared
             // resource, writing to it introduces a brief lag spike as the
             // thread rejoins
-            printf("TIME GPU: %lld\n", duration.count());
-
-            // std::cout << "AFTER:" << "\n";
-            //  for (uint32_t i = 0; i < N; ++i) {
-            //      std::cout << out[i].pos.x << ", " << out[i].pos.y << ", "
-            //                << out[i].pos.z << "\n";
-            //  }
+            // printf("TIME GPU: %lld\n", duration.count());
             m_isCalculatingGPU = false;
         });
         t.detach();
 
-        // m_vulkanContext->RunComputeShader();
+        // std::cout << "AFTER:" << "\n";
+        // for (uint32_t i = 0; i < N; ++i) {
+        //     std::cout << out[i] << "\n";
+        // }
+        //  m_vulkanContext->RunComputeShader();
     }
 
-    // if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_X) &&
-    //     !m_isCalculatingCPU) {
-    //     m_isCalculatingCPU = true;
-    //     std::thread t([this]() {
-    //         float* in = static_cast<float*>(
-    //             m_vulkanGlobalState->m_computeInputBufferMemoryMapped);
-    //         float* out = static_cast<float*>(
-    //             m_vulkanGlobalState->m_computeOutputBufferMemoryMapped);
+    if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_X) &&
+        !m_isCalculatingCPU) {
+        m_isCalculatingCPU = true;
+        std::thread t([this]() {
+            float* in = static_cast<float*>(
+                m_vulkanGlobalState->m_computeInputBufferMemoryMapped);
+            float* out = static_cast<float*>(
+                m_vulkanGlobalState->m_computeOutputBufferMemoryMapped);
 
-    //        // for (uint32_t i = 0; i < N; ++i) {
-    //        //     in[i] = static_cast<float>(i);
-    //        //     out[i] = -1.0f;  // poison value, so you can see if GPU
-    //        wrote
-    //        //                      // anything
-    //        //     // std::cout << out[i];
-    //        // }
-    //        auto start = std::chrono::steady_clock::now();
-    //        for (uint32_t i = 0; i < N; ++i) {
-    //            out[i] = in[i] * 2.0;
-    //        }
-    //        auto end = std::chrono::steady_clock::now();
-    //        auto duration =
-    //            std::chrono::duration_cast<std::chrono::milliseconds>(end -
-    //                                                                  start);
-    //        printf("TIME CPU: %lld\n", duration.count());
-    //        m_isCalculatingCPU = false;
-    //    });
-    //    t.detach();
-    //}
+            // for (uint32_t i = 0; i < N; ++i) {
+            //     in[i] = static_cast<float>(i);
+            //     out[i] = -1.0f;  // poison value, so you can see if GPU wrote
+            //                      // anything
+            //     // std::cout << out[i];
+            // }
+            auto start = std::chrono::steady_clock::now();
+            for (uint32_t i = 0; i < N; ++i) {
+                out[i] = in[i] * 2.0;
+            }
+            auto end = std::chrono::steady_clock::now();
+            auto duration =
+                std::chrono::duration_cast<std::chrono::milliseconds>(end -
+                                                                      start);
+            printf("TIME CPU: %lld\n", duration.count());
+            m_isCalculatingCPU = false;
+        });
+        t.detach();
+    }
     glm::vec3 camPos = orbitCam->GetEye();
 
     float orthoSize = 500.0f;

@@ -56,9 +56,16 @@ void DeviceHandler::InitializePhysicalDevice() {
     // devices.data());
 
     for (const auto& device : devices) {
-        if (IsDeviceSuitable(device)) {
+        VkPhysicalDeviceProperties properties{};
+        vkGetPhysicalDeviceProperties(device, &properties);
+        if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
             this->PhysicalDevice = device;
-            break;
+
+        } else {
+            if (IsDeviceSuitable(device)) {
+                this->PhysicalDevice = device;
+                break;
+            }
         }
     }
 

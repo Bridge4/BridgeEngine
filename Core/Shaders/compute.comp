@@ -96,11 +96,11 @@ float Perlin2D (float x, float z) {
 float terrainHeight(float gx, float gy) {
     vec2 base = vec2(gx, gy) * 0.01 + vec2(dataIn[0], dataIn[1]);
     float sum = 0.0, amp = 1.0, freq = 1.0, norm = 0.0;
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < dataIn[5]; ++i) {
         sum  += amp * ImprovedPerlinNoise3D(base.x * freq, 0.37 + dataIn[2], base.y * freq);
         norm += amp;
-        amp  *= 0.5;
-        freq *= 2.0;
+        amp  *= dataIn[3];
+        freq *= dataIn[4];
     }
     return (sum / norm) * 40.0;
 }
