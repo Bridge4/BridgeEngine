@@ -381,9 +381,6 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
 
     m_vulkanGlobalState->m_renderPassData =
         std::make_unique<ContextVk::RenderPassData>(renderPassData);
-    printf("renderPass handle %p\n",
-           (void*)m_vulkanGlobalState->m_renderPassData->renderPass);
-    assert(m_vulkanGlobalState->m_renderPassData->renderPass != VK_NULL_HANDLE);
 
     if (m_vulkanGlobalState->m_renderPassData == nullptr) {
         std::cout << "Vulkan Init Error: m_vulkanGlobalState->m_renderPassData "
@@ -2519,14 +2516,33 @@ void VulkanContext::DrawFrame(float deltaTime) {
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
+        if (!renderPassDepthAttachmentFormat) {
+            std::cout << "renderPassDepthAttachmentFormat invalid\n";
+        }
+
+        ContextVk::DepthResources renderPassDepthResources =
+            m_renderPassHandler->CreateRenderPassDepthResources(
+                renderPassDepthAttachmentFormat,
+                m_vulkanGlobalState->m_swapChainExtent.width,
+                m_vulkanGlobalState->m_swapChainExtent.height);
+
         ContextVk::RenderPassData renderPassData =
             m_renderPassHandler->CreateRenderPass(
                 m_deviceHandler->LogicalDevice,
                 m_vulkanGlobalState->GetSwapChainImageFormat(),
                 renderPassDepthAttachmentFormat);
 
+        renderPassData.depthResources = renderPassDepthResources;
+
         m_vulkanGlobalState->m_renderPassData =
             std::make_unique<ContextVk::RenderPassData>(renderPassData);
+
+        if (m_vulkanGlobalState->m_renderPassData == nullptr) {
+            std::cout
+                << "Vulkan Init Error: m_vulkanGlobalState->m_renderPassData "
+                   "is INVALID!\n";
+            return;
+        }
 
         std::vector<VkImageView> renderPassPerFrameImageViews = {};
 
@@ -2638,14 +2654,33 @@ void VulkanContext::DrawFrame(float deltaTime) {
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
+        if (!renderPassDepthAttachmentFormat) {
+            std::cout << "renderPassDepthAttachmentFormat invalid\n";
+        }
+
+        ContextVk::DepthResources renderPassDepthResources =
+            m_renderPassHandler->CreateRenderPassDepthResources(
+                renderPassDepthAttachmentFormat,
+                m_vulkanGlobalState->m_swapChainExtent.width,
+                m_vulkanGlobalState->m_swapChainExtent.height);
+
         ContextVk::RenderPassData renderPassData =
             m_renderPassHandler->CreateRenderPass(
                 m_deviceHandler->LogicalDevice,
                 m_vulkanGlobalState->GetSwapChainImageFormat(),
                 renderPassDepthAttachmentFormat);
 
+        renderPassData.depthResources = renderPassDepthResources;
+
         m_vulkanGlobalState->m_renderPassData =
             std::make_unique<ContextVk::RenderPassData>(renderPassData);
+
+        if (m_vulkanGlobalState->m_renderPassData == nullptr) {
+            std::cout
+                << "Vulkan Init Error: m_vulkanGlobalState->m_renderPassData "
+                   "is INVALID!\n";
+            return;
+        }
         std::vector<VkImageView> renderPassPerFrameImageViews = {};
 
         renderPassPerFrameImageViews.push_back(
