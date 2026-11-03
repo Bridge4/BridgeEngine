@@ -2695,10 +2695,10 @@ void VulkanContext::RunComputeShader() {
         m_vulkanGlobalState->m_computeInputBufferMemoryMapped);
     in[0] = dist(gen);
     in[1] = dist(gen);
-    in[2] = dist(gen) * 0.005f;
-    in[3] = amplitude(gen);
+    in[2] = 2.0;
+    in[3] = 0.48;
     in[4] = freq(gen);
-    in[5] = int(octaves(gen));
+    in[5] = 8;
 
     RecordCommandBufferCompute(m_vulkanGlobalState->m_commandBuffersCompute[0],
                                computePipeline, pipelineLayout, &descriptorSet);

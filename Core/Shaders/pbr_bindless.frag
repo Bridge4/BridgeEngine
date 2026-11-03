@@ -109,12 +109,43 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness){
 //}
 bool has(int idx) { return idx >= 0; }
 
+const float WATER_LEVEL = 0.0;
+const float SAND_LEVEL  = 0.1;
+const float GRASS_LEVEL = 0.7;
+const float ROCK_LEVEL  = 0.4;
+
 void main() {
     vec3  albedo    = vec3(1.0);   // white, or a base color factor
-    float metallic  = 1.0;
+    float metallic  = 0.0;
     float roughness = 0.5;
     float ao        = 0.0;
     vec3  emissive  = vec3(0.0);
+
+vec3 deepWater = vec3(0.02, 0.45, 0.65); // Vibrant tropical cyan / deep azure
+vec3 sand      = vec3(0.98, 0.72, 0.35); // Vivid orange-gold sunlit sand
+vec3 grass     = vec3(0.38, 0.72, 0.12); // Bright, luminous lime/apple green
+vec3 rock      = vec3(0.75, 0.32, 0.22); // Striking crimson/burnt terracotta
+vec3 snow      = vec3(1.00, 0.88, 0.65); // Intense golden-hour sunlight highlight
+    
+    vec3 finalColor;
+    // Linearly interpolate (mix) colors based on fragPos.y height
+    if (fragPos.y < WATER_LEVEL) {
+        finalColor = deepWater;
+    } else if (fragPos.y < SAND_LEVEL) {
+        float t = (fragPos.y - WATER_LEVEL) / (SAND_LEVEL - WATER_LEVEL);
+        finalColor = mix(deepWater, sand, t);
+    } else if (fragPos.y < GRASS_LEVEL) {
+        float t = (fragPos.y - SAND_LEVEL) / (GRASS_LEVEL - SAND_LEVEL);
+        finalColor = mix(grass, rock, t);
+    } else if (fragPos.y < ROCK_LEVEL) {
+        float t = (fragPos.y - GRASS_LEVEL) / (ROCK_LEVEL - GRASS_LEVEL);
+        finalColor = mix(rock, grass, t);
+    } else {
+        float t = clamp((fragPos.y - ROCK_LEVEL) / (1.0 - ROCK_LEVEL), 0.0, 1.0);
+        finalColor = mix(rock, snow, t);
+    }
+
+    albedo = finalColor;
 
     if (has(pc.albedoIdx))
         albedo = texture(textures[pc.albedoIdx], fragTexCoord).rgb;
@@ -139,12 +170,6 @@ void main() {
 
 
     roughness = clamp(roughness, 0.04, 1.0);
-    //vec3 albedo     = pow(texture(textures[pc.albedoIdx], fragTexCoord).rgb, vec3(2.2));
-    //vec3 normal     = texture(textures[pc.normalIdx], fragTexCoord).rgb;
-    //float metallic  = texture(textures[pc.metallicIdx], fragTexCoord).r;
-    //float roughness = texture(textures[pc.roughnessIdx], fragTexCoord).r;
-    //float ao        = texture(textures[pc.aoIdx], fragTexCoord).r;
-    //vec3 emissive   = texture(textures[pc.emissiveIdx], fragTexCoord).rgb;
     // Normalize inputs
     vec3 N = normalize(fragNormal);
     vec3 V = normalize(camera.cameraPos.xyz - fragPos);

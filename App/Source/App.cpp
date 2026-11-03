@@ -41,7 +41,7 @@ int main() {
     engine->m_loadedObjects = loadedObjects;
     Light light0;
     light0.position = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    light0.color = glm::vec4(0.93f, 0.21f, 0.55f, 1.0f);
+    light0.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     light0.intensity.x = 100.0f;
     std::vector<Light> lightsToRender;
     lightsToRender.push_back(light0);
