@@ -61,6 +61,11 @@ VkPipeline CreateComputePipeline(
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts,
     VkPipelineLayout& pipelineLayout);
 
+std::vector<VkFramebuffer> CreateSwapChainFramebuffers(
+    int numberOfFramebuffers, std::vector<VkImageView> perFrameImageViews,
+    std::vector<VkImageView> swapChainImageViews, uint32_t framebufferWidth,
+    uint32_t framebufferHeight, VkDevice& logicalDevice,
+    RenderPassData renderPassData);
 }  // namespace ContextVk
 
 struct InputSSBO {

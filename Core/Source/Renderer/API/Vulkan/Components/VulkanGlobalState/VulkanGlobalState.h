@@ -2,10 +2,12 @@
 #define VULKANGLOBALSTATE_H
 #include <vulkan/vulkan_core.h>
 
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
 #include "../ComponentDeclarations.h"
+#include "Source/Renderer/API/Vulkan/Components/RenderPass/RenderPassHandler.h"
 #include "Source/Renderer/API/Vulkan/VkTypes.h"
 #include "Source/Renderer/Mesh/Mesh3D.h"
 #include "vulkan/vulkan.h"
@@ -66,7 +68,6 @@ class VulkanGlobalState {
     VkExtent2D GetSwapChainExtent() { return m_swapChainExtent; }
     // TODO: Replace all getters with direct access to member variables
     VkSurfaceKHR GetSurface() { return m_surface; }
-    VkImageView GetDepthImageView() { return m_renderPassDepthImageView; }
 
     void SetSwapChainImageFormat(VkFormat surfaceFormat) {
         this->m_swapChainImageFormat = surfaceFormat;
@@ -85,14 +86,13 @@ class VulkanGlobalState {
     VulkanContext* m_vulkanContext = 0;
     ERenderingMode m_renderingMode = ERenderingMode::Standard;
 
+    // TODO: We want to create structs for data based on lifetime
     VkSwapchainKHR m_swapChain = nullptr;
     std::vector<VkImage> m_swapChainImages = {};
     VkFormat m_swapChainImageFormat = VK_FORMAT_UNDEFINED;
     VkExtent2D m_swapChainExtent;
 
-    VkImage m_renderPassDepthImage = 0;
-    VkDeviceMemory m_renderPassDepthImageMemory = 0;
-    VkImageView m_renderPassDepthImageView = 0;
+    std::unique_ptr<ContextVk::RenderPassData> m_renderPassData = {};
 
     VkImage m_shadowPassDepthImage = 0;
     VkDeviceMemory m_shadowPassDepthImageMemory = 0;
@@ -100,7 +100,7 @@ class VulkanGlobalState {
     std::vector<VkImageView> m_swapChainImageViews = {};
     VkSampler m_shadowPassTextureSampler;
 
-    VkRenderPass m_renderPass;
+    // VkRenderPass m_renderPass;
     VkRenderPass m_shadowPass;
     ShadowPassPushConstants m_shadowPassPushConstants;
     PBRPushConstants m_pbrPushConstants;
@@ -144,17 +144,7 @@ class VulkanGlobalState {
 
     VkPipeline m_pbrPipeline;
     VkPipeline m_shadowPassPipeline;
-    // Based on object type, we can draw with a different bound graphics
-    // pipeline if object == drawTypeA bind pipelines[drawTypeA] elif object ==
-    // drawTypeB bind pipelines[drawTypeB]
-    //
-    //
-    // 1. define drawTypes enum
-    // 2. set drawType on each mesh on load
-    // 3. unordered_map
-    //      key: DrawType
-    //      value: *pipeline
-    //
+
     std::unordered_map<BeDrawType, VkPipeline*> m_graphicsPipelines = {};
     std::unordered_map<BeDrawType, std::vector<VkDescriptorSetLayout*>>
         m_descriptorSetLayouts = {};

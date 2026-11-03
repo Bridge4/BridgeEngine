@@ -2,13 +2,20 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include <cstdint>
+
 #include "../../VulkanContext.h"
 #include "../VulkanGlobalState/VulkanGlobalState.h"
 #include "Source/Renderer/API/Vulkan/Components/Images/ImageHandler.h"
 
-void RenderPassHandler::CreateRenderPass() {
+namespace ContextVk {}
+ContextVk::RenderPassData RenderPassHandler::CreateRenderPass(
+    VkDevice& logicalDevice, VkFormat colorAttachmentImageFormat,
+    VkFormat depthAttachmentFormat) {
+    VkRenderPass renderPass;
+
     VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = m_vulkanGlobalState->GetSwapChainImageFormat();
+    colorAttachment.format = colorAttachmentImageFormat;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     // Store rendered contents in memory to be read later
@@ -45,11 +52,13 @@ void RenderPassHandler::CreateRenderPass() {
 
     VkAttachmentDescription depthAttachment{};
 
-    depthAttachment.format =
-        FindSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
-                             VK_FORMAT_D24_UNORM_S8_UINT},
-                            VK_IMAGE_TILING_OPTIMAL,
-                            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    // depthAttachment.format =
+    //     FindSupportedFormat({VK_FORMAT_D32_SFLOAT,
+    //     VK_FORMAT_D32_SFLOAT_S8_UINT,
+    //                          VK_FORMAT_D24_UNORM_S8_UINT},
+    //                         VK_IMAGE_TILING_OPTIMAL,
+    //                         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    depthAttachment.format = depthAttachmentFormat;
     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -104,11 +113,16 @@ void RenderPassHandler::CreateRenderPass() {
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-    if (vkCreateRenderPass(m_deviceHandler->LogicalDevice, &renderPassInfo,
-                           nullptr,
-                           &m_vulkanGlobalState->m_renderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(logicalDevice, &renderPassInfo, nullptr,
+                           &renderPass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
     }
+
+    ContextVk::RenderPassData renderPassData = {};
+    renderPassData.renderPass = renderPass;
+    renderPassData.attachmentCount = renderPassInfo.attachmentCount;
+
+    return renderPassData;
 }
 
 void RenderPassHandler::CreateShadowPass() {
@@ -170,62 +184,73 @@ void RenderPassHandler::CreateShadowPass() {
     }
 }
 
-void RenderPassHandler::CreateRenderPassDepthResources() {
-    VkFormat depthFormat =
-        FindSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
-                             VK_FORMAT_D24_UNORM_S8_UINT},
-                            VK_IMAGE_TILING_OPTIMAL,
-                            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+ContextVk::DepthResources RenderPassHandler::CreateRenderPassDepthResources(
+    VkFormat depthFormat, uint32_t width, uint32_t height) {
+    // VkFormat depthFormat =
+    //     FindSupportedFormat({VK_FORMAT_D32_SFLOAT,
+    //     VK_FORMAT_D32_SFLOAT_S8_UINT,
+    //                          VK_FORMAT_D24_UNORM_S8_UINT},
+    //                         VK_IMAGE_TILING_OPTIMAL,
+    //                         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    VkImage renderPassDepthImage = {};
+    VkImageView renderPassDepthImageView = {};
+    VkDeviceMemory renderPassDepthImageMemory = {};
+
     m_imageHandler->CreateImage(
-        m_vulkanGlobalState->GetSwapChainExtent().width,
-        m_vulkanGlobalState->GetSwapChainExtent().height, depthFormat,
-        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        m_vulkanGlobalState->m_renderPassDepthImage,
-        m_vulkanGlobalState->m_renderPassDepthImageMemory);
-    m_vulkanGlobalState->m_renderPassDepthImageView =
-        m_imageHandler->CreateImageView(
-            m_deviceHandler->LogicalDevice,
-            m_vulkanGlobalState->m_renderPassDepthImage, depthFormat,
-            VK_IMAGE_ASPECT_DEPTH_BIT);
+        width, height, depthFormat, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, renderPassDepthImage,
+        renderPassDepthImageMemory);
+    renderPassDepthImageView = m_imageHandler->CreateImageView(
+        m_deviceHandler->LogicalDevice, renderPassDepthImage, depthFormat,
+        VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    TransitionImageLayout(m_vulkanGlobalState->m_renderPassDepthImage,
-                          depthFormat, VK_IMAGE_LAYOUT_UNDEFINED,
+    TransitionImageLayout(renderPassDepthImage, depthFormat,
+                          VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+    ContextVk::DepthResources depthResources = {};
+    depthResources.image = renderPassDepthImage;
+    depthResources.imageView = renderPassDepthImageView;
+    depthResources.imageMemory = renderPassDepthImageMemory;
+
+    return depthResources;
 }
 
-void RenderPassHandler::CreateRenderPassFrameBuffers() {
-    CreateRenderPassDepthResources();
-    m_vulkanGlobalState->m_renderPassFrameBuffers.resize(
-        m_vulkanGlobalState->m_swapChainImageViews.size());
-
-    // Loop through swap chain image views
-    for (size_t i = 0; i < m_vulkanGlobalState->m_swapChainImageViews.size();
-         i++) {
-        std::array<VkImageView, 2> attachments = {
-            m_vulkanGlobalState->m_swapChainImageViews[i],
-            m_vulkanGlobalState->m_renderPassDepthImageView};
-
-        VkFramebufferCreateInfo framebufferInfo{};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = m_vulkanGlobalState->m_renderPass;
-        framebufferInfo.attachmentCount =
-            static_cast<uint32_t>(attachments.size());
-        framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width = m_vulkanGlobalState->GetSwapChainExtent().width;
-        framebufferInfo.height =
-            m_vulkanGlobalState->GetSwapChainExtent().height;
-        framebufferInfo.layers = 1;
-
-        if (vkCreateFramebuffer(
-                m_deviceHandler->LogicalDevice, &framebufferInfo, nullptr,
-                &m_vulkanGlobalState->m_renderPassFrameBuffers[i]) !=
-            VK_SUCCESS) {
-            throw std::runtime_error("failed to create framebuffer!");
-        }
-    }
-}
+// void RenderPassHandler::CreateRenderPassFrameBuffers() {
+//     CreateRenderPassDepthResources();
+//     m_vulkanGlobalState->m_renderPassFrameBuffers.resize(
+//         m_vulkanGlobalState->m_swapChainImageViews.size());
+//
+//     // Loop through swap chain image views
+//     for (size_t i = 0; i < m_vulkanGlobalState->m_swapChainImageViews.size();
+//          i++) {
+//         std::array<VkImageView, 2> attachments = {
+//             m_vulkanGlobalState->m_swapChainImageViews[i],
+//             m_vulkanGlobalState->m_renderPassDepthImageView};
+//
+//         VkFramebufferCreateInfo framebufferInfo{};
+//         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+//         framebufferInfo.renderPass =
+//             *m_vulkanGlobalState->m_renderPassData->renderPass;
+//         framebufferInfo.attachmentCount =
+//             static_cast<uint32_t>(attachments.size());
+//         framebufferInfo.pAttachments = attachments.data();
+//         framebufferInfo.pAttachments = attachments.data();
+//         framebufferInfo.width =
+//         m_vulkanGlobalState->GetSwapChainExtent().width;
+//         framebufferInfo.height =
+//             m_vulkanGlobalState->GetSwapChainExtent().height;
+//         framebufferInfo.layers = 1;
+//
+//         if (vkCreateFramebuffer(
+//                 m_deviceHandler->LogicalDevice, &framebufferInfo, nullptr,
+//                 &m_vulkanGlobalState->m_renderPassFrameBuffers[i]) !=
+//             VK_SUCCESS) {
+//             throw std::runtime_error("failed to create framebuffer!");
+//         }
+//     }
+// }
 
 void RenderPassHandler::CreateShadowPassDepthResources() {
     VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
@@ -251,6 +276,10 @@ void RenderPassHandler::CreateShadowPassDepthResources() {
 }
 
 void RenderPassHandler::CreateShadowPassFrameBuffers() {
+    // WARN: It is very hard to track changes to the global state, when we
+    // enter a function we can't tell what's going to change in the global
+    // state, when we exit a function we don't know what *has* changed in the
+    // global state
     CreateShadowPassDepthResources();
     m_vulkanGlobalState->m_shadowPassFrameBuffers.resize(
         m_vulkanGlobalState->m_lights.numLights.x);

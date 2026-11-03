@@ -3,6 +3,8 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
+#include <cstdint>
+#include <memory>
 #include <vector>
 
 #include "../ComponentDeclarations.h"
@@ -11,6 +13,48 @@
 // class DeviceHandler;
 
 // enum VkFormat;
+
+namespace ContextVk {
+struct DepthResources {
+    VkImage image;
+    VkImageView imageView;
+    VkDeviceMemory imageMemory;
+};
+
+struct RenderPassData {
+    enum ERenderPassDataState {
+        Valid,
+        FramebuffersInvalid,
+        AttachmentCountInvalid,
+        RenderPassInvalid
+    };
+    VkRenderPass renderPass = VK_NULL_HANDLE;
+    int attachmentCount;
+    std::vector<VkFramebuffer> framebuffers;
+    DepthResources depthResources;
+
+    ERenderPassDataState GetRenderPassDataState() {
+        if (this->framebuffers.empty())
+            return ERenderPassDataState::FramebuffersInvalid;
+        if (attachmentCount == 0)
+            return ERenderPassDataState::AttachmentCountInvalid;
+        if (renderPass == VK_NULL_HANDLE)
+            return ERenderPassDataState::RenderPassInvalid;
+
+        return ERenderPassDataState::Valid;
+    }
+};
+
+struct RenderPassFramebuffer {
+    uint32_t width;
+    uint32_t height;
+    std::shared_ptr<VkFramebuffer> framebuffer;
+};
+
+RenderPassData CreateRenderPass(VkDevice& logicalDevice,
+                                VkFormat colorAttachmentImageFormat,
+                                VkFormat depthAttachmentFormat);
+}  // namespace ContextVk
 
 struct BrVkRenderPass {
     VkViewport viewport;
@@ -32,9 +76,12 @@ class RenderPassHandler {
         this->m_vulkanGlobalState = VulkanGlobalState;
     }
 
-    void CreateRenderPass();
-    void CreateRenderPassDepthResources();
-    void CreateRenderPassFrameBuffers();
+    ContextVk::RenderPassData CreateRenderPass(
+        VkDevice& logicalDevice, VkFormat colorAttachmentImageFormat,
+        VkFormat depthAttachmentFormat);
+    ContextVk::DepthResources CreateRenderPassDepthResources(
+        VkFormat depthFormat, uint32_t width, uint32_t height);
+    // void CreateRenderPassFrameBuffers();
 
     void CreateShadowPass();
     void CreateShadowPassDepthResources();

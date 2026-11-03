@@ -112,15 +112,20 @@ void SwapChainHandler::Rebuild(int frameBufferWidth, int frameBufferHeight) {
 }
 
 void SwapChainHandler::Destroy() {
-    vkDestroyImageView(m_deviceHandler->LogicalDevice,
-                       m_vulkanGlobalState->m_renderPassDepthImageView,
-                       nullptr);
+    vkDestroyImageView(
+        m_deviceHandler->LogicalDevice,
+        m_vulkanGlobalState->m_renderPassData->depthResources.imageView,
+        nullptr);
     vkDestroyImage(m_deviceHandler->LogicalDevice,
-                   m_vulkanGlobalState->m_renderPassDepthImage, nullptr);
-    vkFreeMemory(m_deviceHandler->LogicalDevice,
-                 m_vulkanGlobalState->m_renderPassDepthImageMemory, nullptr);
+                   m_vulkanGlobalState->m_renderPassData->depthResources.image,
+                   nullptr);
+    vkFreeMemory(
+        m_deviceHandler->LogicalDevice,
+        m_vulkanGlobalState->m_renderPassData->depthResources.imageMemory,
+        nullptr);
 
-    for (auto framebuffer : m_vulkanGlobalState->m_renderPassFrameBuffers) {
+    for (auto framebuffer :
+         m_vulkanGlobalState->m_renderPassData->framebuffers) {
         vkDestroyFramebuffer(m_deviceHandler->LogicalDevice, framebuffer,
                              nullptr);
     }

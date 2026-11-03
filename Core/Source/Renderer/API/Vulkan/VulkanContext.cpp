@@ -242,6 +242,82 @@ void SetIndices(std::vector<uint32_t>& indices, Vertex* vertices,
         }
     }
 }
+// WARN: It is very hard to track changes to the global state, when we
+std::vector<VkFramebuffer> CreateSwapChainFramebuffers(
+    int numberOfFramebuffers, std::vector<VkImageView> perFrameImageViews,
+    std::vector<VkImageView> swapChainImageViews, uint32_t framebufferWidth,
+    uint32_t framebufferHeight, VkDevice& logicalDevice,
+    RenderPassData renderPassData) {
+    // TODO: Check if our targeted render pass is valid
+    // TODO: Check if count > 0
+    // TODO: Check if attachmentImageViews is not empty
+    // TODO: Check if each attachmentImageView is valid
+    // TODO: Check if framebufferHeight is not 0
+    // TODO: Check if attachmentImageViews.size() == renderPass attachment count
+
+    VkRenderPass renderPass = renderPassData.renderPass;
+    if (renderPass == VK_NULL_HANDLE || renderPass == nullptr) {
+        std::cout << __LINE__
+                  << " FAILED TO CREATE FRAMEBUFFER: INVALID RENDER PASS\n";
+        return {};
+    }
+
+    std::vector<VkFramebuffer> framebuffers = {};
+
+    // CreateShadowPassDepthResources();
+    framebuffers.resize(numberOfFramebuffers);
+
+    for (size_t i = 0; i < numberOfFramebuffers; i++) {
+        // NOTE: Each renderpass framebuffer has a swapChainImageView and a
+        // renderPassDepthImageView
+        std::vector<VkImageView> attachments = {};
+        attachments.push_back(swapChainImageViews[i]);
+        for (size_t j = 0; j < perFrameImageViews.size(); j++) {
+            attachments.push_back(perFrameImageViews[j]);
+        }
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = renderPassData.renderPass;
+        framebufferInfo.attachmentCount = renderPassData.attachmentCount;
+        framebufferInfo.pAttachments = attachments.data();
+        framebufferInfo.pAttachments = attachments.data();
+        framebufferInfo.width = framebufferWidth;
+        framebufferInfo.height = framebufferHeight;
+        framebufferInfo.layers = 1;
+
+        if (vkCreateFramebuffer(logicalDevice, &framebufferInfo, nullptr,
+                                &framebuffers[i]) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create framebuffer!");
+        }
+    }
+
+    return framebuffers;
+}
+
+bool CheckRenderPassDataValidity(
+    RenderPassData::ERenderPassDataState renderPassDataState) {
+    if (renderPassDataState != RenderPassData::ERenderPassDataState::Valid) {
+        switch (renderPassDataState) {
+            case RenderPassData::ERenderPassDataState::RenderPassInvalid:
+                std::cout << __LINE__ << " ERROR: RENDER PASS INVALID\n";
+                break;
+            case RenderPassData::ERenderPassDataState::AttachmentCountInvalid:
+                std::cout << __LINE__
+                          << " ERROR: RENDER PASS ATTACHMENT COUNT INVALID\n";
+                break;
+            case RenderPassData::ERenderPassDataState::FramebuffersInvalid:
+                std::cout << __LINE__
+                          << " ERROR: RENDER PASS FRAMEBUFFERS INVALID\n";
+                break;
+            default:
+                break;
+        }
+        return false;
+    }
+    std::cout << "SUCCESS: RENDER PASS DATA VALID\n";
+    return true;
+}
+
 }  // namespace ContextVk
 void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
     m_vulkanGlobalState = new VulkanGlobalState(this, renderingMode);
@@ -276,19 +352,68 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
     m_windowingBackend->GetFramebufferSizeGLFW(&frameBufferWidth,
                                                &frameBufferHeight);
     m_swapChainHandler->Initialize(frameBufferWidth, frameBufferHeight);
-
-    m_renderPassHandler->CreateRenderPass();
-    m_renderPassHandler->CreateShadowPass();
-
     CreateCommandPool();
+
+    VkFormat renderPassDepthAttachmentFormat =
+        m_renderPassHandler->FindSupportedFormat(
+            {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
+             VK_FORMAT_D24_UNORM_S8_UINT},
+            VK_IMAGE_TILING_OPTIMAL,
+            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+    if (!renderPassDepthAttachmentFormat) {
+        std::cout << "renderPassDepthAttachmentFormat invalid\n";
+    }
+
+    ContextVk::DepthResources renderPassDepthResources =
+        m_renderPassHandler->CreateRenderPassDepthResources(
+            renderPassDepthAttachmentFormat,
+            m_vulkanGlobalState->m_swapChainExtent.width,
+            m_vulkanGlobalState->m_swapChainExtent.height);
+
+    ContextVk::RenderPassData renderPassData =
+        m_renderPassHandler->CreateRenderPass(
+            m_deviceHandler->LogicalDevice,
+            m_vulkanGlobalState->GetSwapChainImageFormat(),
+            renderPassDepthAttachmentFormat);
+
+    renderPassData.depthResources = renderPassDepthResources;
+
+    m_vulkanGlobalState->m_renderPassData =
+        std::make_unique<ContextVk::RenderPassData>(renderPassData);
+    printf("renderPass handle %p\n",
+           (void*)m_vulkanGlobalState->m_renderPassData->renderPass);
+    assert(m_vulkanGlobalState->m_renderPassData->renderPass != VK_NULL_HANDLE);
+
+    if (m_vulkanGlobalState->m_renderPassData == nullptr) {
+        std::cout << "Vulkan Init Error: m_vulkanGlobalState->m_renderPassData "
+                     "is INVALID!\n";
+        return;
+    }
+
+    // m_renderPassHandler->CreateShadowPass();
 
     QueueFamilyIndices queueFamilyIndices =
         m_deviceHandler->FindQueueFamilies(m_deviceHandler->PhysicalDevice);
     m_vulkanGlobalState->m_commandPoolCompute = CreateCommandPoolCompute(
         m_deviceHandler->LogicalDevice, queueFamilyIndices);
 
-    m_renderPassHandler->CreateRenderPassFrameBuffers();
+    // m_renderPassHandler->CreateRenderPassFrameBuffers();
 
+    std::vector<VkImageView> renderPassPerFrameImageViews = {};
+
+    renderPassPerFrameImageViews.push_back(
+        m_vulkanGlobalState->m_renderPassData->depthResources.imageView);
+
+    m_vulkanGlobalState->m_renderPassData->framebuffers =
+        ContextVk::CreateSwapChainFramebuffers(
+            m_vulkanGlobalState->m_swapChainImageViews.size(),
+            renderPassPerFrameImageViews,
+            m_vulkanGlobalState->m_swapChainImageViews,
+            m_vulkanGlobalState->GetSwapChainExtent().width,
+            m_vulkanGlobalState->GetSwapChainExtent().height,
+            m_deviceHandler->LogicalDevice,
+            *m_vulkanGlobalState->m_renderPassData);
     if (m_vulkanGlobalState->m_renderingMode == ERenderingMode::Bindless) {
         m_descriptorSetHandler->CreateDescriptorPoolBindless();
         m_descriptorSetHandler->CreateDescriptorPoolBindlessScene();
@@ -310,9 +435,9 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
 
     std::vector<char> vertShadow = ReadFile(SHADERS_DIR "shadow.spv");
     std::vector<char> fragShadow = ReadFile(SHADERS_DIR "shadowFrag.spv");
-    CreateShadowPassPipeline(vertShadow, fragShadow,
-                             &m_vulkanGlobalState->m_shadowPassPipeline);
-    CreateTextureSamplerShadowPass();
+    // CreateShadowPassPipeline(vertShadow, fragShadow,
+    //                          &m_vulkanGlobalState->m_shadowPassPipeline);
+    // CreateTextureSamplerShadowPass();
 
     if (m_vulkanGlobalState->m_renderingMode == ERenderingMode::Bindless) {
         std::vector<char> vertScene = ReadFile(SHADERS_DIR "scene.spv");
@@ -374,6 +499,7 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
     init_info.QueueFamily = queueFamilyIndices.graphicsFamily.value();
     init_info.Queue = m_vulkanGlobalState->m_graphicsQueue;
     init_info.PipelineCache = VK_NULL_HANDLE;
+    // init_info.DescriptorPool = VK_NULL_HANDLE;
     if (m_vulkanGlobalState->m_renderingMode == ERenderingMode::Bindless) {
         init_info.DescriptorPool =
             m_vulkanGlobalState->m_descriptorPoolBindlessScene;
@@ -384,7 +510,10 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
     init_info.MinImageCount = 2;
     init_info.ImageCount = m_maxFramesInFlight;
     // init_info.Allocator = g_Allocator;
-    init_info.PipelineInfoMain.RenderPass = m_vulkanGlobalState->m_renderPass;
+    init_info.PipelineInfoMain.RenderPass =
+        m_vulkanGlobalState->m_renderPassData->renderPass;
+
+    assert(init_info.PipelineInfoMain.RenderPass != VK_NULL_HANDLE);
     init_info.PipelineInfoMain.Subpass = 0;
     init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     // init_info.CheckVkResultFn = check_vk_result;
@@ -393,7 +522,8 @@ void VulkanContext::InitVulkan(ERenderingMode renderingMode) {
         [](const char* function_name, void* user_data) -> PFN_vkVoidFunction {
             VkInstance instance = *static_cast<VkInstance*>(user_data);
             return vkGetInstanceProcAddr(instance, function_name);
-        });
+        },
+        &m_vulkanGlobalState->m_instance);
     ImGui_ImplVulkan_Init(&init_info);
 
     // m_vulkanGlobalState->m_computeInputBuffer = {2.0f};
@@ -869,7 +999,8 @@ void VulkanContext::CreatePBRPipeline(std::vector<char> vertShaderCode,
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = m_vulkanGlobalState->m_pbrPipelineLayout;
-    pipelineInfo.renderPass = m_vulkanGlobalState->m_renderPass;
+    pipelineInfo.renderPass = m_vulkanGlobalState->m_renderPassData->renderPass;
+
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
@@ -1306,7 +1437,8 @@ void VulkanContext::CreatePBRPipelineBindless(std::vector<char> vertShaderCode,
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = m_vulkanGlobalState->m_pbrPipelineLayout;
-    pipelineInfo.renderPass = m_vulkanGlobalState->m_renderPass;
+    pipelineInfo.renderPass = m_vulkanGlobalState->m_renderPassData->renderPass;
+
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
@@ -1803,11 +1935,12 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
 
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = m_vulkanGlobalState->m_renderPass;
+        renderPassInfo.renderPass =
+            m_vulkanGlobalState->m_renderPassData->renderPass;
         // DEBUG
         // printf("imageIndex DEBUG: %d\n", imageIndex);
         renderPassInfo.framebuffer =
-            m_vulkanGlobalState->m_renderPassFrameBuffers[imageIndex];
+            m_vulkanGlobalState->m_renderPassData->framebuffers[imageIndex];
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent =
             m_vulkanGlobalState->GetSwapChainExtent();
@@ -1985,7 +2118,8 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
 
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = m_vulkanGlobalState->m_renderPass;
+        renderPassInfo.renderPass =
+            m_vulkanGlobalState->m_renderPassData->renderPass;
         // DEBUG
         // printf("imageIndex DEBUG: %d\n", imageIndex);
         renderPassInfo.framebuffer =
@@ -2225,7 +2359,8 @@ void VulkanContext::RecordCommandBufferGeneric(
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = m_vulkanGlobalState->m_renderPass;
+    renderPassInfo.renderPass =
+        m_vulkanGlobalState->m_renderPassData->renderPass;
     // DEBUG
     // printf("imageIndex DEBUG: %d\n", imageIndex);
     renderPassInfo.framebuffer =
@@ -2344,6 +2479,13 @@ void VulkanContext::DrawFrame(float deltaTime) {
         - Submit the recorded command buffer
         - Present the swap chain image
     */
+
+    ContextVk::RenderPassData::ERenderPassDataState renderPassDataState =
+        m_vulkanGlobalState->m_renderPassData.get()->GetRenderPassDataState();
+    if (!ContextVk::CheckRenderPassDataValidity(renderPassDataState)) {
+        return;
+    }
+
     vkWaitForFences(
         m_deviceHandler->LogicalDevice, 1,
         &m_vulkanGlobalState
@@ -2369,8 +2511,42 @@ void VulkanContext::DrawFrame(float deltaTime) {
         vkDeviceWaitIdle(m_deviceHandler->LogicalDevice);
         m_swapChainHandler->Rebuild(frameBufferWidth, frameBufferHeight);
         // TODO: MUST NOT FORGET THIS
-        m_renderPassHandler->CreateRenderPass();
-        m_renderPassHandler->CreateRenderPassFrameBuffers();
+        // m_renderPassHandler->CreateRenderPass();
+        VkFormat renderPassDepthAttachmentFormat =
+            m_renderPassHandler->FindSupportedFormat(
+                {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
+                 VK_FORMAT_D24_UNORM_S8_UINT},
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+        ContextVk::RenderPassData renderPassData =
+            m_renderPassHandler->CreateRenderPass(
+                m_deviceHandler->LogicalDevice,
+                m_vulkanGlobalState->GetSwapChainImageFormat(),
+                renderPassDepthAttachmentFormat);
+
+        m_vulkanGlobalState->m_renderPassData =
+            std::make_unique<ContextVk::RenderPassData>(renderPassData);
+
+        std::vector<VkImageView> renderPassPerFrameImageViews = {};
+
+        renderPassPerFrameImageViews.push_back(
+            m_vulkanGlobalState->m_renderPassData->depthResources.imageView);
+
+        m_vulkanGlobalState->m_renderPassData->framebuffers =
+            ContextVk::CreateSwapChainFramebuffers(
+                m_vulkanGlobalState->m_swapChainImageViews.size(),
+                renderPassPerFrameImageViews,
+                m_vulkanGlobalState->m_swapChainImageViews,
+                m_vulkanGlobalState->GetSwapChainExtent().width,
+                m_vulkanGlobalState->GetSwapChainExtent().height,
+                m_deviceHandler->LogicalDevice,
+                *m_vulkanGlobalState->m_renderPassData);
+
+        if (!ContextVk::CheckRenderPassDataValidity(
+                renderPassData.GetRenderPassDataState())) {
+            return;
+        }
         m_renderPassHandler->CreateShadowPass();
         m_renderPassHandler->CreateShadowPassFrameBuffers();
         return;
@@ -2454,8 +2630,36 @@ void VulkanContext::DrawFrame(float deltaTime) {
         vkDeviceWaitIdle(m_deviceHandler->LogicalDevice);
         m_swapChainHandler->Rebuild(frameBufferWidth, frameBufferHeight);
         // TODO: MUST NOT FORGET THIS
-        m_renderPassHandler->CreateRenderPass();
-        m_renderPassHandler->CreateRenderPassFrameBuffers();
+        // m_renderPassHandler->CreateRenderPass();
+        VkFormat renderPassDepthAttachmentFormat =
+            m_renderPassHandler->FindSupportedFormat(
+                {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
+                 VK_FORMAT_D24_UNORM_S8_UINT},
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+        ContextVk::RenderPassData renderPassData =
+            m_renderPassHandler->CreateRenderPass(
+                m_deviceHandler->LogicalDevice,
+                m_vulkanGlobalState->GetSwapChainImageFormat(),
+                renderPassDepthAttachmentFormat);
+
+        m_vulkanGlobalState->m_renderPassData =
+            std::make_unique<ContextVk::RenderPassData>(renderPassData);
+        std::vector<VkImageView> renderPassPerFrameImageViews = {};
+
+        renderPassPerFrameImageViews.push_back(
+            m_vulkanGlobalState->m_renderPassData->depthResources.imageView);
+
+        m_vulkanGlobalState->m_renderPassData->framebuffers =
+            ContextVk::CreateSwapChainFramebuffers(
+                m_vulkanGlobalState->m_swapChainImageViews.size(),
+                renderPassPerFrameImageViews,
+                m_vulkanGlobalState->m_swapChainImageViews,
+                m_vulkanGlobalState->GetSwapChainExtent().width,
+                m_vulkanGlobalState->GetSwapChainExtent().height,
+                m_deviceHandler->LogicalDevice,
+                *m_vulkanGlobalState->m_renderPassData);
         m_renderPassHandler->CreateShadowPass();
         m_renderPassHandler->CreateShadowPassFrameBuffers();
     } else if (result != VK_SUCCESS) {
@@ -2696,7 +2900,7 @@ void VulkanContext::RunComputeShader() {
     in[0] = dist(gen);
     in[1] = dist(gen);
     in[2] = 2.0;
-    in[3] = 0.48;
+    in[3] = 0.52;
     in[4] = freq(gen);
     in[5] = 8;
 
