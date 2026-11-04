@@ -2,6 +2,8 @@
 #define VULKANCONTEXT_H
 
 // VULKAN PLATFORM DEFINITION
+#include <vulkan/vulkan_core.h>
+
 #include <iostream>
 
 #include "Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
@@ -66,6 +68,14 @@ std::vector<VkFramebuffer> CreateSwapChainFramebuffers(
     std::vector<VkImageView> swapChainImageViews, uint32_t framebufferWidth,
     uint32_t framebufferHeight, VkDevice& logical_device,
     render_pass::RenderPassData renderPassData);
+
+VkCommandBuffer begin_single_time_commands(VkDevice& logical_device,
+                                           VkCommandPool& commandPool);
+
+void end_single_time_commands(VkDevice& logical_device,
+                              VkCommandPool& command_pool,
+                              VkQueue& graphics_queue,
+                              VkCommandBuffer command_buffer);
 }  // namespace backend_vk
 
 struct InputSSBO {
