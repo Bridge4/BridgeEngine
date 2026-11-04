@@ -378,7 +378,12 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
             m_vulkan_global_state->m_swapChainExtent.height);
 
     cvk_render_pass::RenderPassData render_pass_data =
-        m_render_pass_handler->create_render_pass(
+        // m_render_pass_handler->create_render_pass(
+        //     m_device_handler->m_logical_device,
+        //     m_vulkan_global_state->GetSwapChainImageFormat(),
+        //     render_pass_depth_attachment_format);
+
+        cvk_render_pass::create_render_pass(
             m_device_handler->m_logical_device,
             m_vulkan_global_state->GetSwapChainImageFormat(),
             render_pass_depth_attachment_format);
@@ -2552,7 +2557,12 @@ void VulkanContext::DrawFrame(float deltaTime) {
                 m_vulkan_global_state->m_swapChainExtent.height);
 
         cvk_render_pass::RenderPassData renderPassData =
-            m_render_pass_handler->create_render_pass(
+            // m_render_pass_handler->create_render_pass(
+            //     m_device_handler->m_logical_device,
+            //     m_vulkan_global_state->GetSwapChainImageFormat(),
+            //     renderPassDepthAttachmentFormat);
+
+            cvk_render_pass::create_render_pass(
                 m_device_handler->m_logical_device,
                 m_vulkan_global_state->GetSwapChainImageFormat(),
                 renderPassDepthAttachmentFormat);
@@ -2692,7 +2702,12 @@ void VulkanContext::DrawFrame(float deltaTime) {
                 m_vulkan_global_state->m_swapChainExtent.height);
 
         cvk_render_pass::RenderPassData renderPassData =
-            m_render_pass_handler->create_render_pass(
+            // m_render_pass_handler->create_render_pass(
+            //     m_device_handler->m_logical_device,
+            //     m_vulkan_global_state->GetSwapChainImageFormat(),
+            //     renderPassDepthAttachmentFormat);
+
+            cvk_render_pass::create_render_pass(
                 m_device_handler->m_logical_device,
                 m_vulkan_global_state->GetSwapChainImageFormat(),
                 renderPassDepthAttachmentFormat);

@@ -76,9 +76,6 @@ class RenderPassHandler {
         this->m_vulkanGlobalState = VulkanGlobalState;
     }
 
-    context_vk::render_pass::RenderPassData create_render_pass(
-        VkDevice& logical_device, VkFormat colorAttachmentImageFormat,
-        VkFormat depthAttachmentFormat);
     context_vk::render_pass::DepthResources create_render_pass_depth_resources(
         VkFormat depthFormat, uint32_t width, uint32_t height);
     // void CreateRenderPassFrameBuffers();

@@ -8,10 +8,11 @@
 #include "../VulkanGlobalState/VulkanGlobalState.h"
 #include "Source/Renderer/API/Vulkan/Components/Images/ImageHandler.h"
 
-namespace context_vk {}
-context_vk::render_pass::RenderPassData RenderPassHandler::create_render_pass(
-    VkDevice& logical_device, VkFormat color_attachment_image_format,
-    VkFormat depth_attachment_format) {
+namespace context_vk::render_pass {
+
+RenderPassData create_render_pass(VkDevice& logical_device,
+                                  VkFormat color_attachment_image_format,
+                                  VkFormat depth_attachment_format) {
     VkRenderPass render_pass;
 
     VkAttachmentDescription color_attachment{};
@@ -126,6 +127,8 @@ context_vk::render_pass::RenderPassData RenderPassHandler::create_render_pass(
     return render_pass_data;
 }
 
+}  // namespace context_vk::render_pass
+
 void RenderPassHandler::create_shadow_pass() {
     VkAttachmentDescription depthAttachment{};
 
@@ -186,7 +189,7 @@ void RenderPassHandler::create_shadow_pass() {
 }
 
 context_vk::render_pass::DepthResources
-RenderPassHandler::create_render_pass_depth_resources(VkFormat depthFormat,
+RenderPassHandler::create_render_pass_depth_resources(VkFormat depth_format,
                                                       uint32_t width,
                                                       uint32_t height) {
     // VkFormat depthFormat =
@@ -200,15 +203,15 @@ RenderPassHandler::create_render_pass_depth_resources(VkFormat depthFormat,
     VkDeviceMemory renderPassDepthImageMemory = {};
 
     m_imageHandler->CreateImage(
-        width, height, depthFormat, VK_IMAGE_TILING_OPTIMAL,
+        width, height, depth_format, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, renderPassDepthImage,
         renderPassDepthImageMemory);
     renderPassDepthImageView = m_imageHandler->CreateImageView(
-        m_deviceHandler->m_logical_device, renderPassDepthImage, depthFormat,
+        m_deviceHandler->m_logical_device, renderPassDepthImage, depth_format,
         VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    transition_image_layout(renderPassDepthImage, depthFormat,
+    transition_image_layout(renderPassDepthImage, depth_format,
                             VK_IMAGE_LAYOUT_UNDEFINED,
                             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
