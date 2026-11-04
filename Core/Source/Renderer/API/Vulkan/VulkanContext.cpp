@@ -1777,7 +1777,8 @@ void VulkanContext::CreateTextureImage(TextureResource props, Mesh3D* mesh,
     // WARN: Potential for memory leak here
     stbi_image_free(pixels);
 
-    m_image_handler->CreateImage(
+    backend_vk::images::create_image(
+        m_device_handler->m_physical_device, m_device_handler->m_logical_device,
         texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,

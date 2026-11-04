@@ -45,10 +45,6 @@ class ImageHandler {
                                VkImageLayout oldLayout,
                                VkImageLayout newLayout);
 
-    void CreateImage(uint32_t width, uint32_t height, VkFormat format,
-                     VkImageTiling tiling, VkImageUsageFlags usage,
-                     VkMemoryPropertyFlags properties, VkImage& image,
-                     VkDeviceMemory& imageMemory);
     uint32_t FindMemoryType(uint32_t typeFilter,
                             VkMemoryPropertyFlags properties);
 

@@ -265,7 +265,7 @@ void RenderPassHandler::create_shadow_pass() {
     shadowPassInfo.dependencyCount = 1;
     shadowPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(m_deviceHandler->m_logical_device, &shadowPassInfo,
+    if (vkCreateRenderPass(m_device_handler->m_logical_device, &shadowPassInfo,
                            nullptr,
                            &m_vulkanGlobalState->m_shadowPass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
@@ -286,13 +286,14 @@ RenderPassHandler::create_render_pass_depth_resources(VkFormat depth_format,
     VkImageView renderPassDepthImageView = {};
     VkDeviceMemory renderPassDepthImageMemory = {};
 
-    m_imageHandler->CreateImage(
+    backend_vk::images::create_image(
+        m_device_handler->m_physical_device, m_device_handler->m_logical_device,
         width, height, depth_format, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, renderPassDepthImage,
         renderPassDepthImageMemory);
     renderPassDepthImageView = m_imageHandler->CreateImageView(
-        m_deviceHandler->m_logical_device, renderPassDepthImage, depth_format,
+        m_device_handler->m_logical_device, renderPassDepthImage, depth_format,
         VK_IMAGE_ASPECT_DEPTH_BIT);
 
     transition_image_layout(renderPassDepthImage, depth_format,
@@ -344,7 +345,8 @@ RenderPassHandler::create_render_pass_depth_resources(VkFormat depth_format,
 
 void RenderPassHandler::create_shadow_pass_depth_resources() {
     VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
-    m_imageHandler->CreateImage(
+    backend_vk::images::create_image(
+        m_device_handler->m_physical_device, m_device_handler->m_logical_device,
         m_vulkanGlobalState->m_shadowMapWidth,
         m_vulkanGlobalState->m_shadowMapHeight, depthFormat,
         VK_IMAGE_TILING_OPTIMAL,
@@ -356,7 +358,7 @@ void RenderPassHandler::create_shadow_pass_depth_resources() {
 
     m_vulkanGlobalState->m_shadowPassDepthImageView =
         m_imageHandler->CreateImageView(
-            m_deviceHandler->m_logical_device,
+            m_device_handler->m_logical_device,
             m_vulkanGlobalState->m_shadowPassDepthImage, depthFormat,
             VK_IMAGE_ASPECT_DEPTH_BIT);
 
@@ -390,7 +392,7 @@ void RenderPassHandler::create_shadow_pass_framebuffers() {
         framebufferInfo.layers = 1;
 
         if (vkCreateFramebuffer(
-                m_deviceHandler->m_logical_device, &framebufferInfo, nullptr,
+                m_device_handler->m_logical_device, &framebufferInfo, nullptr,
                 &m_vulkanGlobalState->m_shadowPassFrameBuffers[i]) !=
             VK_SUCCESS) {
             throw std::runtime_error("failed to create framebuffer!");
@@ -403,7 +405,7 @@ VkFormat RenderPassHandler::find_supported_format(
     VkFormatFeatureFlags features) {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(m_deviceHandler->m_physical_device,
+        vkGetPhysicalDeviceFormatProperties(m_device_handler->m_physical_device,
                                             format, &props);
         if (tiling == VK_IMAGE_TILING_LINEAR &&
             (props.linearTilingFeatures & features) == features) {
@@ -487,7 +489,7 @@ VkCommandBuffer RenderPassHandler::begin_single_time_commands() {
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(m_deviceHandler->m_logical_device, &allocInfo,
+    vkAllocateCommandBuffers(m_device_handler->m_logical_device, &allocInfo,
                              &commandBuffer);
 
     VkCommandBufferBeginInfo beginInfo{};
@@ -512,6 +514,6 @@ void RenderPassHandler::end_single_time_commands(
                   VK_NULL_HANDLE);
     vkQueueWaitIdle(m_vulkanGlobalState->m_graphicsQueue);
 
-    vkFreeCommandBuffers(m_deviceHandler->m_logical_device,
+    vkFreeCommandBuffers(m_device_handler->m_logical_device,
                          m_vulkanGlobalState->m_commandPool, 1, &commandBuffer);
 }
