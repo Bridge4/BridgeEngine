@@ -26,7 +26,6 @@ class SwapChainHandler {
     VkFormat m_swapChainImageFormat = VK_FORMAT_UNDEFINED;
     VkExtent2D m_swapChainExtent = {};
     std::vector<VkImageView> m_swapChainImageViews = {};
-    RenderPassHandler* m_renderPassHandler = 0;
 
    private:
     VulkanContext* m_vulkanContext = 0;

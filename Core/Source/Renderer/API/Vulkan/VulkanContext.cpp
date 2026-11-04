@@ -389,9 +389,6 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
         new SwapChainHandler(this, m_device_handler, m_vulkan_global_state);
     m_buffer_handler =
         new BufferHandler(m_vulkan_global_state, m_device_handler);
-    m_render_pass_handler = new RenderPassHandler(
-        this, m_swap_chain_handler, m_device_handler, m_vulkan_global_state);
-    m_swap_chain_handler->m_renderPassHandler = m_render_pass_handler;
     m_cameraController =
         new CameraController(this, m_windowing_backend, m_swap_chain_handler,
                              m_buffer_handler, m_vulkan_global_state);
@@ -2335,198 +2332,6 @@ void VulkanContext::RecordCommandBufferCompute(VkCommandBuffer commandBuffer,
     }
 }
 
-void VulkanContext::RecordCommandBufferGeneric(
-    VkCommandBuffer commandBuffer, uint32_t imageIndex,
-    std::vector<BrVkRenderPass> renderPasses) {
-    /*
-        If the command buffer was already recorded once, then a call to
-       vkBeginCommandBuffer will implicitly reset it. It's not possible to
-       append commands to a buffer at a later time.
-    */
-    VkCommandBufferBeginInfo beginInfo{};
-    /*
-        VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT: The command buffer will be
-       rerecorded right after executing it once.
-        VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT : This is a secondary
-       command buffer that will be entirely within a single render pass.
-        VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT : The command buffer can be
-       resubmitted while it is also already pending execution.
-    */
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-        throw std::runtime_error("failed to begin recording command buffer!");
-    }
-    // We set the viewport and scissor state as dynamic in the pipeline
-    // We need to set those up in the command buffer now
-    VkViewport viewport{};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width =
-        static_cast<float>(m_vulkan_global_state->m_shadowMapWidth);
-    viewport.height =
-        static_cast<float>(m_vulkan_global_state->m_shadowMapHeight);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
-    VkExtent2D shadowMapExtent = {
-        static_cast<uint32_t>(m_vulkan_global_state->m_shadowMapWidth),
-        static_cast<uint32_t>(m_vulkan_global_state->m_shadowMapHeight)};
-    VkRect2D scissor{};
-    scissor.offset = {0, 0};
-    scissor.extent = shadowMapExtent;
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-    VkRenderPassBeginInfo shadowPassInfo{};
-    shadowPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    shadowPassInfo.renderPass = m_vulkan_global_state->m_shadowPass;
-    shadowPassInfo.renderArea.offset = {0, 0};
-    shadowPassInfo.renderArea.extent = shadowMapExtent;
-
-    // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
-    std::array<VkClearValue, 1> shadowPassClearValues{};
-    shadowPassClearValues[0].depthStencil = {1.0f, 0};
-    shadowPassInfo.clearValueCount = 1;
-    shadowPassInfo.pClearValues = shadowPassClearValues.data();
-    // for (auto& light : m_vulkanGlobalState->m_lights.lights) {
-    // WARN: HARDCODING SHADOWPASS FRAMEBBUFFERS.
-    // THIS SHOULD BE CHANGED IF MORE THAN 1 SHADOW CASTER
-    shadowPassInfo.framebuffer =
-        m_vulkan_global_state->m_shadowPassFrameBuffers[0];
-    vkCmdBeginRenderPass(commandBuffer, &shadowPassInfo,
-                         VK_SUBPASS_CONTENTS_INLINE);
-
-    // DRAW CALLS
-    // SCENE
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                      m_vulkan_global_state->m_shadowPassPipeline);
-
-    if (!m_vulkan_global_state->m_meshList.empty()) {
-        VkBuffer vertexBuffers[] = {m_buffer_handler->VertexBuffer};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-
-        vkCmdBindIndexBuffer(commandBuffer, m_buffer_handler->IndexBuffer, 0,
-                             VK_INDEX_TYPE_UINT32);
-        for (auto& mesh : m_vulkan_global_state->m_meshList) {
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-            model = glm::rotate(model, -glm::radians(90.0f),
-                                glm::vec3(0.0f, 1.0f, 0.0f));
-            model = glm::scale(model, glm::vec3(0.05f, 0.05f, 0.05f));
-
-            m_vulkan_global_state->m_shadowPassPushConstants.model = model;
-
-            vkCmdPushConstants(
-                commandBuffer,
-                m_vulkan_global_state->m_shadowPassPipelineLayout,
-                VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShadowPassPushConstants),
-                &m_vulkan_global_state->m_shadowPassPushConstants);
-            vkCmdDrawIndexed(commandBuffer,
-                             static_cast<uint32_t>(mesh.m_indexCount), 1,
-                             mesh.m_indexBufferStartIndex, 0, 0);
-        }
-    }
-    vkCmdEndRenderPass(commandBuffer);
-    //}
-
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width =
-        static_cast<float>(m_vulkan_global_state->GetSwapChainExtent().width);
-    viewport.height =
-        static_cast<float>(m_vulkan_global_state->GetSwapChainExtent().height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
-    scissor.offset = {0, 0};
-    scissor.extent = m_vulkan_global_state->GetSwapChainExtent();
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass =
-        m_vulkan_global_state->m_render_pass_data->render_pass;
-    // DEBUG
-    // printf("imageIndex DEBUG: %d\n", imageIndex);
-    renderPassInfo.framebuffer =
-        m_vulkan_global_state->m_renderPassFrameBuffers[imageIndex];
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent =
-        m_vulkan_global_state->GetSwapChainExtent();
-
-    // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
-    std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-    clearValues[1].depthStencil = {1.0f, 0};
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
-
-    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
-                         VK_SUBPASS_CONTENTS_INLINE);
-
-    vkCmdBindDescriptorSets(
-        commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        m_vulkan_global_state->m_pbrPipelineLayout, 0, 1,
-        &m_vulkan_global_state
-             ->m_sceneDescriptorSets[m_vulkan_global_state->m_currentFrame],
-        0, nullptr);
-    std::vector<VkDescriptorSet> descriptorSetsToBind;
-    if (!m_vulkan_global_state->m_meshList.empty()) {
-        VkBuffer vertexBuffers[] = {m_buffer_handler->VertexBuffer};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-
-        vkCmdBindIndexBuffer(commandBuffer, m_buffer_handler->IndexBuffer, 0,
-                             VK_INDEX_TYPE_UINT32);
-        for (auto& mesh : m_vulkan_global_state->m_meshList) {
-            // Binding the graphics pipeline
-            if (mesh.MeshType == TEXTURED) {
-                vkCmdBindPipeline(commandBuffer,
-                                  VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                  m_vulkan_global_state->m_pbrPipeline);
-                vkCmdBindDescriptorSets(
-                    commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    m_vulkan_global_state->m_pbrPipelineLayout, 1, 1,
-                    &mesh.m_descriptorSets[m_vulkan_global_state
-                                               ->m_currentFrame],
-                    0, nullptr);
-            }
-            /*
-                vkCmdDraw(VkCommandBuffer, vertexCount, instanceCount,
-               firstVertex, firstInstance) vertexCount: Even though we don't
-               have a vertex buffer, we technically still have 3 vertices to
-               draw. instanceCount: Used for instanced rendering, use 1 if
-               you're not doing that. firstVertex: Used as an offset into the
-               vertex buffer, defines the lowest value of gl_VertexIndex.
-                firstInstance: Used as an offset for instanced rendering,
-               defines the lowest value of gl_InstanceIndex.
-            */
-            // vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()),
-            // 1, 0, 0);
-            m_vulkan_global_state->m_pbrPushConstants = {
-                m_vulkan_global_state->m_shadowPassPushConstants.lightViewProj,
-                m_vulkan_global_state->m_shadowBias};
-
-            vkCmdPushConstants(
-                commandBuffer, m_vulkan_global_state->m_pbrPipelineLayout,
-                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                sizeof(PBRPushConstants),
-                &m_vulkan_global_state->m_shadowPassPushConstants
-                     .lightViewProj);
-            vkCmdDrawIndexed(commandBuffer,
-                             static_cast<uint32_t>(mesh.m_indexCount), 1,
-                             mesh.m_indexBufferStartIndex, 0, 0);
-        }
-    }
-
-    vkCmdEndRenderPass(commandBuffer);
-    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("failed to record command buffer!");
-    }
-}
 void VulkanContext::CreateSyncObjects() {
     m_vulkan_global_state->m_imageAvailableSemaphores.resize(
         m_maxFramesInFlight);
@@ -2670,8 +2475,8 @@ void VulkanContext::DrawFrame(float deltaTime) {
                 renderPassData.GetRenderPassDataState())) {
             return;
         }
-        m_render_pass_handler->create_shadow_pass();
-        m_render_pass_handler->create_shadow_pass_framebuffers();
+        // m_render_pass_handler->create_shadow_pass();
+        // m_render_pass_handler->create_shadow_pass_framebuffers();
         return;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("failed to acquire swap chain image!");
@@ -2819,8 +2624,8 @@ void VulkanContext::DrawFrame(float deltaTime) {
                 m_vulkan_global_state->GetSwapChainExtent().height,
                 m_device_handler->m_logical_device,
                 *m_vulkan_global_state->m_render_pass_data);
-        m_render_pass_handler->create_shadow_pass();
-        m_render_pass_handler->create_shadow_pass_framebuffers();
+        // m_render_pass_handler->create_shadow_pass();
+        // m_render_pass_handler->create_shadow_pass_framebuffers();
     } else if (result != VK_SUCCESS) {
         throw std::runtime_error("Failed to present swap chain image");
     }
@@ -2924,7 +2729,8 @@ void VulkanContext::destroy() {
                             nullptr);
 
     vkDestroyRenderPass(m_device_handler->m_logical_device,
-                        m_render_pass_handler->m_renderPass, nullptr);
+                        m_vulkan_global_state->m_render_pass_data->render_pass,
+                        nullptr);
 
     for (size_t i = 0; i < m_maxFramesInFlight; i++) {
         vkDestroySemaphore(m_device_handler->m_logical_device,

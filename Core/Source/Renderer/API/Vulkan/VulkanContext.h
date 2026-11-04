@@ -47,10 +47,8 @@
 // Forward Declarations
 class DeviceHandler;
 class SwapChainHandler;
-class ImageHandler;
 class BufferHandler;
 class WindowingBackend;
-class RenderPassHandler;
 class CameraController;
 class VulkanGlobalState;
 class Mesh3D;
@@ -162,7 +160,6 @@ class VulkanContext {
     // DeviceHandler* m_deviceHandler;
     SwapChainHandler* m_swap_chain_handler;
     BufferHandler* m_buffer_handler;
-    RenderPassHandler* m_render_pass_handler;
     CameraController* m_cameraController;
     DescriptorSetHandler* m_descriptor_set_handler;
 
@@ -249,9 +246,6 @@ class VulkanContext {
                                     VkPipelineLayout pipelineLayout,
                                     VkDescriptorSet* descriptorSet);
 
-    void RecordCommandBufferGeneric(VkCommandBuffer commandBuffer,
-                                    uint32_t imageIndex,
-                                    std::vector<BrVkRenderPass> renderPasses);
     // SEMAPHORES AND FENCES
     // Creates semaphores and fences for each frame in flight
     void CreateSyncObjects();
