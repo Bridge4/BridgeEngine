@@ -3,7 +3,7 @@
 #include <array>
 #include <optional>
 
-// #include "../glm/gtx/hash.hpp"
+// #include "../glm/gtx/hash.m_vulkan_global_state"
 #include "Source/Math/Math.h"
 #include "Source/Renderer/Lights/Lights.h"
 #include "vulkan/vulkan.h"

@@ -305,7 +305,7 @@ DepthResources create_render_pass_depth_resources(
 //     shadowPassInfo.dependencyCount = 1;
 //     shadowPassInfo.pDependencies = dependencies.data();
 //
-//     if (vkCreateRenderPass(m_device_handler->m_logical_device,
+//     if (vkCreateRenderPass(m_vulkan_global_state->m_logical_device,
 //     &shadowPassInfo,
 //                            nullptr,
 //                            &m_vulkanGlobalState->m_shadowPass) != VK_SUCCESS)
@@ -317,8 +317,8 @@ DepthResources create_render_pass_depth_resources(
 // void RenderPassHandler::create_shadow_pass_depth_resources() {
 //     VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
 //     backend_vk::images::create_image(
-//         m_device_handler->m_physical_device,
-//         m_device_handler->m_logical_device,
+//         m_vulkan_global_state->m_physical_device,
+//         m_vulkan_global_state->m_logical_device,
 //         m_vulkanGlobalState->m_shadowMapWidth,
 //         m_vulkanGlobalState->m_shadowMapHeight, depthFormat,
 //         VK_IMAGE_TILING_OPTIMAL,
@@ -330,7 +330,7 @@ DepthResources create_render_pass_depth_resources(
 //
 //     m_vulkanGlobalState->m_shadowPassDepthImageView =
 //         backend_vk::images::create_image_view(
-//             m_device_handler->m_logical_device,
+//             m_vulkan_global_state->m_logical_device,
 //             m_vulkanGlobalState->m_shadowPassDepthImage, depthFormat,
 //             VK_IMAGE_ASPECT_DEPTH_BIT);
 //
@@ -364,7 +364,7 @@ DepthResources create_render_pass_depth_resources(
 //         framebufferInfo.layers = 1;
 //
 //         if (vkCreateFramebuffer(
-//                 m_device_handler->m_logical_device, &framebufferInfo,
+//                 m_vulkan_global_state->m_logical_device, &framebufferInfo,
 //                 nullptr, &m_vulkanGlobalState->m_shadowPassFrameBuffers[i])
 //                 !=
 //             VK_SUCCESS) {

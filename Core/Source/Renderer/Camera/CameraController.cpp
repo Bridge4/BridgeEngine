@@ -214,28 +214,32 @@ void CameraController::HandleInputOrbit(float deltaTime) {
     }
 
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_P)) {
-        m_vulkanGlobalState->m_lights.lights[0].intensity.x +=
+        m_vulkan_global_state->m_lights.lights[0].intensity.x +=
             1000.0f * deltaTime;
-        m_vulkanGlobalState->m_lights.lights[2].intensity.x +=
+        m_vulkan_global_state->m_lights.lights[2].intensity.x +=
             1000.0f * deltaTime;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_O)) {
-        m_vulkanGlobalState->m_lights.lights[0].intensity.x -=
+        m_vulkan_global_state->m_lights.lights[0].intensity.x -=
             1000.0f * deltaTime;
-        m_vulkanGlobalState->m_lights.lights[2].intensity.x -=
+        m_vulkan_global_state->m_lights.lights[2].intensity.x -=
             1000.0f * deltaTime;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_H)) {
-        m_vulkanGlobalState->m_lights.lights[0].position.x -= 20.0f * deltaTime;
+        m_vulkan_global_state->m_lights.lights[0].position.x -=
+            20.0f * deltaTime;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_L)) {
-        m_vulkanGlobalState->m_lights.lights[0].position.x += 20.0f * deltaTime;
+        m_vulkan_global_state->m_lights.lights[0].position.x +=
+            20.0f * deltaTime;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_J)) {
-        m_vulkanGlobalState->m_lights.lights[0].position.y -= 20.0f * deltaTime;
+        m_vulkan_global_state->m_lights.lights[0].position.y -=
+            20.0f * deltaTime;
     }
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_K)) {
-        m_vulkanGlobalState->m_lights.lights[0].position.y += 20.0f * deltaTime;
+        m_vulkan_global_state->m_lights.lights[0].position.y +=
+            20.0f * deltaTime;
     }
 
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_Q)) {
@@ -261,7 +265,7 @@ void CameraController::HandleInputOrbit(float deltaTime) {
     }
 
     if (glfwGetKey(m_windowingBackend->m_window, GLFW_KEY_B)) {
-        m_vulkanGlobalState->m_pbrPushConstants.bias.x += 0.001;
+        m_vulkan_global_state->m_pbrPushConstants.bias.x += 0.001;
     }
 
     constexpr uint32_t N =
@@ -314,9 +318,9 @@ void CameraController::HandleInputOrbit(float deltaTime) {
         m_isCalculatingCPU = true;
         std::thread t([this]() {
             float* in = static_cast<float*>(
-                m_vulkanGlobalState->m_computeInputBufferMemoryMapped);
+                m_vulkan_global_state->m_computeInputBufferMemoryMapped);
             float* out = static_cast<float*>(
-                m_vulkanGlobalState->m_computeOutputBufferMemoryMapped);
+                m_vulkan_global_state->m_computeOutputBufferMemoryMapped);
 
             // for (uint32_t i = 0; i < N; ++i) {
             //     in[i] = static_cast<float>(i);
@@ -350,12 +354,12 @@ void CameraController::UpdateCameraPosition(uint32_t currentImage,
     m_cameraUBO.cameraPos = glm::vec4(orbitCam->GetEye(), 0.0f);
     m_cameraUBO.proj = glm::perspectiveZO(
         glm::radians(90.0f),
-        m_vulkanGlobalState->GetSwapChainExtent().width /
-            (float)m_vulkanGlobalState->GetSwapChainExtent().height,
+        m_vulkan_global_state->GetSwapChainExtent().width /
+            (float)m_vulkan_global_state->GetSwapChainExtent().height,
         0.5f, 2000.0f);
     // Invert GLM for Vulkan
     m_cameraUBO.proj[1][1] *= -1;
-    memcpy(m_vulkanGlobalState
-               ->m_cameraUBOMapped[m_vulkanGlobalState->m_currentFrame],
+    memcpy(m_vulkan_global_state
+               ->m_cameraUBOMapped[m_vulkan_global_state->m_currentFrame],
            &m_cameraUBO, sizeof(m_cameraUBO));
 }

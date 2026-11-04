@@ -82,6 +82,9 @@ class VulkanGlobalState {
         this->m_swapChainImages = swapChainImages;
     }
 
+    VkPhysicalDevice m_physical_device = nullptr;
+    VkDevice m_logical_device = nullptr;
+
     // VkInstance m_vulkanInstance = 0;
     VulkanContext* m_vulkanContext = 0;
     ERenderingMode m_renderingMode = ERenderingMode::Standard;

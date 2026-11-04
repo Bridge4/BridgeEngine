@@ -56,11 +56,14 @@ m_indexBuffer, m_indexBufferMemory);
 */
 
 void BufferHandler::DestroyBuffers() {
-    vkQueueWaitIdle(m_vulkanGlobalState->m_presentQueue);
-    vkDestroyBuffer(m_deviceHandler->m_logical_device, IndexBuffer, nullptr);
-    vkFreeMemory(m_deviceHandler->m_logical_device, IndexBufferMemory, nullptr);
-    vkDestroyBuffer(m_deviceHandler->m_logical_device, VertexBuffer, nullptr);
-    vkFreeMemory(m_deviceHandler->m_logical_device, VertexBufferMemory,
+    vkQueueWaitIdle(m_vulkan_global_state->m_presentQueue);
+    vkDestroyBuffer(m_vulkan_global_state->m_logical_device, IndexBuffer,
+                    nullptr);
+    vkFreeMemory(m_vulkan_global_state->m_logical_device, IndexBufferMemory,
+                 nullptr);
+    vkDestroyBuffer(m_vulkan_global_state->m_logical_device, VertexBuffer,
+                    nullptr);
+    vkFreeMemory(m_vulkan_global_state->m_logical_device, VertexBufferMemory,
                  nullptr);
 }
 
@@ -77,10 +80,10 @@ void BufferHandler::CreateVertexBuffer(std::vector<Vertex> vertices) {
 
     // Map it
     void* data;
-    vkMapMemory(m_deviceHandler->m_logical_device, stagingBufferMemory, 0,
+    vkMapMemory(m_vulkan_global_state->m_logical_device, stagingBufferMemory, 0,
                 bufferSize, 0, &data);
     memcpy(data, vertices.data(), (size_t)bufferSize);
-    vkUnmapMemory(m_deviceHandler->m_logical_device, stagingBufferMemory);
+    vkUnmapMemory(m_vulkan_global_state->m_logical_device, stagingBufferMemory);
 
     // Create vertex buffer
     CreateBuffer(
@@ -92,8 +95,9 @@ void BufferHandler::CreateVertexBuffer(std::vector<Vertex> vertices) {
     CopyBuffer(stagingBuffer, VertexBuffer, bufferSize);
 
     // cleanup
-    vkDestroyBuffer(m_deviceHandler->m_logical_device, stagingBuffer, nullptr);
-    vkFreeMemory(m_deviceHandler->m_logical_device, stagingBufferMemory,
+    vkDestroyBuffer(m_vulkan_global_state->m_logical_device, stagingBuffer,
+                    nullptr);
+    vkFreeMemory(m_vulkan_global_state->m_logical_device, stagingBufferMemory,
                  nullptr);
 }
 
@@ -127,10 +131,10 @@ void BufferHandler::CreateIndexBuffer(std::vector<uint32_t> indices) {
                  stagingBuffer, stagingBufferMemory);
 
     void* data;
-    vkMapMemory(m_deviceHandler->m_logical_device, stagingBufferMemory, 0,
+    vkMapMemory(m_vulkan_global_state->m_logical_device, stagingBufferMemory, 0,
                 bufferSize, 0, &data);
     memcpy(data, indices.data(), (size_t)bufferSize);
-    vkUnmapMemory(m_deviceHandler->m_logical_device, stagingBufferMemory);
+    vkUnmapMemory(m_vulkan_global_state->m_logical_device, stagingBufferMemory);
 
     CreateBuffer(
         bufferSize,
@@ -139,8 +143,9 @@ void BufferHandler::CreateIndexBuffer(std::vector<uint32_t> indices) {
 
     CopyBuffer(stagingBuffer, IndexBuffer, bufferSize);
 
-    vkDestroyBuffer(m_deviceHandler->m_logical_device, stagingBuffer, nullptr);
-    vkFreeMemory(m_deviceHandler->m_logical_device, stagingBufferMemory,
+    vkDestroyBuffer(m_vulkan_global_state->m_logical_device, stagingBuffer,
+                    nullptr);
+    vkFreeMemory(m_vulkan_global_state->m_logical_device, stagingBufferMemory,
                  nullptr);
 }
 
@@ -151,24 +156,24 @@ void BufferHandler::CreateCameraUBO() {
     VkDeviceSize bufferSize = sizeof(CameraUBO);
 
     // Create a uniform buffer per frame in flight
-    m_vulkanGlobalState->m_cameraUBO.resize(
-        m_vulkanGlobalState->m_maxFramesInFlight);
-    m_vulkanGlobalState->m_cameraUBOMemory.resize(
-        m_vulkanGlobalState->m_maxFramesInFlight);
-    m_vulkanGlobalState->m_cameraUBOMapped.resize(
-        m_vulkanGlobalState->m_maxFramesInFlight);
+    m_vulkan_global_state->m_cameraUBO.resize(
+        m_vulkan_global_state->m_maxFramesInFlight);
+    m_vulkan_global_state->m_cameraUBOMemory.resize(
+        m_vulkan_global_state->m_maxFramesInFlight);
+    m_vulkan_global_state->m_cameraUBOMapped.resize(
+        m_vulkan_global_state->m_maxFramesInFlight);
 
-    for (size_t i = 0; i < m_vulkanGlobalState->m_maxFramesInFlight; i++) {
+    for (size_t i = 0; i < m_vulkan_global_state->m_maxFramesInFlight; i++) {
         // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i],
         // m_uniformBuffersMemory[i], UNSTAGED) Create then Map to memory
         CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     m_vulkanGlobalState->m_cameraUBO[i],
-                     m_vulkanGlobalState->m_cameraUBOMemory[i]);
-        vkMapMemory(m_deviceHandler->m_logical_device,
-                    m_vulkanGlobalState->m_cameraUBOMemory[i], 0, bufferSize, 0,
-                    &m_vulkanGlobalState->m_cameraUBOMapped[i]);
+                     m_vulkan_global_state->m_cameraUBO[i],
+                     m_vulkan_global_state->m_cameraUBOMemory[i]);
+        vkMapMemory(m_vulkan_global_state->m_logical_device,
+                    m_vulkan_global_state->m_cameraUBOMemory[i], 0, bufferSize,
+                    0, &m_vulkan_global_state->m_cameraUBOMapped[i]);
     }
 }
 
@@ -176,24 +181,24 @@ void BufferHandler::CreateLightUBO() {
     VkDeviceSize bufferSize = sizeof(LightUBO);
 
     // Create a uniform buffer per frame in flight
-    m_vulkanGlobalState->m_lightUBO.resize(
-        m_vulkanGlobalState->m_maxFramesInFlight);
-    m_vulkanGlobalState->m_lightUBOMemory.resize(
-        m_vulkanGlobalState->m_maxFramesInFlight);
-    m_vulkanGlobalState->m_lightUBOMapped.resize(
-        m_vulkanGlobalState->m_maxFramesInFlight);
+    m_vulkan_global_state->m_lightUBO.resize(
+        m_vulkan_global_state->m_maxFramesInFlight);
+    m_vulkan_global_state->m_lightUBOMemory.resize(
+        m_vulkan_global_state->m_maxFramesInFlight);
+    m_vulkan_global_state->m_lightUBOMapped.resize(
+        m_vulkan_global_state->m_maxFramesInFlight);
 
-    for (size_t i = 0; i < m_vulkanGlobalState->m_maxFramesInFlight; i++) {
+    for (size_t i = 0; i < m_vulkan_global_state->m_maxFramesInFlight; i++) {
         // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i],
         // m_uniformBuffersMemory[i], UNSTAGED) Create then Map to memory
         CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     m_vulkanGlobalState->m_lightUBO[i],
-                     m_vulkanGlobalState->m_lightUBOMemory[i]);
-        vkMapMemory(m_deviceHandler->m_logical_device,
-                    m_vulkanGlobalState->m_lightUBOMemory[i], 0, bufferSize, 0,
-                    &m_vulkanGlobalState->m_lightUBOMapped[i]);
+                     m_vulkan_global_state->m_lightUBO[i],
+                     m_vulkan_global_state->m_lightUBOMemory[i]);
+        vkMapMemory(m_vulkan_global_state->m_logical_device,
+                    m_vulkan_global_state->m_lightUBOMemory[i], 0, bufferSize,
+                    0, &m_vulkan_global_state->m_lightUBOMapped[i]);
     }
 }
 
@@ -205,33 +210,35 @@ void BufferHandler::CreateComputeSSBOs() {
     CreateBuffer(bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                 m_vulkanGlobalState->m_computeInputBuffer,
-                 m_vulkanGlobalState->m_computeInputBufferMemory);
-    vkMapMemory(m_deviceHandler->m_logical_device,
-                m_vulkanGlobalState->m_computeInputBufferMemory, 0, bufferSize,
-                0, &m_vulkanGlobalState->m_computeInputBufferMemoryMapped);
+                 m_vulkan_global_state->m_computeInputBuffer,
+                 m_vulkan_global_state->m_computeInputBufferMemory);
+    vkMapMemory(m_vulkan_global_state->m_logical_device,
+                m_vulkan_global_state->m_computeInputBufferMemory, 0,
+                bufferSize, 0,
+                &m_vulkan_global_state->m_computeInputBufferMemoryMapped);
 
     bufferSize = sizeof(OutputSSBO);
     CreateBuffer(bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                 m_vulkanGlobalState->m_computeOutputBuffer,
-                 m_vulkanGlobalState->m_computeOutputBufferMemory);
-    vkMapMemory(m_deviceHandler->m_logical_device,
-                m_vulkanGlobalState->m_computeOutputBufferMemory, 0, bufferSize,
-                0, &m_vulkanGlobalState->m_computeOutputBufferMemoryMapped);
+                 m_vulkan_global_state->m_computeOutputBuffer,
+                 m_vulkan_global_state->m_computeOutputBufferMemory);
+    vkMapMemory(m_vulkan_global_state->m_logical_device,
+                m_vulkan_global_state->m_computeOutputBufferMemory, 0,
+                bufferSize, 0,
+                &m_vulkan_global_state->m_computeOutputBufferMemoryMapped);
 }
 
 void BufferHandler::CreateModelUBO(Mesh3D* mesh) {
     VkDeviceSize bufferSize = sizeof(ModelUBO);
 
-    mesh->m_uniformBuffers.resize(m_vulkanGlobalState->m_maxFramesInFlight);
+    mesh->m_uniformBuffers.resize(m_vulkan_global_state->m_maxFramesInFlight);
     mesh->m_uniformBuffersMemory.resize(
-        m_vulkanGlobalState->m_maxFramesInFlight);
+        m_vulkan_global_state->m_maxFramesInFlight);
     mesh->m_uniformBuffersMapped.resize(
-        m_vulkanGlobalState->m_maxFramesInFlight);
+        m_vulkan_global_state->m_maxFramesInFlight);
 
-    for (size_t i = 0; i < m_vulkanGlobalState->m_maxFramesInFlight; i++) {
+    for (size_t i = 0; i < m_vulkan_global_state->m_maxFramesInFlight; i++) {
         // bufferBuilder->BuildUniformBuffer(m_uniformBuffers[i],
         // m_uniformBuffersMemory[i], UNSTAGED) Create then Map to memory
         CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -239,7 +246,7 @@ void BufferHandler::CreateModelUBO(Mesh3D* mesh) {
                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      mesh->m_uniformBuffers[i],
                      mesh->m_uniformBuffersMemory[i]);
-        vkMapMemory(m_deviceHandler->m_logical_device,
+        vkMapMemory(m_vulkan_global_state->m_logical_device,
                     mesh->m_uniformBuffersMemory[i], 0, bufferSize, 0,
                     &mesh->m_uniformBuffersMapped[i]);
     }
@@ -247,8 +254,8 @@ void BufferHandler::CreateModelUBO(Mesh3D* mesh) {
 
 void BufferHandler::CreateCommandBuffersCompute(VkDevice& logical_device,
                                                 VkCommandPool& commandPool) {
-    m_vulkanGlobalState->m_commandBuffersCompute.resize(
-        m_vulkanGlobalState->m_maxFramesInFlight);
+    m_vulkan_global_state->m_commandBuffersCompute.resize(
+        m_vulkan_global_state->m_maxFramesInFlight);
 
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -261,23 +268,23 @@ void BufferHandler::CreateCommandBuffersCompute(VkDevice& logical_device,
     */
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount =
-        (uint32_t)m_vulkanGlobalState->m_commandBuffersCompute.size();
+        (uint32_t)m_vulkan_global_state->m_commandBuffersCompute.size();
 
     if (vkAllocateCommandBuffers(
             logical_device, &allocInfo,
-            m_vulkanGlobalState->m_commandBuffersCompute.data()) !=
+            m_vulkan_global_state->m_commandBuffersCompute.data()) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to allocate command buffers!");
     }
 }
 
 void BufferHandler::CreateCommandBuffers() {
-    m_vulkanGlobalState->m_commandBuffers.resize(
-        m_vulkanGlobalState->m_maxFramesInFlight);
+    m_vulkan_global_state->m_commandBuffers.resize(
+        m_vulkan_global_state->m_maxFramesInFlight);
 
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = m_vulkanGlobalState->m_commandPool;
+    allocInfo.commandPool = m_vulkan_global_state->m_commandPool;
     /*
         VK_COMMAND_BUFFER_LEVEL_PRIMARY: Can be submitted to a queue for
        execution, but cannot be called from other command buffers.
@@ -286,11 +293,11 @@ void BufferHandler::CreateCommandBuffers() {
     */
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount =
-        (uint32_t)m_vulkanGlobalState->m_commandBuffers.size();
+        (uint32_t)m_vulkan_global_state->m_commandBuffers.size();
 
     if (vkAllocateCommandBuffers(
-            m_deviceHandler->m_logical_device, &allocInfo,
-            m_vulkanGlobalState->m_commandBuffers.data()) != VK_SUCCESS) {
+            m_vulkan_global_state->m_logical_device, &allocInfo,
+            m_vulkan_global_state->m_commandBuffers.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate command buffers!");
     }
 }
@@ -309,15 +316,15 @@ void BufferHandler::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     bufferInfo.usage = usage;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateBuffer(m_deviceHandler->m_logical_device, &bufferInfo, nullptr,
-                       &buffer) != VK_SUCCESS) {
+    if (vkCreateBuffer(m_vulkan_global_state->m_logical_device, &bufferInfo,
+                       nullptr, &buffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to create vertex buffer!");
     }
 
     // Allocation
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(m_deviceHandler->m_logical_device, buffer,
-                                  &memRequirements);
+    vkGetBufferMemoryRequirements(m_vulkan_global_state->m_logical_device,
+                                  buffer, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -328,14 +335,14 @@ void BufferHandler::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     // VkAllocateMemory is an expensive operation on the CPU side, so we should
     // minimize calls to it "Aggressively allocate your buffer as large as you
     // believe it will grow" - dude on stackoverflow
-    if (vkAllocateMemory(m_deviceHandler->m_logical_device, &allocInfo, nullptr,
-                         &bufferMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(m_vulkan_global_state->m_logical_device, &allocInfo,
+                         nullptr, &bufferMemory) != VK_SUCCESS) {
         throw std::runtime_error("Failed to allocate buffer memory.");
     }
 
     // Binding
-    vkBindBufferMemory(m_deviceHandler->m_logical_device, buffer, bufferMemory,
-                       0);
+    vkBindBufferMemory(m_vulkan_global_state->m_logical_device, buffer,
+                       bufferMemory, 0);
 }
 
 void BufferHandler::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer,
@@ -352,12 +359,12 @@ VkCommandBuffer BufferHandler::BeginSingleTimeCommands() {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = m_vulkanGlobalState->m_commandPool;
+    allocInfo.commandPool = m_vulkan_global_state->m_commandPool;
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(m_deviceHandler->m_logical_device, &allocInfo,
-                             &commandBuffer);
+    vkAllocateCommandBuffers(m_vulkan_global_state->m_logical_device,
+                             &allocInfo, &commandBuffer);
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -376,19 +383,20 @@ void BufferHandler::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    vkQueueSubmit(m_vulkanGlobalState->m_graphicsQueue, 1, &submitInfo,
+    vkQueueSubmit(m_vulkan_global_state->m_graphicsQueue, 1, &submitInfo,
                   VK_NULL_HANDLE);
-    vkQueueWaitIdle(m_vulkanGlobalState->m_graphicsQueue);
+    vkQueueWaitIdle(m_vulkan_global_state->m_graphicsQueue);
 
-    vkFreeCommandBuffers(m_deviceHandler->m_logical_device,
-                         m_vulkanGlobalState->m_commandPool, 1, &commandBuffer);
+    vkFreeCommandBuffers(m_vulkan_global_state->m_logical_device,
+                         m_vulkan_global_state->m_commandPool, 1,
+                         &commandBuffer);
 }
 
 uint32_t BufferHandler::FindMemoryType(uint32_t typeFilter,
                                        VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(m_deviceHandler->m_physical_device,
-                                        &memProperties);
+    vkGetPhysicalDeviceMemoryProperties(
+        m_vulkan_global_state->m_physical_device, &memProperties);
 
     // Go over this section
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {

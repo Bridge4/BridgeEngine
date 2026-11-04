@@ -22,7 +22,7 @@ class CameraController {
         this->m_bufferHandler = bufferHandler;
         this->m_windowingBackend = windowHandler;
         this->m_swapChainHandler = swapChainHandler;
-        this->m_vulkanGlobalState = VulkanGlobalState;
+        this->m_vulkan_global_state = VulkanGlobalState;
         this->m_cameraType = camType;
         Initialize();
     }
@@ -47,7 +47,7 @@ class CameraController {
     WindowingBackend* m_windowingBackend = 0;
     SwapChainHandler* m_swapChainHandler = 0;
     BufferHandler* m_bufferHandler = 0;
-    VulkanGlobalState* m_vulkanGlobalState = 0;
+    VulkanGlobalState* m_vulkan_global_state = 0;
 
     glm::mat4 m_cameraViewMatrix = glm::mat4(1.0f);
 

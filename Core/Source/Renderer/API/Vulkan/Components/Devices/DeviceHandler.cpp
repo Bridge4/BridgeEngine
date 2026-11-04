@@ -8,7 +8,7 @@
 #include <set>
 
 #include "../VulkanGlobalState/VulkanGlobalState.h"
-// CORE FUNCTIONS
+// m_vulkan_global_state FUNCTIONS
 #include "../../VulkanContext.h"
 #include "Source/Renderer/API/Vulkan/VkTypes.h"
 #include "Source/Renderer/RendererTypes.h"
@@ -319,15 +319,3 @@ void destroy_debug_utils_messenger_ext(
 }
 
 }  // namespace backend_vk::devices
-
-void DeviceHandler::init() {
-    m_physical_device = backend_vk::devices::init_physical_device(
-        m_vulkanGlobalState->m_instance, m_vulkanGlobalState->m_surface);
-    m_logical_device = backend_vk::devices::init_logical_device(
-        m_physical_device, m_vulkanGlobalState->m_surface,
-        ERenderingMode::Bindless);
-    m_vulkanGlobalState->m_debug_messenger =
-        backend_vk::devices::init_debug_messenger(
-            m_vulkanGlobalState->m_instance)
-            .value();
-}

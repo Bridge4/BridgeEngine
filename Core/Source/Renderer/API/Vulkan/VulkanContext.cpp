@@ -22,7 +22,6 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-#include <array>
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
@@ -382,13 +381,9 @@ namespace bvk_render_pass = backend_vk::render_pass;
 void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     m_vulkan_global_state = new VulkanGlobalState(this, rendering_mode);
 
-    m_device_handler = new DeviceHandler(m_vulkan_global_state);
-    m_descriptor_set_handler =
-        new DescriptorSetHandler(m_vulkan_global_state, m_device_handler);
-    m_swap_chain_handler =
-        new SwapChainHandler(this, m_device_handler, m_vulkan_global_state);
-    m_buffer_handler =
-        new BufferHandler(m_vulkan_global_state, m_device_handler);
+    m_descriptor_set_handler = new DescriptorSetHandler(m_vulkan_global_state);
+    m_swap_chain_handler = new SwapChainHandler(this, m_vulkan_global_state);
+    m_buffer_handler = new BufferHandler(m_vulkan_global_state);
     m_cameraController =
         new CameraController(this, m_windowing_backend, m_swap_chain_handler,
                              m_buffer_handler, m_vulkan_global_state);
@@ -402,25 +397,37 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
             &m_vulkan_global_state->m_surface) != VK_SUCCESS)
         throw std::runtime_error("Failed to create window surface");
 
-    m_device_handler->init();
+    m_vulkan_global_state->m_physical_device =
+        backend_vk::devices::init_physical_device(
+            m_vulkan_global_state->m_instance,
+            m_vulkan_global_state->m_surface);
+    m_vulkan_global_state->m_logical_device =
+        backend_vk::devices::init_logical_device(
+            m_vulkan_global_state->m_physical_device,
+            m_vulkan_global_state->m_surface, ERenderingMode::Bindless);
+    m_vulkan_global_state->m_debug_messenger =
+        backend_vk::devices::init_debug_messenger(
+            m_vulkan_global_state->m_instance)
+            .value();
+
     QueueFamilyIndices queue_family_indices =
         backend_vk::devices::find_queue_families(
-            m_device_handler->m_physical_device,
+            m_vulkan_global_state->m_physical_device,
             m_vulkan_global_state->m_surface);
 
     m_vulkan_global_state->m_graphicsQueue =
         backend_vk::devices::get_device_queue(
-            m_device_handler->m_logical_device,
+            m_vulkan_global_state->m_logical_device,
             queue_family_indices.graphics_family.value());
 
     m_vulkan_global_state->m_presentQueue =
         backend_vk::devices::get_device_queue(
-            m_device_handler->m_logical_device,
+            m_vulkan_global_state->m_logical_device,
             queue_family_indices.present_family.value());
 
     m_vulkan_global_state->m_computeQueue =
         backend_vk::devices::get_device_queue(
-            m_device_handler->m_logical_device,
+            m_vulkan_global_state->m_logical_device,
             queue_family_indices.present_family.value());
 
     int framebuffer_width, framebuffer_height;
@@ -431,7 +438,7 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
 
     VkFormat render_pass_depth_attachment_format =
         bvk_render_pass::find_supported_format(
-            m_device_handler->m_physical_device,
+            m_vulkan_global_state->m_physical_device,
             {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
              VK_FORMAT_D24_UNORM_S8_UINT},
             VK_IMAGE_TILING_OPTIMAL,
@@ -443,8 +450,8 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
 
     bvk_render_pass::DepthResources render_pass_depth_resources =
         bvk_render_pass::create_render_pass_depth_resources(
-            m_device_handler->m_physical_device,
-            m_device_handler->m_logical_device,
+            m_vulkan_global_state->m_physical_device,
+            m_vulkan_global_state->m_logical_device,
             m_vulkan_global_state->m_commandPool,
             m_vulkan_global_state->m_graphicsQueue,
             render_pass_depth_attachment_format,
@@ -453,7 +460,7 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
 
     bvk_render_pass::RenderPassData render_pass_data =
         bvk_render_pass::create_render_pass(
-            m_device_handler->m_logical_device,
+            m_vulkan_global_state->m_logical_device,
             m_vulkan_global_state->GetSwapChainImageFormat(),
             render_pass_depth_attachment_format);
 
@@ -474,7 +481,7 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     //     m_device_handler->find_queue_families(
     //         m_device_handler->m_physical_device);
     m_vulkan_global_state->m_commandPoolCompute = create_command_pool_compute(
-        m_device_handler->m_logical_device, queue_family_indices);
+        m_vulkan_global_state->m_logical_device, queue_family_indices);
 
     // m_renderPassHandler->CreateRenderPassFrameBuffers();
 
@@ -490,7 +497,7 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
             m_vulkan_global_state->m_swapChainImageViews,
             m_vulkan_global_state->GetSwapChainExtent().width,
             m_vulkan_global_state->GetSwapChainExtent().height,
-            m_device_handler->m_logical_device,
+            m_vulkan_global_state->m_logical_device,
             *m_vulkan_global_state->m_render_pass_data);
     if (m_vulkan_global_state->m_renderingMode == ERenderingMode::Bindless) {
         m_descriptor_set_handler->CreateDescriptorPoolBindless();
@@ -537,7 +544,7 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     m_buffer_handler->CreateComputeSSBOs();
     m_buffer_handler->CreateCommandBuffers();
     m_buffer_handler->CreateCommandBuffersCompute(
-        m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_commandPoolCompute);
 
     CreateSyncObjects();
@@ -572,8 +579,8 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     // value of VkApplicationInfo::apiVersion, otherwise will default to
     // header / version.
     init_info.Instance = m_vulkan_global_state->m_instance;
-    init_info.PhysicalDevice = m_device_handler->m_physical_device;
-    init_info.Device = m_device_handler->m_logical_device;
+    init_info.PhysicalDevice = m_vulkan_global_state->m_physical_device;
+    init_info.Device = m_vulkan_global_state->m_logical_device;
 
     init_info.QueueFamily = queue_family_indices.graphics_family.value();
     init_info.Queue = m_vulkan_global_state->m_graphicsQueue;
@@ -607,7 +614,7 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
 
     // m_vulkanGlobalState->m_computeInputBuffer = {2.0f};
     m_buffer_handler->CreateCommandBuffersCompute(
-        m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_commandPoolCompute);
 }
 
@@ -661,7 +668,7 @@ uint32_t VulkanContext::register_texture(VkImageView* textureImageView,
     w.descriptorCount = 1;
     w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     w.pImageInfo = &imageInfo;
-    vkUpdateDescriptorSets(m_device_handler->m_logical_device, 1, &w, 0,
+    vkUpdateDescriptorSets(m_vulkan_global_state->m_logical_device, 1, &w, 0,
                            nullptr);
     return idx;  // store in the material
 }
@@ -838,7 +845,7 @@ void VulkanContext::new_landscape() {
         m_vertices.begin() +
             m_vulkan_global_state->m_meshList[0].m_vertexBufferStartIndex);
     vkDeviceWaitIdle(
-        m_device_handler
+        m_vulkan_global_state
             ->m_logical_device);  // GPU must not be reading the old buffer
     // destroy old vertex buffer + memory here (whatever your cleanup does)
     m_buffer_handler->CreateVertexBuffer(m_vertices);
@@ -849,23 +856,23 @@ void VulkanContext::new_landscape() {
 void VulkanContext::unload_scene_objects() {
     if (!m_vulkan_global_state->m_meshList.empty()) {
         vkQueueWaitIdle(m_vulkan_global_state->m_presentQueue);
-        vkDestroyDescriptorPool(m_device_handler->m_logical_device,
+        vkDestroyDescriptorPool(m_vulkan_global_state->m_logical_device,
                                 m_vulkan_global_state->m_descriptorPool,
                                 nullptr);
         for (auto& mesh : m_vulkan_global_state->m_meshList) {
-            vkDestroySampler(m_device_handler->m_logical_device,
+            vkDestroySampler(m_vulkan_global_state->m_logical_device,
                              mesh.m_textureSampler, nullptr);
-            vkDestroyImageView(m_device_handler->m_logical_device,
+            vkDestroyImageView(m_vulkan_global_state->m_logical_device,
                                mesh.m_textureImageView, nullptr);
-            vkDestroyImage(m_device_handler->m_logical_device,
+            vkDestroyImage(m_vulkan_global_state->m_logical_device,
                            mesh.m_textureImage, nullptr);
-            vkFreeMemory(m_device_handler->m_logical_device,
+            vkFreeMemory(m_vulkan_global_state->m_logical_device,
                          mesh.m_textureImageMemory, nullptr);
             int bufCount = 0;
             for (auto& buffer : mesh.m_uniformBuffers) {
-                vkDestroyBuffer(m_device_handler->m_logical_device, buffer,
+                vkDestroyBuffer(m_vulkan_global_state->m_logical_device, buffer,
                                 nullptr);
-                vkFreeMemory(m_device_handler->m_logical_device,
+                vkFreeMemory(m_vulkan_global_state->m_logical_device,
                              mesh.m_uniformBuffersMemory[bufCount], nullptr);
                 bufCount++;
             }
@@ -1063,9 +1070,10 @@ void VulkanContext::CreatePBRPipeline(std::vector<char> vertShaderCode,
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-    if (vkCreatePipelineLayout(
-            m_device_handler->m_logical_device, &pipelineLayoutInfo, nullptr,
-            &m_vulkan_global_state->m_pbrPipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(m_vulkan_global_state->m_logical_device,
+                               &pipelineLayoutInfo, nullptr,
+                               &m_vulkan_global_state->m_pbrPipelineLayout) !=
+        VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     };
 
@@ -1091,16 +1099,16 @@ void VulkanContext::CreatePBRPipeline(std::vector<char> vertShaderCode,
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
 
-    if (vkCreateGraphicsPipelines(m_device_handler->m_logical_device,
+    if (vkCreateGraphicsPipelines(m_vulkan_global_state->m_logical_device,
                                   VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
                                   pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    vkDestroyShaderModule(m_device_handler->m_logical_device, fragShaderModule,
-                          nullptr);
-    vkDestroyShaderModule(m_device_handler->m_logical_device, vertShaderModule,
-                          nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
+                          fragShaderModule, nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
+                          vertShaderModule, nullptr);
 }
 
 void VulkanContext::CreateShadowPassPipeline(std::vector<char> vertShaderCode,
@@ -1270,7 +1278,8 @@ void VulkanContext::CreateShadowPassPipeline(std::vector<char> vertShaderCode,
     pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
     if (vkCreatePipelineLayout(
-            m_device_handler->m_logical_device, &pipelineLayoutInfo, nullptr,
+            m_vulkan_global_state->m_logical_device, &pipelineLayoutInfo,
+            nullptr,
             &m_vulkan_global_state->m_shadowPassPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     };
@@ -1294,17 +1303,17 @@ void VulkanContext::CreateShadowPassPipeline(std::vector<char> vertShaderCode,
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
 
-    if (vkCreateGraphicsPipelines(m_device_handler->m_logical_device,
+    if (vkCreateGraphicsPipelines(m_vulkan_global_state->m_logical_device,
                                   VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
                                   pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shadow pass pipeline!");
     }
 
-    vkDestroyShaderModule(m_device_handler->m_logical_device, fragShaderModule,
-                          nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
+                          fragShaderModule, nullptr);
 
-    vkDestroyShaderModule(m_device_handler->m_logical_device, vertShaderModule,
-                          nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
+                          vertShaderModule, nullptr);
 }
 
 void VulkanContext::CreatePBRPipelineBindless(std::vector<char> vertShaderCode,
@@ -1502,9 +1511,10 @@ void VulkanContext::CreatePBRPipelineBindless(std::vector<char> vertShaderCode,
     pipelineLayoutInfo.pushConstantRangeCount = 2;
     pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
 
-    if (vkCreatePipelineLayout(
-            m_device_handler->m_logical_device, &pipelineLayoutInfo, nullptr,
-            &m_vulkan_global_state->m_pbrPipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(m_vulkan_global_state->m_logical_device,
+                               &pipelineLayoutInfo, nullptr,
+                               &m_vulkan_global_state->m_pbrPipelineLayout) !=
+        VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     };
 
@@ -1530,16 +1540,16 @@ void VulkanContext::CreatePBRPipelineBindless(std::vector<char> vertShaderCode,
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
 
-    if (vkCreateGraphicsPipelines(m_device_handler->m_logical_device,
+    if (vkCreateGraphicsPipelines(m_vulkan_global_state->m_logical_device,
                                   VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
                                   pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    vkDestroyShaderModule(m_device_handler->m_logical_device, fragShaderModule,
-                          nullptr);
-    vkDestroyShaderModule(m_device_handler->m_logical_device, vertShaderModule,
-                          nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
+                          fragShaderModule, nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
+                          vertShaderModule, nullptr);
 }
 
 void VulkanContext::CreateShadowPassPipelineBindless(
@@ -1709,7 +1719,8 @@ void VulkanContext::CreateShadowPassPipelineBindless(
     pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
     if (vkCreatePipelineLayout(
-            m_device_handler->m_logical_device, &pipelineLayoutInfo, nullptr,
+            m_vulkan_global_state->m_logical_device, &pipelineLayoutInfo,
+            nullptr,
             &m_vulkan_global_state->m_shadowPassPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     };
@@ -1733,22 +1744,22 @@ void VulkanContext::CreateShadowPassPipelineBindless(
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
 
-    if (vkCreateGraphicsPipelines(m_device_handler->m_logical_device,
+    if (vkCreateGraphicsPipelines(m_vulkan_global_state->m_logical_device,
                                   VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
                                   pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shadow pass pipeline!");
     }
 
-    vkDestroyShaderModule(m_device_handler->m_logical_device, fragShaderModule,
-                          nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
+                          fragShaderModule, nullptr);
 
-    vkDestroyShaderModule(m_device_handler->m_logical_device, vertShaderModule,
-                          nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
+                          vertShaderModule, nullptr);
 }
 void VulkanContext::create_command_pool() {
     QueueFamilyIndices queue_family_indices =
         backend_vk::devices::find_queue_families(
-            m_device_handler->m_physical_device,
+            m_vulkan_global_state->m_physical_device,
             m_vulkan_global_state->m_surface);
 
     VkCommandPoolCreateInfo poolInfo{};
@@ -1758,7 +1769,7 @@ void VulkanContext::create_command_pool() {
     // pool
     poolInfo.queueFamilyIndex = queue_family_indices.graphics_family.value();
 
-    if (vkCreateCommandPool(m_device_handler->m_logical_device, &poolInfo,
+    if (vkCreateCommandPool(m_vulkan_global_state->m_logical_device, &poolInfo,
                             nullptr, &m_vulkan_global_state->m_commandPool) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create command pool!");
@@ -1807,24 +1818,25 @@ void VulkanContext::CreateTextureImage(TextureResource props, Mesh3D* mesh,
                                    stagingBuffer, stagingBufferMemory);
 
     void* data;
-    vkMapMemory(m_device_handler->m_logical_device, stagingBufferMemory, 0,
+    vkMapMemory(m_vulkan_global_state->m_logical_device, stagingBufferMemory, 0,
                 imageSize, 0, &data);
     memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vkUnmapMemory(m_device_handler->m_logical_device, stagingBufferMemory);
+    vkUnmapMemory(m_vulkan_global_state->m_logical_device, stagingBufferMemory);
 
     // WARN: Potential for memory leak here
     stbi_image_free(pixels);
 
     backend_vk::images::create_image(
-        m_device_handler->m_physical_device, m_device_handler->m_logical_device,
-        texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+        m_vulkan_global_state->m_physical_device,
+        m_vulkan_global_state->m_logical_device, texWidth, texHeight,
+        VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         mesh->m_materialDataMap[materialType].m_textureImage,
         mesh->m_materialDataMap[materialType].m_textureImageMemory);
 
     backend_vk::images::transition_image_layout(
-        m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_commandPool,
         m_vulkan_global_state->m_graphicsQueue,
         mesh->m_materialDataMap[materialType].m_textureImage,
@@ -1832,22 +1844,23 @@ void VulkanContext::CreateTextureImage(TextureResource props, Mesh3D* mesh,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     backend_vk::images::copy_buffer_to_image(
-        m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_commandPool,
         m_vulkan_global_state->m_graphicsQueue, stagingBuffer,
         mesh->m_materialDataMap[materialType].m_textureImage,
         static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 
     backend_vk::images::transition_image_layout(
-        m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_commandPool,
         m_vulkan_global_state->m_graphicsQueue,
         mesh->m_materialDataMap[materialType].m_textureImage,
         VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    vkDestroyBuffer(m_device_handler->m_logical_device, stagingBuffer, nullptr);
-    vkFreeMemory(m_device_handler->m_logical_device, stagingBufferMemory,
+    vkDestroyBuffer(m_vulkan_global_state->m_logical_device, stagingBuffer,
+                    nullptr);
+    vkFreeMemory(m_vulkan_global_state->m_logical_device, stagingBufferMemory,
                  nullptr);
 }
 
@@ -1856,7 +1869,7 @@ void VulkanContext::CreateTextureImageView(Mesh3D* mesh,
                                            MaterialEnums materialType) {
     mesh->m_materialDataMap[materialType].m_textureImageView =
         backend_vk::images::create_image_view(
-            m_device_handler->m_logical_device,
+            m_vulkan_global_state->m_logical_device,
             mesh->m_materialDataMap[materialType].m_textureImage,
             VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 }
@@ -1875,7 +1888,7 @@ void VulkanContext::CreateTextureSampler(Mesh3D* mesh,
     samplerInfo.anisotropyEnable = VK_TRUE;
 
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(m_device_handler->m_physical_device,
+    vkGetPhysicalDeviceProperties(m_vulkan_global_state->m_physical_device,
                                   &properties);
     std::cout << "MAX COMPUTE WORK GROUP SIZE "
               << properties.limits.maxComputeWorkGroupSize[0] << "\n"
@@ -1899,7 +1912,7 @@ void VulkanContext::CreateTextureSampler(Mesh3D* mesh,
     samplerInfo.maxLod = 0.0f;
 
     if (vkCreateSampler(
-            m_device_handler->m_logical_device, &samplerInfo, nullptr,
+            m_vulkan_global_state->m_logical_device, &samplerInfo, nullptr,
             &mesh->m_materialDataMap[materialType].m_textureSampler) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
@@ -1918,7 +1931,7 @@ void VulkanContext::CreateTextureSamplerShadowPass() {
     samplerInfo.anisotropyEnable = VK_FALSE;
 
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(m_device_handler->m_physical_device,
+    vkGetPhysicalDeviceProperties(m_vulkan_global_state->m_physical_device,
                                   &properties);
     samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 
@@ -1934,7 +1947,7 @@ void VulkanContext::CreateTextureSamplerShadowPass() {
     samplerInfo.maxLod = 0.0f;
 
     if (vkCreateSampler(
-            m_device_handler->m_logical_device, &samplerInfo, nullptr,
+            m_vulkan_global_state->m_logical_device, &samplerInfo, nullptr,
             &m_vulkan_global_state->m_shadowPassTextureSampler) != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
@@ -2369,21 +2382,24 @@ void VulkanContext::CreateSyncObjects() {
 
     for (int i = 0; i < m_maxFramesInFlight; i++) {
         if (vkCreateSemaphore(
-                m_device_handler->m_logical_device, &semaphoreInfo, nullptr,
+                m_vulkan_global_state->m_logical_device, &semaphoreInfo,
+                nullptr,
                 &m_vulkan_global_state->m_imageAvailableSemaphores[i]) !=
                 VK_SUCCESS ||
             vkCreateSemaphore(
-                m_device_handler->m_logical_device, &semaphoreInfo, nullptr,
+                m_vulkan_global_state->m_logical_device, &semaphoreInfo,
+                nullptr,
                 &m_vulkan_global_state->m_renderFinishedSemaphores[i]) !=
                 VK_SUCCESS ||
             vkCreateFence(
-                m_device_handler->m_logical_device, &fenceInfo, nullptr,
+                m_vulkan_global_state->m_logical_device, &fenceInfo, nullptr,
                 &m_vulkan_global_state->m_inFlightFences[i]) != VK_SUCCESS) {
             throw std::runtime_error("failed to create semaphores!");
         }
     }
 
-    if (vkCreateFence(m_device_handler->m_logical_device, &fenceInfo, nullptr,
+    if (vkCreateFence(m_vulkan_global_state->m_logical_device, &fenceInfo,
+                      nullptr,
                       &m_vulkan_global_state->m_computeFence) != VK_SUCCESS) {
         throw std::runtime_error("failed to create compute fence!");
     }
@@ -2406,7 +2422,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
     }
 
     vkWaitForFences(
-        m_device_handler->m_logical_device, 1,
+        m_vulkan_global_state->m_logical_device, 1,
         &m_vulkan_global_state
              ->m_inFlightFences[m_vulkan_global_state->m_currentFrame],
         VK_TRUE, UINT64_MAX);
@@ -2416,8 +2432,8 @@ void VulkanContext::DrawFrame(float deltaTime) {
 
     // SWAP CHAIN RECREATION
     VkResult result = vkAcquireNextImageKHR(
-        m_device_handler->m_logical_device, m_vulkan_global_state->m_swapChain,
-        UINT64_MAX,
+        m_vulkan_global_state->m_logical_device,
+        m_vulkan_global_state->m_swapChain, UINT64_MAX,
         m_vulkan_global_state
             ->m_imageAvailableSemaphores[m_vulkan_global_state->m_currentFrame],
         VK_NULL_HANDLE, &imageIndex);
@@ -2427,13 +2443,13 @@ void VulkanContext::DrawFrame(float deltaTime) {
         m_windowing_backend->get_framebuffer_size_glfw(&frameBufferWidth,
                                                        &frameBufferHeight);
         m_windowing_backend->PollWindowNotMinimizedGLFW();
-        vkDeviceWaitIdle(m_device_handler->m_logical_device);
+        vkDeviceWaitIdle(m_vulkan_global_state->m_logical_device);
         m_swap_chain_handler->Rebuild(frameBufferWidth, frameBufferHeight);
         // TODO: MUST NOT FORGET THIS
         // m_renderPassHandler->CreateRenderPass();
         VkFormat render_pass_depth_attachment_format =
             bvk_render_pass::find_supported_format(
-                m_device_handler->m_physical_device,
+                m_vulkan_global_state->m_physical_device,
                 {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
                  VK_FORMAT_D24_UNORM_S8_UINT},
                 VK_IMAGE_TILING_OPTIMAL,
@@ -2445,8 +2461,8 @@ void VulkanContext::DrawFrame(float deltaTime) {
 
         bvk_render_pass::DepthResources renderPassDepthResources =
             bvk_render_pass::create_render_pass_depth_resources(
-                m_device_handler->m_physical_device,
-                m_device_handler->m_logical_device,
+                m_vulkan_global_state->m_physical_device,
+                m_vulkan_global_state->m_logical_device,
                 m_vulkan_global_state->m_commandPool,
                 m_vulkan_global_state->m_graphicsQueue,
                 render_pass_depth_attachment_format,
@@ -2455,12 +2471,12 @@ void VulkanContext::DrawFrame(float deltaTime) {
 
         bvk_render_pass::RenderPassData renderPassData =
             // m_render_pass_handler->create_render_pass(
-            //     m_device_handler->m_logical_device,
+            //     m_vulkan_global_state->m_logical_device,
             //     m_vulkan_global_state->GetSwapChainImageFormat(),
             //     renderPassDepthAttachmentFormat);
 
             bvk_render_pass::create_render_pass(
-                m_device_handler->m_logical_device,
+                m_vulkan_global_state->m_logical_device,
                 m_vulkan_global_state->GetSwapChainImageFormat(),
                 render_pass_depth_attachment_format);
 
@@ -2489,7 +2505,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
                 m_vulkan_global_state->m_swapChainImageViews,
                 m_vulkan_global_state->GetSwapChainExtent().width,
                 m_vulkan_global_state->GetSwapChainExtent().height,
-                m_device_handler->m_logical_device,
+                m_vulkan_global_state->m_logical_device,
                 *m_vulkan_global_state->m_render_pass_data);
 
         if (!backend_vk::CheckRenderPassDataValidity(
@@ -2505,7 +2521,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
 
     // Only reset fences if we are submitting work
     vkResetFences(
-        m_device_handler->m_logical_device, 1,
+        m_vulkan_global_state->m_logical_device, 1,
         &m_vulkan_global_state
              ->m_inFlightFences[m_vulkan_global_state->m_currentFrame]);
 
@@ -2577,7 +2593,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
         m_windowing_backend->get_framebuffer_size_glfw(&frameBufferWidth,
                                                        &frameBufferHeight);
         m_windowing_backend->PollWindowNotMinimizedGLFW();
-        vkDeviceWaitIdle(m_device_handler->m_logical_device);
+        vkDeviceWaitIdle(m_vulkan_global_state->m_logical_device);
         m_swap_chain_handler->Rebuild(frameBufferWidth, frameBufferHeight);
         // TODO: MUST NOT FORGET THIS
         // m_renderPassHandler->CreateRenderPass();
@@ -2589,7 +2605,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
             //     VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
             bvk_render_pass::find_supported_format(
-                m_device_handler->m_physical_device,
+                m_vulkan_global_state->m_physical_device,
                 {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
                  VK_FORMAT_D24_UNORM_S8_UINT},
                 VK_IMAGE_TILING_OPTIMAL,
@@ -2600,8 +2616,8 @@ void VulkanContext::DrawFrame(float deltaTime) {
 
         bvk_render_pass::DepthResources render_pass_depth_resources =
             bvk_render_pass::create_render_pass_depth_resources(
-                m_device_handler->m_physical_device,
-                m_device_handler->m_logical_device,
+                m_vulkan_global_state->m_physical_device,
+                m_vulkan_global_state->m_logical_device,
                 m_vulkan_global_state->m_commandPool,
                 m_vulkan_global_state->m_graphicsQueue,
                 render_pass_depth_attachment_format,
@@ -2610,12 +2626,12 @@ void VulkanContext::DrawFrame(float deltaTime) {
 
         bvk_render_pass::RenderPassData renderPassData =
             // m_render_pass_handler->create_render_pass(
-            //     m_device_handler->m_logical_device,
+            //     m_vulkan_global_state->m_logical_device,
             //     m_vulkan_global_state->GetSwapChainImageFormat(),
             //     renderPassDepthAttachmentFormat);
 
             bvk_render_pass::create_render_pass(
-                m_device_handler->m_logical_device,
+                m_vulkan_global_state->m_logical_device,
                 m_vulkan_global_state->GetSwapChainImageFormat(),
                 render_pass_depth_attachment_format);
 
@@ -2643,7 +2659,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
                 m_vulkan_global_state->m_swapChainImageViews,
                 m_vulkan_global_state->GetSwapChainExtent().width,
                 m_vulkan_global_state->GetSwapChainExtent().height,
-                m_device_handler->m_logical_device,
+                m_vulkan_global_state->m_logical_device,
                 *m_vulkan_global_state->m_render_pass_data);
         // m_render_pass_handler->create_shadow_pass();
         // m_render_pass_handler->create_shadow_pass_framebuffers();
@@ -2711,66 +2727,67 @@ DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 
 // TODO: Create unit tests or something like that to test the destruction order
 void VulkanContext::destroy() {
-    vkDeviceWaitIdle(m_device_handler->m_logical_device);
+    vkDeviceWaitIdle(m_vulkan_global_state->m_logical_device);
     m_swap_chain_handler->Destroy();
     // DestroySwapChain();
 
     for (auto& mesh : m_vulkan_global_state->m_meshList) {
-        vkDestroySampler(m_device_handler->m_logical_device,
+        vkDestroySampler(m_vulkan_global_state->m_logical_device,
                          mesh.m_textureSampler, nullptr);
-        vkDestroyImageView(m_device_handler->m_logical_device,
+        vkDestroyImageView(m_vulkan_global_state->m_logical_device,
                            mesh.m_textureImageView, nullptr);
-        vkDestroyImage(m_device_handler->m_logical_device, mesh.m_textureImage,
-                       nullptr);
-        vkFreeMemory(m_device_handler->m_logical_device,
+        vkDestroyImage(m_vulkan_global_state->m_logical_device,
+                       mesh.m_textureImage, nullptr);
+        vkFreeMemory(m_vulkan_global_state->m_logical_device,
                      mesh.m_textureImageMemory, nullptr);
     }
 
     for (size_t i = 0; i < m_maxFramesInFlight; i++) {
-        vkDestroyBuffer(m_device_handler->m_logical_device,
+        vkDestroyBuffer(m_vulkan_global_state->m_logical_device,
                         m_buffer_handler->UniformBuffers[i], nullptr);
-        vkFreeMemory(m_device_handler->m_logical_device,
+        vkFreeMemory(m_vulkan_global_state->m_logical_device,
                      m_buffer_handler->UniformBuffersMemory[i], nullptr);
     }
 
-    vkDestroyDescriptorPool(m_device_handler->m_logical_device,
+    vkDestroyDescriptorPool(m_vulkan_global_state->m_logical_device,
                             m_vulkan_global_state->m_descriptorPool, nullptr);
 
     vkDestroyDescriptorSetLayout(
-        m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_meshDescriptorSetLayout, nullptr);
 
     // Buffer cleanup
     // Call BufferHandler::DestroyBuffers
     m_buffer_handler->DestroyBuffers();
 
-    vkDestroyPipeline(m_device_handler->m_logical_device,
+    vkDestroyPipeline(m_vulkan_global_state->m_logical_device,
                       m_vulkan_global_state->m_pbrPipeline, nullptr);
-    vkDestroyPipelineLayout(m_device_handler->m_logical_device,
+    vkDestroyPipelineLayout(m_vulkan_global_state->m_logical_device,
                             m_vulkan_global_state->m_pbrPipelineLayout,
                             nullptr);
 
-    vkDestroyRenderPass(m_device_handler->m_logical_device,
+    vkDestroyRenderPass(m_vulkan_global_state->m_logical_device,
                         m_vulkan_global_state->m_render_pass_data->render_pass,
                         nullptr);
 
     for (size_t i = 0; i < m_maxFramesInFlight; i++) {
-        vkDestroySemaphore(m_device_handler->m_logical_device,
+        vkDestroySemaphore(m_vulkan_global_state->m_logical_device,
                            m_vulkan_global_state->m_renderFinishedSemaphores[i],
                            nullptr);
-        vkDestroySemaphore(m_device_handler->m_logical_device,
+        vkDestroySemaphore(m_vulkan_global_state->m_logical_device,
                            m_vulkan_global_state->m_imageAvailableSemaphores[i],
                            nullptr);
-        vkDestroyFence(m_device_handler->m_logical_device,
+        vkDestroyFence(m_vulkan_global_state->m_logical_device,
                        m_vulkan_global_state->m_inFlightFences[i], nullptr);
     }
-    vkDestroyCommandPool(m_device_handler->m_logical_device,
+    vkDestroyCommandPool(m_vulkan_global_state->m_logical_device,
                          m_vulkan_global_state->m_commandPool, nullptr);
 
     // DEVICE DESTRUCTION
     // m_device_handler->Destroy();
     backend_vk::devices::destroy_devices(
-        m_device_handler->m_physical_device, m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_physical_device,
+        m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_surface, m_vulkan_global_state->m_instance,
         m_vulkan_global_state->m_debug_messenger);
     // GLFW DESTRUCTION
@@ -2784,8 +2801,9 @@ VkShaderModule VulkanContext::CreateShaderModule(
     createInfo.codeSize = code.size();
     createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
     VkShaderModule shaderModule;
-    if (vkCreateShaderModule(m_device_handler->m_logical_device, &createInfo,
-                             nullptr, &shaderModule) != VK_SUCCESS) {
+    if (vkCreateShaderModule(m_vulkan_global_state->m_logical_device,
+                             &createInfo, nullptr,
+                             &shaderModule) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module!");
     }
 
@@ -2822,8 +2840,8 @@ VkCommandBuffer VulkanContext::begin_single_time_commands() {
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(m_device_handler->m_logical_device, &allocInfo,
-                             &commandBuffer);
+    vkAllocateCommandBuffers(m_vulkan_global_state->m_logical_device,
+                             &allocInfo, &commandBuffer);
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -2846,35 +2864,35 @@ void VulkanContext::end_single_time_commands(VkCommandBuffer commandBuffer) {
                   VK_NULL_HANDLE);
     vkQueueWaitIdle(m_vulkan_global_state->m_graphicsQueue);
 
-    vkFreeCommandBuffers(m_device_handler->m_logical_device,
+    vkFreeCommandBuffers(m_vulkan_global_state->m_logical_device,
                          m_vulkan_global_state->m_commandPool, 1,
                          &commandBuffer);
 }
 
 void VulkanContext::run_compute_shader() {
-    vkWaitForFences(m_device_handler->m_logical_device, 1,
+    vkWaitForFences(m_vulkan_global_state->m_logical_device, 1,
                     &m_vulkan_global_state->m_computeFence, VK_TRUE,
                     UINT64_MAX);
 
-    VkResult r = vkResetFences(m_device_handler->m_logical_device, 1,
+    VkResult r = vkResetFences(m_vulkan_global_state->m_logical_device, 1,
                                &m_vulkan_global_state->m_computeFence);
     // Do compute stuff
     std::vector<char> computeShaderSpv = read_file(SHADERS_DIR "compute.spv");
     VkDescriptorSetLayout layout =
         m_descriptor_set_handler->CreateComputeDescriptorSetLayout(
-            m_device_handler->m_logical_device);
+            m_vulkan_global_state->m_logical_device);
     VkDescriptorPool descriptorPool =
         m_descriptor_set_handler->CreateDescriptorPoolCompute(
-            m_device_handler->m_logical_device);
+            m_vulkan_global_state->m_logical_device);
 
     VkDescriptorSet descriptorSet =
         m_descriptor_set_handler->CreateDescriptorSetCompute(
-            descriptorPool, layout, m_device_handler->m_logical_device);
+            descriptorPool, layout, m_vulkan_global_state->m_logical_device);
     std::vector<VkDescriptorSetLayout> layouts = {};
     layouts.push_back(layout);
     VkPipelineLayout pipelineLayout;
     VkPipeline computePipeline = backend_vk::CreateComputePipeline(
-        computeShaderSpv, m_device_handler->m_logical_device, layouts,
+        computeShaderSpv, m_vulkan_global_state->m_logical_device, layouts,
         pipelineLayout);
 
     std::random_device rd;

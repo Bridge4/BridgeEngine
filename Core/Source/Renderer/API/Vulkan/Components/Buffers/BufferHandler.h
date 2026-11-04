@@ -16,10 +16,8 @@ namespace BufferVk {}
 
 class BufferHandler {
    public:
-    BufferHandler(VulkanGlobalState* VulkanGlobalState,
-                  DeviceHandler* deviceHandler) {
-        this->m_vulkanGlobalState = VulkanGlobalState;
-        this->m_deviceHandler = deviceHandler;
+    BufferHandler(VulkanGlobalState* VulkanGlobalState) {
+        this->m_vulkan_global_state = VulkanGlobalState;
     }
 
     void DestroyBuffers();
@@ -65,10 +63,8 @@ class BufferHandler {
 
     void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 
-    DeviceHandler* m_deviceHandler;
-
    private:
-    VulkanGlobalState* m_vulkanGlobalState = nullptr;
+    VulkanGlobalState* m_vulkan_global_state = nullptr;
     void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     // COPY BUFFER
 

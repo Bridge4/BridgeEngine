@@ -20,7 +20,7 @@ void SwapChainHandler::init(int frameBufferWidth, int frameBufferHeight) {
 
     SwapChainSupportDetails swapChainSupport =
         backend_vk::devices::query_swap_chain_support(
-            m_device_handler->m_physical_device,
+            m_vulkan_global_state->m_physical_device,
             m_vulkan_global_state->m_surface);
 
     VkSurfaceFormatKHR surfaceFormat =
@@ -50,7 +50,8 @@ void SwapChainHandler::init(int frameBufferWidth, int frameBufferHeight) {
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     QueueFamilyIndices indices = backend_vk::devices::find_queue_families(
-        m_device_handler->m_physical_device, m_vulkan_global_state->m_surface);
+        m_vulkan_global_state->m_physical_device,
+        m_vulkan_global_state->m_surface);
 
     uint32_t queueFamilyIndices[] = {indices.graphics_family.value(),
                                      indices.present_family.value()};
@@ -73,18 +74,18 @@ void SwapChainHandler::init(int frameBufferWidth, int frameBufferHeight) {
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
     if (vkCreateSwapchainKHR(
-            m_device_handler->m_logical_device, &createInfo, nullptr,
+            m_vulkan_global_state->m_logical_device, &createInfo, nullptr,
             m_vulkan_global_state->GetRefSwapChain()) != VK_SUCCESS) {
         throw std::runtime_error("failed to create swap chain!");
     }
 
-    vkGetSwapchainImagesKHR(m_device_handler->m_logical_device,
+    vkGetSwapchainImagesKHR(m_vulkan_global_state->m_logical_device,
                             *m_vulkan_global_state->GetRefSwapChain(),
                             &imageCount, nullptr);
     std::vector<VkImage> swapChainImages =
         *m_vulkan_global_state->GetRefSwapChainImages();
     swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(m_device_handler->m_logical_device,
+    vkGetSwapchainImagesKHR(m_vulkan_global_state->m_logical_device,
                             *m_vulkan_global_state->GetRefSwapChain(),
                             &imageCount, swapChainImages.data());
     m_vulkan_global_state->SetSwapChainImages(swapChainImages);
@@ -98,7 +99,7 @@ void SwapChainHandler::init(int frameBufferWidth, int frameBufferHeight) {
         // Moved definition for createImageView() to a class and turned into a
         // static function
         swapChainImageViews[i] = backend_vk::images::create_image_view(
-            m_device_handler->m_logical_device,
+            m_vulkan_global_state->m_logical_device,
             m_vulkan_global_state->m_swapChainImages[i],
             m_vulkan_global_state->m_swapChainImageFormat,
             VK_IMAGE_ASPECT_COLOR_BIT);
@@ -116,30 +117,30 @@ void SwapChainHandler::Rebuild(int frameBufferWidth, int frameBufferHeight) {
 
 void SwapChainHandler::Destroy() {
     vkDestroyImageView(
-        m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_render_pass_data->depth_resources.image_view,
         nullptr);
     vkDestroyImage(
-        m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_render_pass_data->depth_resources.image,
         nullptr);
     vkFreeMemory(
-        m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_render_pass_data->depth_resources.image_memory,
         nullptr);
 
     for (auto framebuffer :
          m_vulkan_global_state->m_render_pass_data->framebuffers) {
-        vkDestroyFramebuffer(m_device_handler->m_logical_device, framebuffer,
-                             nullptr);
+        vkDestroyFramebuffer(m_vulkan_global_state->m_logical_device,
+                             framebuffer, nullptr);
     }
 
     for (auto imageView : m_vulkan_global_state->m_swapChainImageViews) {
-        vkDestroyImageView(m_device_handler->m_logical_device, imageView,
+        vkDestroyImageView(m_vulkan_global_state->m_logical_device, imageView,
                            nullptr);
     }
 
-    vkDestroySwapchainKHR(m_device_handler->m_logical_device,
+    vkDestroySwapchainKHR(m_vulkan_global_state->m_logical_device,
                           m_vulkan_global_state->m_swapChain, nullptr);
 }
 

@@ -45,7 +45,6 @@
 #include <vector>
 
 // Forward Declarations
-class DeviceHandler;
 class SwapChainHandler;
 class BufferHandler;
 class WindowingBackend;
@@ -126,7 +125,6 @@ class VulkanContext {
     VkCommandBuffer begin_single_time_commands();
 
     void end_single_time_commands(VkCommandBuffer command_buffer);
-    DeviceHandler* m_device_handler;
     // CLEANUP
     void destroy();
     void describe_scene(std::vector<ObjResource> objects_to_render,

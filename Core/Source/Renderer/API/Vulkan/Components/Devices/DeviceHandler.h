@@ -25,7 +25,8 @@ const std::vector<const char*> kDeviceExtensions = {
 QueueFamilyIndices find_queue_families(VkPhysicalDevice physical_device,
                                        VkSurfaceKHR window_surface);
 
-VkPhysicalDevice init_physical_device(VkInstance& instance);
+VkPhysicalDevice init_physical_device(VkInstance& instance,
+                                      VkSurfaceKHR window_surface);
 
 VkDevice init_logical_device(VkPhysicalDevice& physical_device,
                              VkSurfaceKHR window_surface,
@@ -73,22 +74,3 @@ void destroy_devices(VkPhysicalDevice& physical_device,
  * extract that out of the class in the future but for now prioritizing other
  * tasks
  */
-class DeviceHandler {
-   public:
-#ifdef NDEBUG
-    const bool enableValidationLayers = false;
-#else
-    const bool enableValidationLayers = true;
-#endif
-    DeviceHandler(VulkanGlobalState* VulkanGlobalState) {
-        this->m_vulkanGlobalState = VulkanGlobalState;
-    }
-
-    void init();
-
-    VkPhysicalDevice m_physical_device = nullptr;
-    VkDevice m_logical_device = nullptr;
-
-   private:
-    VulkanGlobalState* m_vulkanGlobalState = 0;
-};
