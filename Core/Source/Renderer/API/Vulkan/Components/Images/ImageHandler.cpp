@@ -192,24 +192,6 @@ bool has_stencil_component(VkFormat format) {
 //     throw std::runtime_error("Failed to find suitable memory type");
 // }
 
-uint32_t ImageHandler::FindMemoryType(uint32_t typeFilter,
-                                      VkMemoryPropertyFlags properties) {
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(m_deviceHandler->m_physical_device,
-                                        &memProperties);
-
-    // Go over this section
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if ((typeFilter & (1 << i)) &&
-            (memProperties.memoryTypes[i].propertyFlags & properties) ==
-                properties) {
-            return i;
-        }
-    }
-
-    throw std::runtime_error("failed to find suitable memory type!");
-}
-
 bool ImageHandler::HasStencilComponent(VkFormat format) {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT ||
            format == VK_FORMAT_D24_UNORM_S8_UINT;

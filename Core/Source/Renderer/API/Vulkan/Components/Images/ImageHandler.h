@@ -38,9 +38,6 @@ class ImageHandler {
         this->m_deviceHandler = deviceHandler;
     }
 
-    uint32_t FindMemoryType(uint32_t typeFilter,
-                            VkMemoryPropertyFlags properties);
-
     bool HasStencilComponent(VkFormat format);
 
    private:
