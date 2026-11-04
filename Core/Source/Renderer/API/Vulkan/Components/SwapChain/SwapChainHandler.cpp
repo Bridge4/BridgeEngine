@@ -115,7 +115,7 @@ void SwapChainHandler::Rebuild(int frameBufferWidth, int frameBufferHeight) {
 void SwapChainHandler::Destroy() {
     vkDestroyImageView(
         m_deviceHandler->m_logical_device,
-        m_vulkanGlobalState->m_render_pass_data->depth_resources.imageView,
+        m_vulkanGlobalState->m_render_pass_data->depth_resources.image_view,
         nullptr);
     vkDestroyImage(
         m_deviceHandler->m_logical_device,
@@ -123,7 +123,7 @@ void SwapChainHandler::Destroy() {
         nullptr);
     vkFreeMemory(
         m_deviceHandler->m_logical_device,
-        m_vulkanGlobalState->m_render_pass_data->depth_resources.imageMemory,
+        m_vulkanGlobalState->m_render_pass_data->depth_resources.image_memory,
         nullptr);
 
     for (auto framebuffer :

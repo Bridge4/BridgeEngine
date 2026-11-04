@@ -425,7 +425,11 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     }
 
     bvk_render_pass::DepthResources render_pass_depth_resources =
-        m_render_pass_handler->create_render_pass_depth_resources(
+        bvk_render_pass::create_render_pass_depth_resources(
+            m_device_handler->m_physical_device,
+            m_device_handler->m_logical_device,
+            m_vulkan_global_state->m_commandPool,
+            m_vulkan_global_state->m_graphicsQueue,
             render_pass_depth_attachment_format,
             m_vulkan_global_state->m_swapChainExtent.width,
             m_vulkan_global_state->m_swapChainExtent.height);
@@ -460,7 +464,7 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     std::vector<VkImageView> renderPassPerFrameImageViews = {};
 
     renderPassPerFrameImageViews.push_back(
-        m_vulkan_global_state->m_render_pass_data->depth_resources.imageView);
+        m_vulkan_global_state->m_render_pass_data->depth_resources.image_view);
 
     m_vulkan_global_state->m_render_pass_data->framebuffers =
         backend_vk::CreateSwapChainFramebuffers(
@@ -2601,7 +2605,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
         m_swap_chain_handler->Rebuild(frameBufferWidth, frameBufferHeight);
         // TODO: MUST NOT FORGET THIS
         // m_renderPassHandler->CreateRenderPass();
-        VkFormat renderPassDepthAttachmentFormat =
+        VkFormat render_pass_depth_attachment_format =
             bvk_render_pass::find_supported_format(
                 m_device_handler->m_physical_device,
                 {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
@@ -2609,13 +2613,17 @@ void VulkanContext::DrawFrame(float deltaTime) {
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
-        if (!renderPassDepthAttachmentFormat) {
+        if (!render_pass_depth_attachment_format) {
             std::cout << "renderPassDepthAttachmentFormat invalid\n";
         }
 
         bvk_render_pass::DepthResources renderPassDepthResources =
-            m_render_pass_handler->create_render_pass_depth_resources(
-                renderPassDepthAttachmentFormat,
+            bvk_render_pass::create_render_pass_depth_resources(
+                m_device_handler->m_physical_device,
+                m_device_handler->m_logical_device,
+                m_vulkan_global_state->m_commandPool,
+                m_vulkan_global_state->m_graphicsQueue,
+                render_pass_depth_attachment_format,
                 m_vulkan_global_state->m_swapChainExtent.width,
                 m_vulkan_global_state->m_swapChainExtent.height);
 
@@ -2628,7 +2636,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
             bvk_render_pass::create_render_pass(
                 m_device_handler->m_logical_device,
                 m_vulkan_global_state->GetSwapChainImageFormat(),
-                renderPassDepthAttachmentFormat);
+                render_pass_depth_attachment_format);
 
         renderPassData.depth_resources = renderPassDepthResources;
 
@@ -2646,7 +2654,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
 
         renderPassPerFrameImageViews.push_back(
             m_vulkan_global_state->m_render_pass_data->depth_resources
-                .imageView);
+                .image_view);
 
         m_vulkan_global_state->m_render_pass_data->framebuffers =
             backend_vk::CreateSwapChainFramebuffers(
@@ -2747,7 +2755,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
         m_swap_chain_handler->Rebuild(frameBufferWidth, frameBufferHeight);
         // TODO: MUST NOT FORGET THIS
         // m_renderPassHandler->CreateRenderPass();
-        VkFormat renderPassDepthAttachmentFormat =
+        VkFormat render_pass_depth_attachment_format =
             // m_render_pass_handler->find_supported_format(
             //     {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
             //      VK_FORMAT_D24_UNORM_S8_UINT},
@@ -2760,13 +2768,17 @@ void VulkanContext::DrawFrame(float deltaTime) {
                  VK_FORMAT_D24_UNORM_S8_UINT},
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-        if (!renderPassDepthAttachmentFormat) {
+        if (!render_pass_depth_attachment_format) {
             std::cout << "renderPassDepthAttachmentFormat invalid\n";
         }
 
-        bvk_render_pass::DepthResources renderPassDepthResources =
-            m_render_pass_handler->create_render_pass_depth_resources(
-                renderPassDepthAttachmentFormat,
+        bvk_render_pass::DepthResources render_pass_depth_resources =
+            bvk_render_pass::create_render_pass_depth_resources(
+                m_device_handler->m_physical_device,
+                m_device_handler->m_logical_device,
+                m_vulkan_global_state->m_commandPool,
+                m_vulkan_global_state->m_graphicsQueue,
+                render_pass_depth_attachment_format,
                 m_vulkan_global_state->m_swapChainExtent.width,
                 m_vulkan_global_state->m_swapChainExtent.height);
 
@@ -2779,9 +2791,9 @@ void VulkanContext::DrawFrame(float deltaTime) {
             bvk_render_pass::create_render_pass(
                 m_device_handler->m_logical_device,
                 m_vulkan_global_state->GetSwapChainImageFormat(),
-                renderPassDepthAttachmentFormat);
+                render_pass_depth_attachment_format);
 
-        renderPassData.depth_resources = renderPassDepthResources;
+        renderPassData.depth_resources = render_pass_depth_resources;
 
         m_vulkan_global_state->m_render_pass_data =
             std::make_unique<bvk_render_pass::RenderPassData>(renderPassData);
@@ -2796,7 +2808,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
 
         renderPassPerFrameImageViews.push_back(
             m_vulkan_global_state->m_render_pass_data->depth_resources
-                .imageView);
+                .image_view);
 
         m_vulkan_global_state->m_render_pass_data->framebuffers =
             backend_vk::CreateSwapChainFramebuffers(

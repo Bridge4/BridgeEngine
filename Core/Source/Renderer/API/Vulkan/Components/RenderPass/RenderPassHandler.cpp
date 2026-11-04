@@ -211,6 +211,42 @@ VkFormat find_supported_format(VkPhysicalDevice& physical_device,
     }
     throw std::runtime_error("failed to find supported format!");
 }
+
+DepthResources create_render_pass_depth_resources(
+    VkPhysicalDevice& physical_device, VkDevice& logical_device,
+    VkCommandPool& command_pool, VkQueue& graphics_queue, VkFormat depth_format,
+    uint32_t width, uint32_t height) {
+    // VkFormat depthFormat =
+    //     FindSupportedFormat({VK_FORMAT_D32_SFLOAT,
+    //     VK_FORMAT_D32_SFLOAT_S8_UINT,
+    //                          VK_FORMAT_D24_UNORM_S8_UINT},
+    //                         VK_IMAGE_TILING_OPTIMAL,
+    //                         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    VkImage render_pass_depth_image = {};
+    VkImageView render_pass_depth_image_view = {};
+    VkDeviceMemory render_pass_depth_image_memory = {};
+
+    backend_vk::images::create_image(
+        physical_device, logical_device, width, height, depth_format,
+        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, render_pass_depth_image,
+        render_pass_depth_image_memory);
+    render_pass_depth_image_view = backend_vk::images::create_image_view(
+        logical_device, render_pass_depth_image, depth_format,
+        VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    backend_vk::images::transition_image_layout(
+        logical_device, command_pool, graphics_queue, render_pass_depth_image,
+        depth_format, VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+    backend_vk::render_pass::DepthResources depth_resources = {};
+    depth_resources.image = render_pass_depth_image;
+    depth_resources.image_view = render_pass_depth_image_view;
+    depth_resources.image_memory = render_pass_depth_image_memory;
+
+    return depth_resources;
+}
 }  // namespace backend_vk::render_pass
 
 void RenderPassHandler::create_shadow_pass() {
@@ -302,46 +338,11 @@ RenderPassHandler::create_render_pass_depth_resources(VkFormat depth_format,
 
     backend_vk::render_pass::DepthResources depthResources = {};
     depthResources.image = renderPassDepthImage;
-    depthResources.imageView = renderPassDepthImageView;
-    depthResources.imageMemory = renderPassDepthImageMemory;
+    depthResources.image_view = renderPassDepthImageView;
+    depthResources.image_memory = renderPassDepthImageMemory;
 
     return depthResources;
 }
-
-// void RenderPassHandler::CreateRenderPassFrameBuffers() {
-//     CreateRenderPassDepthResources();
-//     m_vulkanGlobalState->m_renderPassFrameBuffers.resize(
-//         m_vulkanGlobalState->m_swapChainImageViews.size());
-//
-//     // Loop through swap chain image views
-//     for (size_t i = 0; i < m_vulkanGlobalState->m_swapChainImageViews.size();
-//          i++) {
-//         std::array<VkImageView, 2> attachments = {
-//             m_vulkanGlobalState->m_swapChainImageViews[i],
-//             m_vulkanGlobalState->m_renderPassDepthImageView};
-//
-//         VkFramebufferCreateInfo framebufferInfo{};
-//         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-//         framebufferInfo.renderPass =
-//             *m_vulkanGlobalState->m_renderPassData->renderPass;
-//         framebufferInfo.attachmentCount =
-//             static_cast<uint32_t>(attachments.size());
-//         framebufferInfo.pAttachments = attachments.data();
-//         framebufferInfo.pAttachments = attachments.data();
-//         framebufferInfo.width =
-//         m_vulkanGlobalState->GetSwapChainExtent().width;
-//         framebufferInfo.height =
-//             m_vulkanGlobalState->GetSwapChainExtent().height;
-//         framebufferInfo.layers = 1;
-//
-//         if (vkCreateFramebuffer(
-//                 m_deviceHandler->LogicalDevice, &framebufferInfo, nullptr,
-//                 &m_vulkanGlobalState->m_renderPassFrameBuffers[i]) !=
-//             VK_SUCCESS) {
-//             throw std::runtime_error("failed to create framebuffer!");
-//         }
-//     }
-// }
 
 void RenderPassHandler::create_shadow_pass_depth_resources() {
     VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
