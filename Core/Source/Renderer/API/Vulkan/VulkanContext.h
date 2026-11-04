@@ -166,7 +166,6 @@ class VulkanContext {
     CameraController* m_cameraController;
     DescriptorSetHandler* m_descriptor_set_handler;
 
-    ImageHandler* m_image_handler;
     int m_textureHeap[22000] = {0};
 
     uint32_t m_windowWidth = 800;

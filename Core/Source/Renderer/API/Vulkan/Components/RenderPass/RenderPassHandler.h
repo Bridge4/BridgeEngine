@@ -73,12 +73,11 @@ class RenderPassHandler {
    public:
     RenderPassHandler(VulkanContext* vulkanContext,
                       SwapChainHandler* swapChainHandler,
-                      DeviceHandler* deviceHandler, ImageHandler* imageHandler,
+                      DeviceHandler* deviceHandler,
                       VulkanGlobalState* VulkanGlobalState) {
         this->m_vulkanContext = vulkanContext;
         this->m_swapChainHandler = swapChainHandler;
         this->m_device_handler = deviceHandler;
-        this->m_imageHandler = imageHandler;
         this->m_vulkanGlobalState = VulkanGlobalState;
     }
 
@@ -106,6 +105,5 @@ class RenderPassHandler {
     SwapChainHandler* m_swapChainHandler = 0;
     DeviceHandler* m_device_handler = 0;
     VulkanGlobalState* m_vulkanGlobalState = nullptr;
-    ImageHandler* m_imageHandler = 0;
 };
 #endif

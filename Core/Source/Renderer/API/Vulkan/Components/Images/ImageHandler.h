@@ -28,19 +28,3 @@ void copy_buffer_to_image(VkDevice& logical_device, VkCommandPool& command_pool,
                           VkQueue& graphics_queue, VkBuffer buffer,
                           VkImage image, uint32_t width, uint32_t height);
 }  // namespace backend_vk::images
-
-class ImageHandler {
-   public:
-    ImageHandler(VulkanContext* vulkanContext,
-                 VulkanGlobalState* vulkanGlobalState,
-                 DeviceHandler* deviceHandler) {
-        this->m_vulkanContext = vulkanContext;
-        this->m_vulkanGlobalState = vulkanGlobalState;
-        this->m_deviceHandler = deviceHandler;
-    }
-
-   private:
-    VulkanContext* m_vulkanContext;
-    VulkanGlobalState* m_vulkanGlobalState;
-    DeviceHandler* m_deviceHandler;
-};

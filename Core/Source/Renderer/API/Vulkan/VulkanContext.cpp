@@ -385,15 +385,12 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     m_device_handler = new DeviceHandler(m_vulkan_global_state);
     m_descriptor_set_handler =
         new DescriptorSetHandler(m_vulkan_global_state, m_device_handler);
-    m_image_handler =
-        new ImageHandler(this, m_vulkan_global_state, m_device_handler);
-    m_swap_chain_handler = new SwapChainHandler(
-        this, m_device_handler, m_image_handler, m_vulkan_global_state);
+    m_swap_chain_handler =
+        new SwapChainHandler(this, m_device_handler, m_vulkan_global_state);
     m_buffer_handler =
         new BufferHandler(m_vulkan_global_state, m_device_handler);
-    m_render_pass_handler =
-        new RenderPassHandler(this, m_swap_chain_handler, m_device_handler,
-                              m_image_handler, m_vulkan_global_state);
+    m_render_pass_handler = new RenderPassHandler(
+        this, m_swap_chain_handler, m_device_handler, m_vulkan_global_state);
     m_swap_chain_handler->m_renderPassHandler = m_render_pass_handler;
     m_cameraController =
         new CameraController(this, m_windowing_backend, m_swap_chain_handler,

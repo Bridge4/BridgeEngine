@@ -171,28 +171,3 @@ void copy_buffer_to_image(VkDevice& logical_device, VkCommandPool& command_pool,
                                          graphics_queue, command_buffer);
 }
 }  // namespace backend_vk::images
-/*
- * lmao fuck you dude
- *  - me from the future
- * WAS MOVING CREATE IMAGE CODE TO IMAGEHANDLER CLASS
- * Move CreateTextureImage() to this class
- */
-
-// uint32_t BufferHandler::findMemoryType(uint32_t typeFilter,
-// VkMemoryPropertyFlags properties)
-//{
-//     VkPhysicalDeviceMemoryProperties memProperties;
-//     vkGetPhysicalDeviceMemoryProperties(deviceHandler->PhysicalDevice,
-//     &memProperties);
-//
-//     // Go over this section
-//     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-//         if ((typeFilter & (1 << i)) &&
-//         (memProperties.memoryTypes[i].propertyFlags & properties) ==
-//         properties) {
-//             return i;
-//         }
-//     }
-//
-//     throw std::runtime_error("Failed to find suitable memory type");
-// }
