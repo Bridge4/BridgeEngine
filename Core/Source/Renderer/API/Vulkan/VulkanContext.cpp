@@ -242,7 +242,6 @@ void SetIndices(std::vector<uint32_t>& indices, Vertex* vertices,
         }
     }
 }
-// WARN: It is very hard to track changes to the global state, when we
 std::vector<VkFramebuffer> CreateSwapChainFramebuffers(
     int numberOfFramebuffers, std::vector<VkImageView> perFrameImageViews,
     std::vector<VkImageView> swapChainImageViews, uint32_t framebufferWidth,
