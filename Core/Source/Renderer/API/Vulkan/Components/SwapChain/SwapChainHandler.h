@@ -12,8 +12,8 @@ class SwapChainHandler {
     SwapChainHandler(VulkanContext* context, DeviceHandler* deviceHandler,
                      VulkanGlobalState* VulkanGlobalState) {
         this->m_vulkanContext = context;
-        this->m_deviceHandler = deviceHandler;
-        this->m_vulkanGlobalState = VulkanGlobalState;
+        this->m_device_handler = deviceHandler;
+        this->m_vulkan_global_state = VulkanGlobalState;
     };
 
     void init(int frameBufferWidth, int frameBufferHeight);
@@ -29,8 +29,8 @@ class SwapChainHandler {
 
    private:
     VulkanContext* m_vulkanContext = 0;
-    VulkanGlobalState* m_vulkanGlobalState = 0;
-    DeviceHandler* m_deviceHandler = 0;
+    VulkanGlobalState* m_vulkan_global_state = 0;
+    DeviceHandler* m_device_handler = 0;
 
     // HELPERS
     VkSurfaceFormatKHR ChooseSwapSurfaceFormat(

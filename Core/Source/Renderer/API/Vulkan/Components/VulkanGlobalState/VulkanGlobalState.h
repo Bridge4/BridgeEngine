@@ -205,7 +205,7 @@ class VulkanGlobalState {
     const std::vector<const char*> deviceExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     VkInstance m_instance;
-    VkDebugUtilsMessengerEXT m_debugMessenger;
+    VkDebugUtilsMessengerEXT m_debug_messenger;
     int m_maxFramesInFlight = 2;
     int m_maxMeshes = 10;
     int m_frameBufferHeight = 0;

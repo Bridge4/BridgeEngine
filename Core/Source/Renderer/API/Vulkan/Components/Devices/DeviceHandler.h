@@ -31,7 +31,8 @@ VkDevice init_logical_device(VkPhysicalDevice& physical_device,
                              VkSurfaceKHR window_surface,
                              ERenderingMode rendering_mode);
 
-void init_debug_messenger();
+std::optional<VkDebugUtilsMessengerEXT> init_debug_messenger(
+    VkInstance instance);
 
 bool check_validation_layer_support();
 
@@ -48,10 +49,22 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
     VkDebugUtilsMessageTypeFlagsEXT messageType,
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
-void destroy_debug_utils_messenger_ext(const VkAllocationCallbacks* pAllocator);
+VkResult create_debug_utils_messenger_ext(
+    VkInstance instance,
+    const VkDebugUtilsMessengerCreateInfoEXT* p_create_info,
+    const VkAllocationCallbacks* p_allocator,
+    VkDebugUtilsMessengerEXT* p_debug_messenger);
+
+void destroy_debug_utils_messenger_ext(
+    VkInstance& instance, VkDebugUtilsMessengerEXT& debug_messenger,
+    const VkAllocationCallbacks* pAllocator);
 
 VkQueue get_device_queue(VkDevice& logical_device, uint32_t queue_family_index);
 
+void destroy_devices(VkPhysicalDevice& physical_device,
+                     VkDevice& logical_device, VkSurfaceKHR window_surface,
+                     VkInstance& instance,
+                     VkDebugUtilsMessengerEXT& debug_messenger);
 }  // namespace backend_vk::devices
 
 /*
@@ -73,51 +86,9 @@ class DeviceHandler {
 
     void init();
 
-    void Destroy();
-
-    SwapChainSupportDetails QuerySwapChainSupport(
-        VkPhysicalDevice physicalDevice);
-
-    // Used by isDeviceSuitable() and createLogicalDevice()
-    QueueFamilyIndices find_queue_families(VkPhysicalDevice physicalDevice);
-
     VkPhysicalDevice m_physical_device = nullptr;
     VkDevice m_logical_device = nullptr;
 
    private:
-    // CONSTANTS
-    const std::vector<const char*> validationLayers = {
-        "VK_LAYER_KHRONOS_validation"};
-    const std::vector<const char*> deviceExtensions = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-
     VulkanGlobalState* m_vulkanGlobalState = 0;
-    void InitializeDebugMessenger();
-    // CORE FUNCTIONS
-
-    // HELPER FUNCTIONS
-    // Used by createInstance()
-    bool CheckValidationLayerSupport();
-    // std::vector<const char*> getRequiredExtensions();
-
-    // Used by pickPhysicalDevice()
-    bool IsDeviceSuitable(VkPhysicalDevice device);
-
-    // Used by isDeviceSuitable()
-    bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
-
-    // Used by populateDebugMessengerCreateInfo()
-    static VKAPI_ATTR VkBool32 VKAPI_CALL
-    DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                  VkDebugUtilsMessageTypeFlagsEXT messageType,
-                  const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                  void* pUserData);
-    // Used by setupDebugMessenger()
-    VkResult CreateDebugUtilsMessengerEXT(
-        const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-        const VkAllocationCallbacks* pAllocator,
-        VkDebugUtilsMessengerEXT* pDebugMessenger);
-
-    // Used to destroy debugger
-    void DestroyDebugUtilsMessengerEXT(const VkAllocationCallbacks* pAllocator);
 };

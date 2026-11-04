@@ -16,11 +16,12 @@
 #include "../WindowVK/WindowHandlerVK.h"
 
 void SwapChainHandler::init(int frameBufferWidth, int frameBufferHeight) {
-    VkSurfaceKHR surface = m_vulkanGlobalState->GetSurface();
+    VkSurfaceKHR surface = m_vulkan_global_state->GetSurface();
 
     SwapChainSupportDetails swapChainSupport =
-        m_deviceHandler->QuerySwapChainSupport(
-            m_deviceHandler->m_physical_device);
+        backend_vk::devices::query_swap_chain_support(
+            m_device_handler->m_physical_device,
+            m_vulkan_global_state->m_surface);
 
     VkSurfaceFormatKHR surfaceFormat =
         ChooseSwapSurfaceFormat(swapChainSupport.formats);
@@ -48,8 +49,9 @@ void SwapChainHandler::init(int frameBufferWidth, int frameBufferHeight) {
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndices indices = m_deviceHandler->find_queue_families(
-        m_deviceHandler->m_physical_device);
+    QueueFamilyIndices indices = backend_vk::devices::find_queue_families(
+        m_device_handler->m_physical_device, m_vulkan_global_state->m_surface);
+
     uint32_t queueFamilyIndices[] = {indices.graphics_family.value(),
                                      indices.present_family.value()};
 
@@ -70,38 +72,38 @@ void SwapChainHandler::init(int frameBufferWidth, int frameBufferHeight) {
 
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(m_deviceHandler->m_logical_device, &createInfo,
-                             nullptr, m_vulkanGlobalState->GetRefSwapChain()) !=
-        VK_SUCCESS) {
+    if (vkCreateSwapchainKHR(
+            m_device_handler->m_logical_device, &createInfo, nullptr,
+            m_vulkan_global_state->GetRefSwapChain()) != VK_SUCCESS) {
         throw std::runtime_error("failed to create swap chain!");
     }
 
-    vkGetSwapchainImagesKHR(m_deviceHandler->m_logical_device,
-                            *m_vulkanGlobalState->GetRefSwapChain(),
+    vkGetSwapchainImagesKHR(m_device_handler->m_logical_device,
+                            *m_vulkan_global_state->GetRefSwapChain(),
                             &imageCount, nullptr);
     std::vector<VkImage> swapChainImages =
-        *m_vulkanGlobalState->GetRefSwapChainImages();
+        *m_vulkan_global_state->GetRefSwapChainImages();
     swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(m_deviceHandler->m_logical_device,
-                            *m_vulkanGlobalState->GetRefSwapChain(),
+    vkGetSwapchainImagesKHR(m_device_handler->m_logical_device,
+                            *m_vulkan_global_state->GetRefSwapChain(),
                             &imageCount, swapChainImages.data());
-    m_vulkanGlobalState->SetSwapChainImages(swapChainImages);
+    m_vulkan_global_state->SetSwapChainImages(swapChainImages);
 
-    m_vulkanGlobalState->SetSwapChainImageFormat(surfaceFormat.format);
-    m_vulkanGlobalState->SetSwapChainExtent(extent);
+    m_vulkan_global_state->SetSwapChainImageFormat(surfaceFormat.format);
+    m_vulkan_global_state->SetSwapChainExtent(extent);
     std::vector<VkImageView> swapChainImageViews =
-        *m_vulkanGlobalState->GetRefSwapChainImageViews();
+        *m_vulkan_global_state->GetRefSwapChainImageViews();
     swapChainImageViews.resize(swapChainImages.size());
     for (size_t i = 0; i < swapChainImages.size(); i++) {
         // Moved definition for createImageView() to a class and turned into a
         // static function
         swapChainImageViews[i] = backend_vk::images::create_image_view(
-            m_deviceHandler->m_logical_device,
-            m_vulkanGlobalState->m_swapChainImages[i],
-            m_vulkanGlobalState->m_swapChainImageFormat,
+            m_device_handler->m_logical_device,
+            m_vulkan_global_state->m_swapChainImages[i],
+            m_vulkan_global_state->m_swapChainImageFormat,
             VK_IMAGE_ASPECT_COLOR_BIT);
     }
-    m_vulkanGlobalState->SetSwapChainImageViews(swapChainImageViews);
+    m_vulkan_global_state->SetSwapChainImageViews(swapChainImageViews);
 }
 
 void SwapChainHandler::Rebuild(int frameBufferWidth, int frameBufferHeight) {
@@ -114,31 +116,31 @@ void SwapChainHandler::Rebuild(int frameBufferWidth, int frameBufferHeight) {
 
 void SwapChainHandler::Destroy() {
     vkDestroyImageView(
-        m_deviceHandler->m_logical_device,
-        m_vulkanGlobalState->m_render_pass_data->depth_resources.image_view,
+        m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_render_pass_data->depth_resources.image_view,
         nullptr);
     vkDestroyImage(
-        m_deviceHandler->m_logical_device,
-        m_vulkanGlobalState->m_render_pass_data->depth_resources.image,
+        m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_render_pass_data->depth_resources.image,
         nullptr);
     vkFreeMemory(
-        m_deviceHandler->m_logical_device,
-        m_vulkanGlobalState->m_render_pass_data->depth_resources.image_memory,
+        m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_render_pass_data->depth_resources.image_memory,
         nullptr);
 
     for (auto framebuffer :
-         m_vulkanGlobalState->m_render_pass_data->framebuffers) {
-        vkDestroyFramebuffer(m_deviceHandler->m_logical_device, framebuffer,
+         m_vulkan_global_state->m_render_pass_data->framebuffers) {
+        vkDestroyFramebuffer(m_device_handler->m_logical_device, framebuffer,
                              nullptr);
     }
 
-    for (auto imageView : m_vulkanGlobalState->m_swapChainImageViews) {
-        vkDestroyImageView(m_deviceHandler->m_logical_device, imageView,
+    for (auto imageView : m_vulkan_global_state->m_swapChainImageViews) {
+        vkDestroyImageView(m_device_handler->m_logical_device, imageView,
                            nullptr);
     }
 
-    vkDestroySwapchainKHR(m_deviceHandler->m_logical_device,
-                          m_vulkanGlobalState->m_swapChain, nullptr);
+    vkDestroySwapchainKHR(m_device_handler->m_logical_device,
+                          m_vulkan_global_state->m_swapChain, nullptr);
 }
 
 // HELPERS

@@ -4,6 +4,7 @@
 
 #include <cstdint>  // Necessary for uint32_t
 #include <iostream>
+#include <optional>
 #include <set>
 
 #include "../VulkanGlobalState/VulkanGlobalState.h"
@@ -248,22 +249,10 @@ VkQueue get_device_queue(VkDevice& logical_device,
     return queue;
 }
 
-}  // namespace backend_vk::devices
-
-void DeviceHandler::init() {
-    m_physical_device = backend_vk::devices::init_physical_device(
-        m_vulkanGlobalState->m_instance, m_vulkanGlobalState->m_surface);
-    m_logical_device = backend_vk::devices::init_logical_device(
-        m_physical_device, m_vulkanGlobalState->m_surface,
-        ERenderingMode::Bindless);
-    // InitializePhysicalDevice();
-    // InitializeLogicalDevice();
-    InitializeDebugMessenger();
-}
-
-void DeviceHandler::InitializeDebugMessenger() {
-    if (!enableValidationLayers) return;
-
+std::optional<VkDebugUtilsMessengerEXT> init_debug_messenger(
+    VkInstance instance) {
+    if (!kEnableValidationLayers) return nullptr;
+    VkDebugUtilsMessengerEXT debug_messenger;
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
     createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -274,213 +263,71 @@ void DeviceHandler::InitializeDebugMessenger() {
     createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
                              VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                              VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    createInfo.pfnUserCallback = DebugCallback;
+    createInfo.pfnUserCallback = debug_callback;
 
-    if (CreateDebugUtilsMessengerEXT(&createInfo, nullptr,
-                                     &m_vulkanGlobalState->m_debugMessenger) !=
-        VK_SUCCESS) {
+    if (create_debug_utils_messenger_ext(instance, &createInfo, nullptr,
+                                         &debug_messenger) != VK_SUCCESS) {
         throw std::runtime_error("failed to set up debug messenger!");
     }
+    return debug_messenger;
 }
 
-void DeviceHandler::Destroy() {
-    vkDestroyDevice(m_logical_device, nullptr);
-    if (enableValidationLayers) {
-        DestroyDebugUtilsMessengerEXT(nullptr);
-    }
-    vkDestroySurfaceKHR(m_vulkanGlobalState->GetVulkanInstance(),
-                        m_vulkanGlobalState->GetSurface(), nullptr);
-    vkDestroyInstance(m_vulkanGlobalState->GetVulkanInstance(), nullptr);
-}
-// HELPERS
-
-// createInstance()
-bool DeviceHandler::CheckValidationLayerSupport() {
-    uint32_t layerCount;
-    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-    std::vector<VkLayerProperties> availableLayers(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
-    for (const char* layerName : m_vulkanGlobalState->validationLayers) {
-        bool layerFound = false;
-
-        for (const auto& layerProperties : availableLayers) {
-            if (strcmp(layerName, layerProperties.layerName) == 0) {
-                layerFound = true;
-                break;
-            }
-        }
-
-        if (!layerFound) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-// pickPhysicalDevice()
-bool DeviceHandler::IsDeviceSuitable(VkPhysicalDevice device) {
-    // Fetching deviceProperties and deviceFeatures in case we want to check for
-    // specifics
-    /*
-    VkPhysicalDeviceProperties deviceProperties;
-    VkPhysicalDeviceFeatures deviceFeatures;
-    vkGetPhysicalDeviceProperties(device, &deviceProperties);
-    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-    */
-    QueueFamilyIndices indices = find_queue_families(device);
-
-    bool extensionsSupported = CheckDeviceExtensionSupport(device);
-
-    bool swapChainAdequate = false;
-
-    // if the extensions required are supported then we can check for swap chain
-    // compatibility otherwise there's no point
-    if (extensionsSupported) {
-        SwapChainSupportDetails swapChainSupport =
-            QuerySwapChainSupport(device);
-        swapChainAdequate = !swapChainSupport.formats.empty() &&
-                            !swapChainSupport.presentModes.empty();
-    }
-
-    VkPhysicalDeviceFeatures supportedFeatures;
-    vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
-
-    return indices.isComplete() && extensionsSupported && swapChainAdequate &&
-           supportedFeatures.samplerAnisotropy;
-}
-
-// isDeviceSuitable()
-bool DeviceHandler::CheckDeviceExtensionSupport(VkPhysicalDevice device) {
-    uint32_t extensionCount;
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount,
-                                         nullptr);
-
-    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount,
-                                         availableExtensions.data());
-
-    std::set<std::string> requiredExtensions(deviceExtensions.begin(),
-                                             deviceExtensions.end());
-
-    for (const auto& extension : availableExtensions) {
-        requiredExtensions.erase(extension.extensionName);
-    }
-
-    return requiredExtensions.empty();
-}
-
-SwapChainSupportDetails DeviceHandler::QuerySwapChainSupport(
-    VkPhysicalDevice physicalDevice) {
-    // Fetching the capabilities of the device and surface
-
-    // Getting supported surface formats
-    SwapChainSupportDetails details;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice,
-                                              m_vulkanGlobalState->GetSurface(),
-                                              &details.capabilities);
-
-    uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice,
-                                         m_vulkanGlobalState->GetSurface(),
-                                         &formatCount, nullptr);
-
-    if (formatCount != 0) {
-        details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(
-            physicalDevice, m_vulkanGlobalState->GetSurface(), &formatCount,
-            details.formats.data());
-    }
-
-    // Getting supported present modes
-    uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice,
-                                              m_vulkanGlobalState->GetSurface(),
-                                              &presentModeCount, nullptr);
-
-    if (presentModeCount != 0) {
-        details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(
-            physicalDevice, m_vulkanGlobalState->GetSurface(),
-            &presentModeCount, details.presentModes.data());
-    }
-
-    return details;
-}
-
-// isDeviceSuitable() + createLogicalDevice()
-QueueFamilyIndices DeviceHandler::find_queue_families(
-    VkPhysicalDevice physicalDevice) {
-    QueueFamilyIndices indices;
-    uint32_t queueFamilyCount = 0;
-
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount,
-                                             nullptr);
-
-    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount,
-                                             queueFamilies.data());
-
-    int i = 0;
-    for (const auto& queueFamily : queueFamilies) {
-        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            indices.graphics_family = i;
-        }
-
-        if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) {
-            indices.compute_family = i;
-        }
-        VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i,
-                                             m_vulkanGlobalState->GetSurface(),
-                                             &presentSupport);
-
-        if (presentSupport) {
-            indices.present_family = i;
-        }
-        if (indices.isComplete()) {
-            break;
-        }
-        i++;
-    }
-    return indices;
-}
-
-VKAPI_ATTR VkBool32 VKAPI_CALL DeviceHandler::DebugCallback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT messageType,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-    void* pUserData) {
-    std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-
-    return VK_FALSE;
-}
-
-// setupDebugMessenger()
-VkResult DeviceHandler::CreateDebugUtilsMessengerEXT(
-    const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-    const VkAllocationCallbacks* pAllocator,
-    VkDebugUtilsMessengerEXT* pDebugMessenger) {
+VkResult create_debug_utils_messenger_ext(
+    VkInstance instance,
+    const VkDebugUtilsMessengerCreateInfoEXT* p_create_info,
+    const VkAllocationCallbacks* p_allocator,
+    VkDebugUtilsMessengerEXT* p_debug_messenger) {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
-        m_vulkanGlobalState->GetVulkanInstance(),
-        "vkCreateDebugUtilsMessengerEXT");
+        instance, "vkCreateDebugUtilsMessengerEXT");
     if (func != nullptr) {
-        return func(m_vulkanGlobalState->GetVulkanInstance(), pCreateInfo,
-                    pAllocator, pDebugMessenger);
+        return func(instance, p_create_info, p_allocator, p_debug_messenger);
     } else {
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 }
 
-void DeviceHandler::DestroyDebugUtilsMessengerEXT(
+VKAPI_ATTR VkBool32 VKAPI_CALL
+debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+               VkDebugUtilsMessageTypeFlagsEXT messageType,
+               const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+               void* pUserData) {
+    std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+
+    return VK_FALSE;
+}
+
+void destroy_devices(VkPhysicalDevice& physical_device,
+                     VkDevice& logical_device, VkSurfaceKHR window_surface,
+                     VkInstance& instance,
+                     VkDebugUtilsMessengerEXT& debug_messenger) {
+    vkDestroyDevice(logical_device, nullptr);
+    if (kEnableValidationLayers) {
+        destroy_debug_utils_messenger_ext(instance, debug_messenger, nullptr);
+    }
+    vkDestroySurfaceKHR(instance, window_surface, nullptr);
+    vkDestroyInstance(instance, nullptr);
+}
+
+void destroy_debug_utils_messenger_ext(
+    VkInstance& instance, VkDebugUtilsMessengerEXT& debug_messenger,
     const VkAllocationCallbacks* pAllocator) {
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
-        m_vulkanGlobalState->GetVulkanInstance(),
-        "vkDestroyDebugUtilsMessengerEXT");
+        instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr) {
-        func(m_vulkanGlobalState->GetVulkanInstance(),
-             m_vulkanGlobalState->m_debugMessenger, pAllocator);
+        func(instance, debug_messenger, pAllocator);
     }
+}
+
+}  // namespace backend_vk::devices
+
+void DeviceHandler::init() {
+    m_physical_device = backend_vk::devices::init_physical_device(
+        m_vulkanGlobalState->m_instance, m_vulkanGlobalState->m_surface);
+    m_logical_device = backend_vk::devices::init_logical_device(
+        m_physical_device, m_vulkanGlobalState->m_surface,
+        ERenderingMode::Bindless);
+    m_vulkanGlobalState->m_debug_messenger =
+        backend_vk::devices::init_debug_messenger(
+            m_vulkanGlobalState->m_instance)
+            .value();
 }

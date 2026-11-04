@@ -1746,16 +1746,17 @@ void VulkanContext::CreateShadowPassPipelineBindless(
                           nullptr);
 }
 void VulkanContext::create_command_pool() {
-    QueueFamilyIndices queueFamilyIndices =
-        m_device_handler->find_queue_families(
-            m_device_handler->m_physical_device);
+    QueueFamilyIndices queue_family_indices =
+        backend_vk::devices::find_queue_families(
+            m_device_handler->m_physical_device,
+            m_vulkan_global_state->m_surface);
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     // Selecting graphicsFamily in order to issue draw commands in this command
     // pool
-    poolInfo.queueFamilyIndex = queueFamilyIndices.graphics_family.value();
+    poolInfo.queueFamilyIndex = queue_family_indices.graphics_family.value();
 
     if (vkCreateCommandPool(m_device_handler->m_logical_device, &poolInfo,
                             nullptr, &m_vulkan_global_state->m_commandPool) !=
@@ -2708,6 +2709,7 @@ DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     return VK_FALSE;
 }
 
+// TODO: Create unit tests or something like that to test the destruction order
 void VulkanContext::destroy() {
     vkDeviceWaitIdle(m_device_handler->m_logical_device);
     m_swap_chain_handler->Destroy();
@@ -2766,7 +2768,11 @@ void VulkanContext::destroy() {
                          m_vulkan_global_state->m_commandPool, nullptr);
 
     // DEVICE DESTRUCTION
-    m_device_handler->Destroy();
+    // m_device_handler->Destroy();
+    backend_vk::devices::destroy_devices(
+        m_device_handler->m_physical_device, m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_surface, m_vulkan_global_state->m_instance,
+        m_vulkan_global_state->m_debug_messenger);
     // GLFW DESTRUCTION
     m_windowing_backend->DestroyGLFW();
 }
