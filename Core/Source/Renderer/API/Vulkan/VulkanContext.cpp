@@ -357,6 +357,25 @@ void end_single_time_commands(VkDevice& logical_device,
 
     vkFreeCommandBuffers(logical_device, command_pool, 1, &command_buffer);
 }
+
+uint32_t find_memory_type(VkPhysicalDevice& physical_device,
+                          uint32_t type_filter,
+                          VkMemoryPropertyFlags properties) {
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(physical_device, &memProperties);
+
+    // Go over this section
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((type_filter & (1 << i)) &&
+            (memProperties.memoryTypes[i].propertyFlags & properties) ==
+                properties) {
+            return i;
+        }
+    }
+
+    throw std::runtime_error("failed to find suitable memory type!");
+}
+
 }  // namespace backend_vk
 namespace bvk_render_pass = backend_vk::render_pass;
 

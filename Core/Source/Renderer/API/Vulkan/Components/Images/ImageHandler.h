@@ -21,9 +21,6 @@ void create_image(VkPhysicalDevice& physical_device, VkDevice& logical_device,
                   VkImageTiling tiling, VkImageUsageFlags usage,
                   VkMemoryPropertyFlags properties, VkImage& image,
                   VkDeviceMemory& imageMemory);
-uint32_t find_memory_type(VkPhysicalDevice& physical_device,
-                          uint32_t type_filter,
-                          VkMemoryPropertyFlags properties);
 
 bool has_stencil_component(VkFormat format);
 }  // namespace backend_vk::images

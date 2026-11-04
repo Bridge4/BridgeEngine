@@ -66,7 +66,7 @@ void create_image(VkPhysicalDevice& physical_device, VkDevice& logical_device,
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = find_memory_type(
+    allocInfo.memoryTypeIndex = backend_vk::find_memory_type(
         physical_device, memRequirements.memoryTypeBits, properties);
 
     if (vkAllocateMemory(logical_device, &allocInfo, nullptr, &imageMemory) !=
@@ -75,24 +75,6 @@ void create_image(VkPhysicalDevice& physical_device, VkDevice& logical_device,
     }
 
     vkBindImageMemory(logical_device, image, imageMemory, 0);
-}
-
-uint32_t find_memory_type(VkPhysicalDevice& physical_device,
-                          uint32_t type_filter,
-                          VkMemoryPropertyFlags properties) {
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(physical_device, &memProperties);
-
-    // Go over this section
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if ((type_filter & (1 << i)) &&
-            (memProperties.memoryTypes[i].propertyFlags & properties) ==
-                properties) {
-            return i;
-        }
-    }
-
-    throw std::runtime_error("failed to find suitable memory type!");
 }
 
 void transition_image_layout(VkDevice& logical_device,

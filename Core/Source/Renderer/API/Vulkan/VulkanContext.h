@@ -76,6 +76,10 @@ void end_single_time_commands(VkDevice& logical_device,
                               VkCommandPool& command_pool,
                               VkQueue& graphics_queue,
                               VkCommandBuffer command_buffer);
+
+uint32_t find_memory_type(VkPhysicalDevice& physical_device,
+                          uint32_t type_filter,
+                          VkMemoryPropertyFlags properties);
 }  // namespace backend_vk
 
 struct InputSSBO {
