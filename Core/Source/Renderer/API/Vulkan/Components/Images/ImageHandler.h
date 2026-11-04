@@ -38,10 +38,6 @@ class ImageHandler {
         this->m_deviceHandler = deviceHandler;
     }
 
-    void TransitionImageLayout(VkImage image, VkFormat format,
-                               VkImageLayout oldLayout,
-                               VkImageLayout newLayout);
-
     uint32_t FindMemoryType(uint32_t typeFilter,
                             VkMemoryPropertyFlags properties);
 

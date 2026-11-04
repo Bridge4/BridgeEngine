@@ -1785,14 +1785,20 @@ void VulkanContext::CreateTextureImage(TextureResource props, Mesh3D* mesh,
         mesh->m_materialDataMap[materialType].m_textureImage,
         mesh->m_materialDataMap[materialType].m_textureImageMemory);
 
-    m_image_handler->TransitionImageLayout(
+    backend_vk::images::transition_image_layout(
+        m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_commandPool,
+        m_vulkan_global_state->m_graphicsQueue,
         mesh->m_materialDataMap[materialType].m_textureImage,
         VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     CopyBufferToImage(
         stagingBuffer, mesh->m_materialDataMap[materialType].m_textureImage,
         static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-    m_image_handler->TransitionImageLayout(
+    backend_vk::images::transition_image_layout(
+        m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_commandPool,
+        m_vulkan_global_state->m_graphicsQueue,
         mesh->m_materialDataMap[materialType].m_textureImage,
         VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
