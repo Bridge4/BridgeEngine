@@ -403,6 +403,26 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
         throw std::runtime_error("Failed to create window surface");
 
     m_device_handler->init();
+    QueueFamilyIndices queue_family_indices =
+        backend_vk::devices::find_queue_families(
+            m_device_handler->m_physical_device,
+            m_vulkan_global_state->m_surface);
+
+    m_vulkan_global_state->m_graphicsQueue =
+        backend_vk::devices::get_device_queue(
+            m_device_handler->m_logical_device,
+            queue_family_indices.graphics_family.value());
+
+    m_vulkan_global_state->m_presentQueue =
+        backend_vk::devices::get_device_queue(
+            m_device_handler->m_logical_device,
+            queue_family_indices.present_family.value());
+
+    m_vulkan_global_state->m_computeQueue =
+        backend_vk::devices::get_device_queue(
+            m_device_handler->m_logical_device,
+            queue_family_indices.present_family.value());
+
     int framebuffer_width, framebuffer_height;
     m_windowing_backend->get_framebuffer_size_glfw(&framebuffer_width,
                                                    &framebuffer_height);
@@ -450,9 +470,9 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
 
     // m_renderPassHandler->CreateShadowPass();
 
-    QueueFamilyIndices queue_family_indices =
-        m_device_handler->find_queue_families(
-            m_device_handler->m_physical_device);
+    // QueueFamilyIndices queue_family_indices =
+    //     m_device_handler->find_queue_families(
+    //         m_device_handler->m_physical_device);
     m_vulkan_global_state->m_commandPoolCompute = create_command_pool_compute(
         m_device_handler->m_logical_device, queue_family_indices);
 
@@ -555,7 +575,7 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     init_info.PhysicalDevice = m_device_handler->m_physical_device;
     init_info.Device = m_device_handler->m_logical_device;
 
-    init_info.QueueFamily = queue_family_indices.graphicsFamily.value();
+    init_info.QueueFamily = queue_family_indices.graphics_family.value();
     init_info.Queue = m_vulkan_global_state->m_graphicsQueue;
     init_info.PipelineCache = VK_NULL_HANDLE;
     // init_info.DescriptorPool = VK_NULL_HANDLE;
@@ -1735,7 +1755,7 @@ void VulkanContext::create_command_pool() {
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     // Selecting graphicsFamily in order to issue draw commands in this command
     // pool
-    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+    poolInfo.queueFamilyIndex = queueFamilyIndices.graphics_family.value();
 
     if (vkCreateCommandPool(m_device_handler->m_logical_device, &poolInfo,
                             nullptr, &m_vulkan_global_state->m_commandPool) !=
@@ -1755,7 +1775,7 @@ VkCommandPool VulkanContext::create_command_pool_compute(
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     // Selecting graphicsFamily in order to issue draw commands in this command
     // pool
-    poolInfo.queueFamilyIndex = queueFamilyIndices.computeFamily.value();
+    poolInfo.queueFamilyIndex = queueFamilyIndices.compute_family.value();
 
     if (vkCreateCommandPool(logical_device, &poolInfo, nullptr, &commandPool) !=
         VK_SUCCESS) {

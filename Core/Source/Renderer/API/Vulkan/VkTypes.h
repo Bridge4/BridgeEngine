@@ -112,11 +112,11 @@ struct DescriptorSetBindingInfo {
 };
 
 struct QueueFamilyIndices {
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-    std::optional<uint32_t> computeFamily;
+    std::optional<uint32_t> graphics_family;
+    std::optional<uint32_t> present_family;
+    std::optional<uint32_t> compute_family;
 
-    bool isComplete() { return graphicsFamily.has_value(); }
+    bool isComplete() { return graphics_family.has_value(); }
 };
 
 struct SwapChainSupportDetails {

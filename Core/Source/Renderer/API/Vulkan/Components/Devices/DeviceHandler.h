@@ -1,5 +1,6 @@
 #pragma once
 #include "Source/Renderer/API/Vulkan/VkTypes.h"
+#include "Source/Renderer/RendererTypes.h"
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif  // !VK_USE_PLATFORM_WIN32_KHR
@@ -10,6 +11,11 @@
 
 namespace backend_vk::devices {
 
+#ifdef NDEBUG
+const bool kEnableValidationLayers = false;
+#else
+const bool kEnableValidationLayers = true;
+#endif
 const std::vector<const char*> kValidationLayers = {
     "VK_LAYER_KHRONOS_validation"};
 const std::vector<const char*> kDeviceExtensions = {
@@ -21,7 +27,9 @@ QueueFamilyIndices find_queue_families(VkPhysicalDevice physical_device,
 
 VkPhysicalDevice init_physical_device(VkInstance& instance);
 
-VkDevice init_logical_device();
+VkDevice init_logical_device(VkPhysicalDevice& physical_device,
+                             VkSurfaceKHR window_surface,
+                             ERenderingMode rendering_mode);
 
 void init_debug_messenger();
 
@@ -41,6 +49,9 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
 void destroy_debug_utils_messenger_ext(const VkAllocationCallbacks* pAllocator);
+
+VkQueue get_device_queue(VkDevice& logical_device, uint32_t queue_family_index);
+
 }  // namespace backend_vk::devices
 
 /*
@@ -81,7 +92,6 @@ class DeviceHandler {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
     VulkanGlobalState* m_vulkanGlobalState = 0;
-    void InitializeLogicalDevice();
     void InitializeDebugMessenger();
     // CORE FUNCTIONS
 

@@ -50,10 +50,10 @@ void SwapChainHandler::init(int frameBufferWidth, int frameBufferHeight) {
 
     QueueFamilyIndices indices = m_deviceHandler->find_queue_families(
         m_deviceHandler->m_physical_device);
-    uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(),
-                                     indices.presentFamily.value()};
+    uint32_t queueFamilyIndices[] = {indices.graphics_family.value(),
+                                     indices.present_family.value()};
 
-    if (indices.graphicsFamily != indices.presentFamily) {
+    if (indices.graphics_family != indices.present_family) {
         createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         createInfo.queueFamilyIndexCount = 2;
         createInfo.pQueueFamilyIndices = queueFamilyIndices;
