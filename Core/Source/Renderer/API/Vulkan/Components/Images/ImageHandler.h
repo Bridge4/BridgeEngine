@@ -38,9 +38,6 @@ class ImageHandler {
         this->m_deviceHandler = deviceHandler;
     }
 
-    VkImageView CreateImageView(VkDevice device, VkImage image, VkFormat format,
-                                VkImageAspectFlags aspectFlags);
-
     void TransitionImageLayout(VkImage image, VkFormat format,
                                VkImageLayout oldLayout,
                                VkImageLayout newLayout);

@@ -95,7 +95,7 @@ void SwapChainHandler::init(int frameBufferWidth, int frameBufferHeight) {
     for (size_t i = 0; i < swapChainImages.size(); i++) {
         // Moved definition for createImageView() to a class and turned into a
         // static function
-        swapChainImageViews[i] = m_imageViewHandler->CreateImageView(
+        swapChainImageViews[i] = backend_vk::images::create_image_view(
             m_deviceHandler->m_logical_device,
             m_vulkanGlobalState->m_swapChainImages[i],
             m_vulkanGlobalState->m_swapChainImageFormat,

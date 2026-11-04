@@ -292,7 +292,7 @@ RenderPassHandler::create_render_pass_depth_resources(VkFormat depth_format,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, renderPassDepthImage,
         renderPassDepthImageMemory);
-    renderPassDepthImageView = m_imageHandler->CreateImageView(
+    renderPassDepthImageView = backend_vk::images::create_image_view(
         m_device_handler->m_logical_device, renderPassDepthImage, depth_format,
         VK_IMAGE_ASPECT_DEPTH_BIT);
 
@@ -357,7 +357,7 @@ void RenderPassHandler::create_shadow_pass_depth_resources() {
         m_vulkanGlobalState->m_shadowPassDepthImageMemory);
 
     m_vulkanGlobalState->m_shadowPassDepthImageView =
-        m_imageHandler->CreateImageView(
+        backend_vk::images::create_image_view(
             m_device_handler->m_logical_device,
             m_vulkanGlobalState->m_shadowPassDepthImage, depthFormat,
             VK_IMAGE_ASPECT_DEPTH_BIT);

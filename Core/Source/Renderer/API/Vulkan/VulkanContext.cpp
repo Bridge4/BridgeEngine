@@ -1806,7 +1806,7 @@ void VulkanContext::CreateTextureImage(TextureResource props, Mesh3D* mesh,
 void VulkanContext::CreateTextureImageView(Mesh3D* mesh,
                                            MaterialEnums materialType) {
     mesh->m_materialDataMap[materialType].m_textureImageView =
-        m_image_handler->CreateImageView(
+        backend_vk::images::create_image_view(
             m_device_handler->m_logical_device,
             mesh->m_materialDataMap[materialType].m_textureImage,
             VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
