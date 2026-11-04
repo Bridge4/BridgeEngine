@@ -77,13 +77,13 @@ void ImageHandler::CreateImage(uint32_t width, uint32_t height, VkFormat format,
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.flags = 0;  // Optional
 
-    if (vkCreateImage(m_deviceHandler->LogicalDevice, &imageInfo, nullptr,
+    if (vkCreateImage(m_deviceHandler->m_logical_device, &imageInfo, nullptr,
                       &image) != VK_SUCCESS) {
         throw std::runtime_error("failed to create image!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(m_deviceHandler->LogicalDevice, image,
+    vkGetImageMemoryRequirements(m_deviceHandler->m_logical_device, image,
                                  &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
@@ -92,12 +92,12 @@ void ImageHandler::CreateImage(uint32_t width, uint32_t height, VkFormat format,
     allocInfo.memoryTypeIndex =
         FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(m_deviceHandler->LogicalDevice, &allocInfo, nullptr,
+    if (vkAllocateMemory(m_deviceHandler->m_logical_device, &allocInfo, nullptr,
                          &imageMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate image memory!");
     }
 
-    vkBindImageMemory(m_deviceHandler->LogicalDevice, image, imageMemory, 0);
+    vkBindImageMemory(m_deviceHandler->m_logical_device, image, imageMemory, 0);
 }
 
 uint32_t ImageHandler::FindMemoryType(uint32_t typeFilter,
@@ -121,7 +121,8 @@ uint32_t ImageHandler::FindMemoryType(uint32_t typeFilter,
 void ImageHandler::TransitionImageLayout(VkImage image, VkFormat format,
                                          VkImageLayout oldLayout,
                                          VkImageLayout newLayout) {
-    VkCommandBuffer commandBuffer = m_vulkanContext->BeginSingleTimeCommands();
+    VkCommandBuffer commandBuffer =
+        m_vulkanContext->begin_single_time_commands();
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout = oldLayout;
@@ -177,7 +178,7 @@ void ImageHandler::TransitionImageLayout(VkImage image, VkFormat format,
     // Syncronization
     vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0,
                          nullptr, 0, nullptr, 1, &barrier);
-    m_vulkanContext->EndSingleTimeCommands(commandBuffer);
+    m_vulkanContext->end_single_time_commands(commandBuffer);
 }
 
 bool ImageHandler::HasStencilComponent(VkFormat format) {

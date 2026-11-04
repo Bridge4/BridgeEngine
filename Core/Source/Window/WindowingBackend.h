@@ -17,13 +17,13 @@ class WindowingBackend {
 
     void PollWindowNotMinimizedGLFW();
 
-    void GetFramebufferSizeGLFW(int* width, int* height);
+    void get_framebuffer_size_glfw(int* width, int* height);
 
     int ShouldCloseGLFW();
 
     void PollGLFW();
 
-    VkResult CreateSurfaceVkGLFW(VkInstance instance, VkSurfaceKHR* surface);
+    VkResult create_surface_vk_glfw(VkInstance instance, VkSurfaceKHR* surface);
 
     void CreateWindowVkGLFW(uint32_t width = 800, uint32_t height = 600);
 

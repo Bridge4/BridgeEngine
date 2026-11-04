@@ -15,7 +15,7 @@
 #include "../VulkanGlobalState/VulkanGlobalState.h"
 #include "../WindowVK/WindowHandlerVK.h"
 
-void SwapChainHandler::Initialize(int frameBufferWidth, int frameBufferHeight) {
+void SwapChainHandler::init(int frameBufferWidth, int frameBufferHeight) {
     VkSurfaceKHR surface = m_vulkanGlobalState->GetSurface();
 
     SwapChainSupportDetails swapChainSupport =
@@ -48,7 +48,7 @@ void SwapChainHandler::Initialize(int frameBufferWidth, int frameBufferHeight) {
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     QueueFamilyIndices indices =
-        m_deviceHandler->FindQueueFamilies(m_deviceHandler->PhysicalDevice);
+        m_deviceHandler->find_queue_families(m_deviceHandler->PhysicalDevice);
     uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(),
                                      indices.presentFamily.value()};
 
@@ -69,19 +69,19 @@ void SwapChainHandler::Initialize(int frameBufferWidth, int frameBufferHeight) {
 
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(m_deviceHandler->LogicalDevice, &createInfo,
+    if (vkCreateSwapchainKHR(m_deviceHandler->m_logical_device, &createInfo,
                              nullptr, m_vulkanGlobalState->GetRefSwapChain()) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create swap chain!");
     }
 
-    vkGetSwapchainImagesKHR(m_deviceHandler->LogicalDevice,
+    vkGetSwapchainImagesKHR(m_deviceHandler->m_logical_device,
                             *m_vulkanGlobalState->GetRefSwapChain(),
                             &imageCount, nullptr);
     std::vector<VkImage> swapChainImages =
         *m_vulkanGlobalState->GetRefSwapChainImages();
     swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(m_deviceHandler->LogicalDevice,
+    vkGetSwapchainImagesKHR(m_deviceHandler->m_logical_device,
                             *m_vulkanGlobalState->GetRefSwapChain(),
                             &imageCount, swapChainImages.data());
     m_vulkanGlobalState->SetSwapChainImages(swapChainImages);
@@ -95,7 +95,7 @@ void SwapChainHandler::Initialize(int frameBufferWidth, int frameBufferHeight) {
         // Moved definition for createImageView() to a class and turned into a
         // static function
         swapChainImageViews[i] = m_imageViewHandler->CreateImageView(
-            m_deviceHandler->LogicalDevice,
+            m_deviceHandler->m_logical_device,
             m_vulkanGlobalState->m_swapChainImages[i],
             m_vulkanGlobalState->m_swapChainImageFormat,
             VK_IMAGE_ASPECT_COLOR_BIT);
@@ -108,33 +108,34 @@ void SwapChainHandler::Rebuild(int frameBufferWidth, int frameBufferHeight) {
     // m_windowHandler->PollWindowNotMinimized();
     // vkDeviceWaitIdle(m_deviceHandler->LogicalDevice);
     Destroy();
-    Initialize(frameBufferWidth, frameBufferHeight);
+    init(frameBufferWidth, frameBufferHeight);
 }
 
 void SwapChainHandler::Destroy() {
     vkDestroyImageView(
-        m_deviceHandler->LogicalDevice,
-        m_vulkanGlobalState->m_renderPassData->depthResources.imageView,
+        m_deviceHandler->m_logical_device,
+        m_vulkanGlobalState->m_render_pass_data->depthResources.imageView,
         nullptr);
-    vkDestroyImage(m_deviceHandler->LogicalDevice,
-                   m_vulkanGlobalState->m_renderPassData->depthResources.image,
-                   nullptr);
+    vkDestroyImage(
+        m_deviceHandler->m_logical_device,
+        m_vulkanGlobalState->m_render_pass_data->depthResources.image, nullptr);
     vkFreeMemory(
-        m_deviceHandler->LogicalDevice,
-        m_vulkanGlobalState->m_renderPassData->depthResources.imageMemory,
+        m_deviceHandler->m_logical_device,
+        m_vulkanGlobalState->m_render_pass_data->depthResources.imageMemory,
         nullptr);
 
     for (auto framebuffer :
-         m_vulkanGlobalState->m_renderPassData->framebuffers) {
-        vkDestroyFramebuffer(m_deviceHandler->LogicalDevice, framebuffer,
+         m_vulkanGlobalState->m_render_pass_data->framebuffers) {
+        vkDestroyFramebuffer(m_deviceHandler->m_logical_device, framebuffer,
                              nullptr);
     }
 
     for (auto imageView : m_vulkanGlobalState->m_swapChainImageViews) {
-        vkDestroyImageView(m_deviceHandler->LogicalDevice, imageView, nullptr);
+        vkDestroyImageView(m_deviceHandler->m_logical_device, imageView,
+                           nullptr);
     }
 
-    vkDestroySwapchainKHR(m_deviceHandler->LogicalDevice,
+    vkDestroySwapchainKHR(m_deviceHandler->m_logical_device,
                           m_vulkanGlobalState->m_swapChain, nullptr);
 }
 

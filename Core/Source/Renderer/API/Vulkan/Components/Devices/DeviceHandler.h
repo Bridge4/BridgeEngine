@@ -25,7 +25,7 @@ class DeviceHandler {
         this->m_vulkanGlobalState = VulkanGlobalState;
     }
 
-    void Initialize();
+    void init();
 
     void Destroy();
 
@@ -33,10 +33,10 @@ class DeviceHandler {
         VkPhysicalDevice physicalDevice);
 
     // Used by isDeviceSuitable() and createLogicalDevice()
-    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physicalDevice);
+    QueueFamilyIndices find_queue_families(VkPhysicalDevice physicalDevice);
 
     VkPhysicalDevice PhysicalDevice = nullptr;
-    VkDevice LogicalDevice = nullptr;
+    VkDevice m_logical_device = nullptr;
 
    private:
     // CONSTANTS

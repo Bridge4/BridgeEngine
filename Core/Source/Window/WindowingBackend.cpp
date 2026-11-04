@@ -8,8 +8,8 @@
 // 2. Call API-specific windowing setup
 
 // NOTE: VULKAN WINDOWING
-VkResult WindowingBackend::CreateSurfaceVkGLFW(VkInstance instance,
-                                               VkSurfaceKHR* surface) {
+VkResult WindowingBackend::create_surface_vk_glfw(VkInstance instance,
+                                                  VkSurfaceKHR* surface) {
     return glfwCreateWindowSurface(instance, m_window, nullptr, surface);
 }
 
@@ -41,7 +41,7 @@ void WindowingBackend::PollWindowNotMinimizedGLFW() {
     }
 }
 
-void WindowingBackend::GetFramebufferSizeGLFW(int* width, int* height) {
+void WindowingBackend::get_framebuffer_size_glfw(int* width, int* height) {
     glfwGetFramebufferSize(m_window, width, height);
 }
 

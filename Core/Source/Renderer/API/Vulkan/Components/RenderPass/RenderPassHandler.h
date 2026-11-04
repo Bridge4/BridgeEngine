@@ -14,7 +14,7 @@
 
 // enum VkFormat;
 
-namespace ContextVk {
+namespace context_vk::render_pass {
 struct DepthResources {
     VkImage image;
     VkImageView imageView;
@@ -23,25 +23,25 @@ struct DepthResources {
 
 struct RenderPassData {
     enum ERenderPassDataState {
-        Valid,
-        FramebuffersInvalid,
-        AttachmentCountInvalid,
-        RenderPassInvalid
+        VALID,
+        FRAMEBUFFERS_INVALID,
+        ATTACHMENT_COUNT_INVALID,
+        RENDER_PASS_INVALID
     };
-    VkRenderPass renderPass = VK_NULL_HANDLE;
-    int attachmentCount;
+    VkRenderPass render_pass = VK_NULL_HANDLE;
+    int attachment_count;
     std::vector<VkFramebuffer> framebuffers;
     DepthResources depthResources;
 
     ERenderPassDataState GetRenderPassDataState() {
         if (this->framebuffers.empty())
-            return ERenderPassDataState::FramebuffersInvalid;
-        if (attachmentCount == 0)
-            return ERenderPassDataState::AttachmentCountInvalid;
-        if (renderPass == VK_NULL_HANDLE)
-            return ERenderPassDataState::RenderPassInvalid;
+            return ERenderPassDataState::FRAMEBUFFERS_INVALID;
+        if (attachment_count == 0)
+            return ERenderPassDataState::ATTACHMENT_COUNT_INVALID;
+        if (render_pass == VK_NULL_HANDLE)
+            return ERenderPassDataState::RENDER_PASS_INVALID;
 
-        return ERenderPassDataState::Valid;
+        return ERenderPassDataState::VALID;
     }
 };
 
@@ -51,10 +51,10 @@ struct RenderPassFramebuffer {
     std::shared_ptr<VkFramebuffer> framebuffer;
 };
 
-RenderPassData CreateRenderPass(VkDevice& logicalDevice,
-                                VkFormat colorAttachmentImageFormat,
-                                VkFormat depthAttachmentFormat);
-}  // namespace ContextVk
+RenderPassData create_render_pass(VkDevice& logical_device,
+                                  VkFormat colorAttachmentImageFormat,
+                                  VkFormat depthAttachmentFormat);
+}  // namespace context_vk::render_pass
 
 struct BrVkRenderPass {
     VkViewport viewport;
@@ -76,27 +76,27 @@ class RenderPassHandler {
         this->m_vulkanGlobalState = VulkanGlobalState;
     }
 
-    ContextVk::RenderPassData CreateRenderPass(
-        VkDevice& logicalDevice, VkFormat colorAttachmentImageFormat,
+    context_vk::render_pass::RenderPassData create_render_pass(
+        VkDevice& logical_device, VkFormat colorAttachmentImageFormat,
         VkFormat depthAttachmentFormat);
-    ContextVk::DepthResources CreateRenderPassDepthResources(
+    context_vk::render_pass::DepthResources create_render_pass_depth_resources(
         VkFormat depthFormat, uint32_t width, uint32_t height);
     // void CreateRenderPassFrameBuffers();
 
-    void CreateShadowPass();
-    void CreateShadowPassDepthResources();
-    void CreateShadowPassFrameBuffers();
+    void create_shadow_pass();
+    void create_shadow_pass_depth_resources();
+    void create_shadow_pass_framebuffers();
 
-    VkCommandBuffer BeginSingleTimeCommands();
+    VkCommandBuffer begin_single_time_commands();
 
-    void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
-    VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates,
-                                 VkImageTiling tiling,
-                                 VkFormatFeatureFlags features);
+    void end_single_time_commands(VkCommandBuffer commandBuffer);
+    VkFormat find_supported_format(const std::vector<VkFormat>& candidates,
+                                   VkImageTiling tiling,
+                                   VkFormatFeatureFlags features);
 
-    void TransitionImageLayout(VkImage image, VkFormat format,
-                               VkImageLayout oldLayout,
-                               VkImageLayout newLayout);
+    void transition_image_layout(VkImage image, VkFormat format,
+                                 VkImageLayout oldLayout,
+                                 VkImageLayout newLayout);
 
     VkRenderPass m_renderPass = 0;
     VulkanContext* m_vulkanContext = 0;

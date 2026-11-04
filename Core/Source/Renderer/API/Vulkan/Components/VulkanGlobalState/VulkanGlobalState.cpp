@@ -32,7 +32,7 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     return VK_FALSE;
 }
 
-void VulkanGlobalState::CreateVulkanInstance() {
+void VulkanGlobalState::create_vulkan_instance() {
     // Helpers needed: getRequiredExtensions
     // getRequiredExtensions is actuall calling a bunch of glfw functions
     // that should be handled by the WindowHandler class

@@ -13,9 +13,9 @@
 
 // NOTE: VULKAN WINDOWING
 VkResult WindowHandlerVK::CreateSurface() {
-    return m_windowingBackend->CreateSurfaceVkGLFW(
-        vulkanContext->m_vulkanGlobalState->m_instance,
-        &vulkanContext->m_vulkanGlobalState->m_surface);
+    return m_windowingBackend->create_surface_vk_glfw(
+        vulkanContext->m_vulkan_global_state->m_instance,
+        &vulkanContext->m_vulkan_global_state->m_surface);
 }
 
 // void key_callback(GLFWwindow* m_window, int key, int scancode, int action,

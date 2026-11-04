@@ -42,7 +42,7 @@ class BufferHandler {
     void CreateModelUBO(Mesh3D* mesh);
 
     void CreateCommandBuffers();
-    void CreateCommandBuffersCompute(VkDevice& logicalDevice,
+    void CreateCommandBuffersCompute(VkDevice& logical_device,
                                      VkCommandPool& commandPool);
 
     void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,

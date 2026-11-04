@@ -50,7 +50,7 @@ class VulkanGlobalState {
         this->m_renderingMode = renderingMode;
     }
 
-    void CreateVulkanInstance();
+    void create_vulkan_instance();
 
     // Getters
     VkInstance GetVulkanInstance() { return m_instance; }
@@ -92,7 +92,8 @@ class VulkanGlobalState {
     VkFormat m_swapChainImageFormat = VK_FORMAT_UNDEFINED;
     VkExtent2D m_swapChainExtent;
 
-    std::unique_ptr<ContextVk::RenderPassData> m_renderPassData = {};
+    std::unique_ptr<context_vk::render_pass::RenderPassData>
+        m_render_pass_data = {};
 
     VkImage m_shadowPassDepthImage = 0;
     VkDeviceMemory m_shadowPassDepthImageMemory = 0;

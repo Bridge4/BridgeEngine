@@ -285,7 +285,7 @@ void CameraController::HandleInputOrbit(float deltaTime) {
             //  std::cout << "INPUT SSBO" << sizeof(InputSSBO) << "\n";
             //  std::cout << "OUTPUT SSBO" << sizeof(OutputSSBO) << "\n";
 
-            m_vulkanContext->NewLandscape();
+            m_vulkanContext->new_landscape();
             // auto start = std::chrono::steady_clock::now();
             // m_vulkanContext->RunComputeShader();
             // auto end = std::chrono::steady_clock::now();

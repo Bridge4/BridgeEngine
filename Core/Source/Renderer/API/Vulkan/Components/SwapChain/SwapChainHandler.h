@@ -18,7 +18,7 @@ class SwapChainHandler {
         this->m_vulkanGlobalState = VulkanGlobalState;
     };
 
-    void Initialize(int frameBufferWidth, int frameBufferHeight);
+    void init(int frameBufferWidth, int frameBufferHeight);
 
     void Rebuild(int frameBufferWidth, int frameBufferHeight);
 

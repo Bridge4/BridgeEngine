@@ -53,20 +53,20 @@ class CameraController;
 class VulkanGlobalState;
 class Mesh3D;
 
-namespace ContextVk {
+namespace context_vk {
 void RenderUI();
 
 VkPipeline CreateComputePipeline(
-    std::vector<char> shader, VkDevice& logicalDevice,
+    std::vector<char> shader, VkDevice& logical_device,
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts,
     VkPipelineLayout& pipelineLayout);
 
 std::vector<VkFramebuffer> CreateSwapChainFramebuffers(
     int numberOfFramebuffers, std::vector<VkImageView> perFrameImageViews,
     std::vector<VkImageView> swapChainImageViews, uint32_t framebufferWidth,
-    uint32_t framebufferHeight, VkDevice& logicalDevice,
-    RenderPassData renderPassData);
-}  // namespace ContextVk
+    uint32_t framebufferHeight, VkDevice& logical_device,
+    render_pass::RenderPassData renderPassData);
+}  // namespace context_vk
 
 struct InputSSBO {
     float dataIn[1024];
@@ -84,18 +84,18 @@ class VulkanContext {
     const bool enableValidationLayers = true;
 #endif
     VulkanContext() {};
-    void InitVulkan(ERenderingMode renderingMode = ERenderingMode::Standard);
+    void init_vulkan(ERenderingMode renderingMode = ERenderingMode::Standard);
 
-    void Tick(std::vector<ObjResource> objectsToRender, float deltaTime);
+    void tick(std::vector<ObjResource> objectsToRender, float deltaTime);
 
-    void LoadSceneObjects();
+    void load_scene_objects();
 
-    void UnloadSceneObjects();
+    void unload_scene_objects();
 
-    void NewLandscape();
+    void new_landscape();
 
-    VulkanGlobalState* m_vulkanGlobalState;
-    WindowingBackend* m_windowingBackend = nullptr;
+    VulkanGlobalState* m_vulkan_global_state;
+    WindowingBackend* m_windowing_backend = nullptr;
 
     const std::vector<const char*> m_validationLayers = {
         "VK_LAYER_KHRONOS_validation"};
@@ -105,29 +105,29 @@ class VulkanContext {
     std::vector<Vertex> m_vertices;
     std::vector<uint32_t> m_indices;
     // TODO: Figure out what the fuck this does
-    void TransitionImageLayout(VkImage image, VkFormat format,
-                               VkImageLayout oldLayout,
-                               VkImageLayout newLayout);
+    void transition_image_layout(VkImage image, VkFormat format,
+                                 VkImageLayout old_layout,
+                                 VkImageLayout new_layout);
 
     // beginSingleTimeCommands and endSingleTimeCommands are helpers for
     // copyBuffer
-    VkCommandBuffer BeginSingleTimeCommands();
+    VkCommandBuffer begin_single_time_commands();
 
-    void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
-    DeviceHandler* m_deviceHandler;
+    void end_single_time_commands(VkCommandBuffer command_buffer);
+    DeviceHandler* m_device_handler;
     // CLEANUP
-    void Destroy();
-    void DescribeScene(std::vector<ObjResource> objectsToRender,
-                       std::vector<Light> lightsToRender);
-    uint32_t RegisterTexture(VkImageView* textureImageView,
-                             VkSampler* textureSampler);
+    void destroy();
+    void describe_scene(std::vector<ObjResource> objects_to_render,
+                        std::vector<Light> lights_to_render);
+    uint32_t register_texture(VkImageView* texture_image_view,
+                              VkSampler* texture_sampler);
 
-    void RunComputeShader();
-    std::vector<ObjResource> m_objectsToRender = {};
+    void run_compute_shader();
+    std::vector<ObjResource> m_objects_to_render = {};
 
     // Reading in SPIRV shaders
-    static std::vector<char> ReadFile(const std::string& fileName) {
-        std::ifstream file(fileName, std::ios::ate | std::ios::binary);
+    static std::vector<char> read_file(const std::string& file_name) {
+        std::ifstream file(file_name, std::ios::ate | std::ios::binary);
 
         if (!file.is_open()) {
             throw std::runtime_error("failed to open file!");
@@ -146,13 +146,13 @@ class VulkanContext {
 
    private:
     // DeviceHandler* m_deviceHandler;
-    SwapChainHandler* m_swapChainHandler;
-    BufferHandler* m_bufferHandler;
-    RenderPassHandler* m_renderPassHandler;
+    SwapChainHandler* m_swap_chain_handler;
+    BufferHandler* m_buffer_handler;
+    RenderPassHandler* m_render_pass_handler;
     CameraController* m_cameraController;
-    DescriptorSetHandler* m_descriptorSetHandler;
+    DescriptorSetHandler* m_descriptor_set_handler;
 
-    ImageHandler* m_imageHandler;
+    ImageHandler* m_image_handler;
     int m_textureHeap[22000] = {0};
 
     uint32_t m_windowWidth = 800;
@@ -190,9 +190,9 @@ class VulkanContext {
         Allows for multithreaded command recording since all commands are
        available together in the buffers
     */
-    void CreateCommandPool();
-    VkCommandPool CreateCommandPoolCompute(
-        VkDevice& logicalDevice, QueueFamilyIndices queueFamilyIndices);
+    void create_command_pool();
+    VkCommandPool create_command_pool_compute(
+        VkDevice& logical_device, QueueFamilyIndices queueFamilyIndices);
 
     // VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates,
     // VkImageTiling tiling, VkFormatFeatureFlags features);

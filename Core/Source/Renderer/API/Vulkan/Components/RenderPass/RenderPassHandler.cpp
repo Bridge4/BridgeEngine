@@ -8,26 +8,26 @@
 #include "../VulkanGlobalState/VulkanGlobalState.h"
 #include "Source/Renderer/API/Vulkan/Components/Images/ImageHandler.h"
 
-namespace ContextVk {}
-ContextVk::RenderPassData RenderPassHandler::CreateRenderPass(
-    VkDevice& logicalDevice, VkFormat colorAttachmentImageFormat,
-    VkFormat depthAttachmentFormat) {
-    VkRenderPass renderPass;
+namespace context_vk {}
+context_vk::render_pass::RenderPassData RenderPassHandler::create_render_pass(
+    VkDevice& logical_device, VkFormat color_attachment_image_format,
+    VkFormat depth_attachment_format) {
+    VkRenderPass render_pass;
 
-    VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = colorAttachmentImageFormat;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    VkAttachmentDescription color_attachment{};
+    color_attachment.format = color_attachment_image_format;
+    color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     // Store rendered contents in memory to be read later
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 
     // Lookup stencil buffers later
-    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
     // The initialLayout specifies which layout the image will have before the
     // render pass begins.
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     /*
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL: Images used as color
@@ -44,13 +44,13 @@ ContextVk::RenderPassData RenderPassHandler::CreateRenderPass(
 
     // The finalLayout specifies the layout to automatically transition to when
     // the render pass finishes.
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-    VkAttachmentReference colorAttachmentRef{};
-    colorAttachmentRef.attachment = 0;
-    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentReference color_attachment_ref{};
+    color_attachment_ref.attachment = 0;
+    color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkAttachmentDescription depthAttachment{};
+    VkAttachmentDescription depth_attachment{};
 
     // depthAttachment.format =
     //     FindSupportedFormat({VK_FORMAT_D32_SFLOAT,
@@ -58,19 +58,19 @@ ContextVk::RenderPassData RenderPassHandler::CreateRenderPass(
     //                          VK_FORMAT_D24_UNORM_S8_UINT},
     //                         VK_IMAGE_TILING_OPTIMAL,
     //                         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    depthAttachment.format = depthAttachmentFormat;
-    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depthAttachment.finalLayout =
+    depth_attachment.format = depth_attachment_format;
+    depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depth_attachment.finalLayout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    VkAttachmentReference depthAttachmentRef{};
-    depthAttachmentRef.attachment = 1;
-    depthAttachmentRef.layout =
+    VkAttachmentReference depth_attachment_ref{};
+    depth_attachment_ref.attachment = 1;
+    depth_attachment_ref.layout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkSubpassDescription subpass{};
@@ -85,8 +85,8 @@ ContextVk::RenderPassData RenderPassHandler::CreateRenderPass(
     // The index of the attachment in this array is directly referenced from the
     // fragment shader with the layout(location = 0) out vec4 outColor directive
     subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colorAttachmentRef;
-    subpass.pDepthStencilAttachment = &depthAttachmentRef;
+    subpass.pColorAttachments = &color_attachment_ref;
+    subpass.pDepthStencilAttachment = &depth_attachment_ref;
 
     VkSubpassDependency dependency{};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -95,16 +95,17 @@ ContextVk::RenderPassData RenderPassHandler::CreateRenderPass(
 
     // Creating render pass object and populating the struct with necessary
     // properties
-    std::array<VkAttachmentDescription, 2> attachments = {colorAttachment,
-                                                          depthAttachment};
-    VkRenderPassCreateInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-    renderPassInfo.pAttachments = attachments.data();
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpass;
-    renderPassInfo.dependencyCount = 1;
-    renderPassInfo.pDependencies = &dependency;
+    std::array<VkAttachmentDescription, 2> attachments = {color_attachment,
+                                                          depth_attachment};
+    VkRenderPassCreateInfo render_pass_info{};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    render_pass_info.attachmentCount =
+        static_cast<uint32_t>(attachments.size());
+    render_pass_info.pAttachments = attachments.data();
+    render_pass_info.subpassCount = 1;
+    render_pass_info.pSubpasses = &subpass;
+    render_pass_info.dependencyCount = 1;
+    render_pass_info.pDependencies = &dependency;
 
     dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
                               VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
@@ -113,19 +114,19 @@ ContextVk::RenderPassData RenderPassHandler::CreateRenderPass(
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-    if (vkCreateRenderPass(logicalDevice, &renderPassInfo, nullptr,
-                           &renderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(logical_device, &render_pass_info, nullptr,
+                           &render_pass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
     }
 
-    ContextVk::RenderPassData renderPassData = {};
-    renderPassData.renderPass = renderPass;
-    renderPassData.attachmentCount = renderPassInfo.attachmentCount;
+    context_vk::render_pass::RenderPassData render_pass_data = {};
+    render_pass_data.render_pass = render_pass;
+    render_pass_data.attachment_count = render_pass_info.attachmentCount;
 
-    return renderPassData;
+    return render_pass_data;
 }
 
-void RenderPassHandler::CreateShadowPass() {
+void RenderPassHandler::create_shadow_pass() {
     VkAttachmentDescription depthAttachment{};
 
     depthAttachment.format = VK_FORMAT_D32_SFLOAT;
@@ -177,15 +178,17 @@ void RenderPassHandler::CreateShadowPass() {
     shadowPassInfo.dependencyCount = 1;
     shadowPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(m_deviceHandler->LogicalDevice, &shadowPassInfo,
+    if (vkCreateRenderPass(m_deviceHandler->m_logical_device, &shadowPassInfo,
                            nullptr,
                            &m_vulkanGlobalState->m_shadowPass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
     }
 }
 
-ContextVk::DepthResources RenderPassHandler::CreateRenderPassDepthResources(
-    VkFormat depthFormat, uint32_t width, uint32_t height) {
+context_vk::render_pass::DepthResources
+RenderPassHandler::create_render_pass_depth_resources(VkFormat depthFormat,
+                                                      uint32_t width,
+                                                      uint32_t height) {
     // VkFormat depthFormat =
     //     FindSupportedFormat({VK_FORMAT_D32_SFLOAT,
     //     VK_FORMAT_D32_SFLOAT_S8_UINT,
@@ -202,14 +205,14 @@ ContextVk::DepthResources RenderPassHandler::CreateRenderPassDepthResources(
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, renderPassDepthImage,
         renderPassDepthImageMemory);
     renderPassDepthImageView = m_imageHandler->CreateImageView(
-        m_deviceHandler->LogicalDevice, renderPassDepthImage, depthFormat,
+        m_deviceHandler->m_logical_device, renderPassDepthImage, depthFormat,
         VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    TransitionImageLayout(renderPassDepthImage, depthFormat,
-                          VK_IMAGE_LAYOUT_UNDEFINED,
-                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    transition_image_layout(renderPassDepthImage, depthFormat,
+                            VK_IMAGE_LAYOUT_UNDEFINED,
+                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-    ContextVk::DepthResources depthResources = {};
+    context_vk::render_pass::DepthResources depthResources = {};
     depthResources.image = renderPassDepthImage;
     depthResources.imageView = renderPassDepthImageView;
     depthResources.imageMemory = renderPassDepthImageMemory;
@@ -252,7 +255,7 @@ ContextVk::DepthResources RenderPassHandler::CreateRenderPassDepthResources(
 //     }
 // }
 
-void RenderPassHandler::CreateShadowPassDepthResources() {
+void RenderPassHandler::create_shadow_pass_depth_resources() {
     VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
     m_imageHandler->CreateImage(
         m_vulkanGlobalState->m_shadowMapWidth,
@@ -266,21 +269,21 @@ void RenderPassHandler::CreateShadowPassDepthResources() {
 
     m_vulkanGlobalState->m_shadowPassDepthImageView =
         m_imageHandler->CreateImageView(
-            m_deviceHandler->LogicalDevice,
+            m_deviceHandler->m_logical_device,
             m_vulkanGlobalState->m_shadowPassDepthImage, depthFormat,
             VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    TransitionImageLayout(m_vulkanGlobalState->m_shadowPassDepthImage,
-                          depthFormat, VK_IMAGE_LAYOUT_UNDEFINED,
-                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    transition_image_layout(m_vulkanGlobalState->m_shadowPassDepthImage,
+                            depthFormat, VK_IMAGE_LAYOUT_UNDEFINED,
+                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
-void RenderPassHandler::CreateShadowPassFrameBuffers() {
+void RenderPassHandler::create_shadow_pass_framebuffers() {
     // WARN: It is very hard to track changes to the global state, when we
     // enter a function we can't tell what's going to change in the global
     // state, when we exit a function we don't know what *has* changed in the
     // global state
-    CreateShadowPassDepthResources();
+    create_shadow_pass_depth_resources();
     m_vulkanGlobalState->m_shadowPassFrameBuffers.resize(
         m_vulkanGlobalState->m_lights.numLights.x);
 
@@ -300,7 +303,7 @@ void RenderPassHandler::CreateShadowPassFrameBuffers() {
         framebufferInfo.layers = 1;
 
         if (vkCreateFramebuffer(
-                m_deviceHandler->LogicalDevice, &framebufferInfo, nullptr,
+                m_deviceHandler->m_logical_device, &framebufferInfo, nullptr,
                 &m_vulkanGlobalState->m_shadowPassFrameBuffers[i]) !=
             VK_SUCCESS) {
             throw std::runtime_error("failed to create framebuffer!");
@@ -308,7 +311,7 @@ void RenderPassHandler::CreateShadowPassFrameBuffers() {
     }
 }
 
-VkFormat RenderPassHandler::FindSupportedFormat(
+VkFormat RenderPassHandler::find_supported_format(
     const std::vector<VkFormat>& candidates, VkImageTiling tiling,
     VkFormatFeatureFlags features) {
     for (VkFormat format : candidates) {
@@ -326,10 +329,10 @@ VkFormat RenderPassHandler::FindSupportedFormat(
     throw std::runtime_error("failed to find supported format!");
 }
 
-void RenderPassHandler::TransitionImageLayout(VkImage image, VkFormat format,
-                                              VkImageLayout oldLayout,
-                                              VkImageLayout newLayout) {
-    VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
+void RenderPassHandler::transition_image_layout(VkImage image, VkFormat format,
+                                                VkImageLayout oldLayout,
+                                                VkImageLayout newLayout) {
+    VkCommandBuffer commandBuffer = begin_single_time_commands();
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout = oldLayout;
@@ -386,10 +389,10 @@ void RenderPassHandler::TransitionImageLayout(VkImage image, VkFormat format,
     // Syncronization
     vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0,
                          nullptr, 0, nullptr, 1, &barrier);
-    EndSingleTimeCommands(commandBuffer);
+    end_single_time_commands(commandBuffer);
 }
 
-VkCommandBuffer RenderPassHandler::BeginSingleTimeCommands() {
+VkCommandBuffer RenderPassHandler::begin_single_time_commands() {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -397,7 +400,7 @@ VkCommandBuffer RenderPassHandler::BeginSingleTimeCommands() {
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(m_deviceHandler->LogicalDevice, &allocInfo,
+    vkAllocateCommandBuffers(m_deviceHandler->m_logical_device, &allocInfo,
                              &commandBuffer);
 
     VkCommandBufferBeginInfo beginInfo{};
@@ -409,7 +412,8 @@ VkCommandBuffer RenderPassHandler::BeginSingleTimeCommands() {
     return commandBuffer;
 }
 
-void RenderPassHandler::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
+void RenderPassHandler::end_single_time_commands(
+    VkCommandBuffer commandBuffer) {
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{};
@@ -421,6 +425,6 @@ void RenderPassHandler::EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
                   VK_NULL_HANDLE);
     vkQueueWaitIdle(m_vulkanGlobalState->m_graphicsQueue);
 
-    vkFreeCommandBuffers(m_deviceHandler->LogicalDevice,
+    vkFreeCommandBuffers(m_deviceHandler->m_logical_device,
                          m_vulkanGlobalState->m_commandPool, 1, &commandBuffer);
 }

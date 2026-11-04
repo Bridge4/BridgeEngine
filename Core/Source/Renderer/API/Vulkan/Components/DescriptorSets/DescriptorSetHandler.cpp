@@ -34,7 +34,7 @@ void DescriptorSetHandler::CreateDescriptorPool() {
                        m_vulkanGlobalState->m_maxMeshes;
 
     if (vkCreateDescriptorPool(
-            m_deviceHandler->LogicalDevice, &poolInfo, nullptr,
+            m_deviceHandler->m_logical_device, &poolInfo, nullptr,
             &m_vulkanGlobalState->m_descriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
     }
@@ -53,7 +53,7 @@ void DescriptorSetHandler::CreateDescriptorPoolBindless() {
     poolInfo.maxSets = 10000 * 2;
 
     if (vkCreateDescriptorPool(
-            m_deviceHandler->LogicalDevice, &poolInfo, nullptr,
+            m_deviceHandler->m_logical_device, &poolInfo, nullptr,
             &m_vulkanGlobalState->m_descriptorPoolBindless) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
     }
@@ -79,7 +79,7 @@ void DescriptorSetHandler::CreateDescriptorPoolBindlessScene() {
                        m_vulkanGlobalState->m_maxMeshes;
 
     if (vkCreateDescriptorPool(
-            m_deviceHandler->LogicalDevice, &poolInfo, nullptr,
+            m_deviceHandler->m_logical_device, &poolInfo, nullptr,
             &m_vulkanGlobalState->m_descriptorPoolBindlessScene) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
@@ -106,7 +106,7 @@ void DescriptorSetHandler::CreateDescriptorPoolPerMeshBindless() {
                        m_vulkanGlobalState->m_maxMeshes;
 
     if (vkCreateDescriptorPool(
-            m_deviceHandler->LogicalDevice, &poolInfo, nullptr,
+            m_deviceHandler->m_logical_device, &poolInfo, nullptr,
             &m_vulkanGlobalState->m_descriptorPoolPerMeshBindless) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
@@ -141,7 +141,7 @@ void DescriptorSetHandler::CreateDescriptorSetLayoutBindless() {
     layoutInfo.pBindings = bindings.data();
 
     if (vkCreateDescriptorSetLayout(
-            m_deviceHandler->LogicalDevice, &layoutInfo, nullptr,
+            m_deviceHandler->m_logical_device, &layoutInfo, nullptr,
             &m_vulkanGlobalState->m_bindlessDescriptorSetLayout) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
@@ -158,7 +158,7 @@ void DescriptorSetHandler::CreateDescriptorSetBindless() {
     allocInfo.pSetLayouts = layout.data();
 
     if (vkAllocateDescriptorSets(
-            m_deviceHandler->LogicalDevice, &allocInfo,
+            m_deviceHandler->m_logical_device, &allocInfo,
             &m_vulkanGlobalState->m_globalBindlessDescriptorSet) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
@@ -194,7 +194,7 @@ void DescriptorSetHandler::CreateDescriptorSetLayout(
     layoutInfo.pBindings = layoutBindings.data();
 
     if (vkCreateDescriptorSetLayout(
-            m_deviceHandler->LogicalDevice, &layoutInfo, nullptr,
+            m_deviceHandler->m_logical_device, &layoutInfo, nullptr,
             &m_vulkanGlobalState->m_meshDescriptorSetLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
     }
@@ -226,14 +226,14 @@ void DescriptorSetHandler::CreateSceneDescriptorSetLayout() {
     layoutInfo.pBindings = bindings.data();
 
     if (vkCreateDescriptorSetLayout(
-            m_deviceHandler->LogicalDevice, &layoutInfo, nullptr,
+            m_deviceHandler->m_logical_device, &layoutInfo, nullptr,
             &m_vulkanGlobalState->m_sceneDescriptorSetLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
     }
 }
 
 VkDescriptorPool DescriptorSetHandler::CreateDescriptorPoolCompute(
-    VkDevice& logicalDevice) {
+    VkDevice& logical_device) {
     VkDescriptorPool descriptorPool;
     std::array<VkDescriptorPoolSize, 2> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -245,7 +245,7 @@ VkDescriptorPool DescriptorSetHandler::CreateDescriptorPoolCompute(
     poolInfo.maxSets = 1;
     poolInfo.poolSizeCount = 1;
 
-    if (vkCreateDescriptorPool(logicalDevice, &poolInfo, nullptr,
+    if (vkCreateDescriptorPool(logical_device, &poolInfo, nullptr,
                                &descriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
     }
@@ -253,7 +253,7 @@ VkDescriptorPool DescriptorSetHandler::CreateDescriptorPoolCompute(
 }
 
 VkDescriptorSetLayout DescriptorSetHandler::CreateComputeDescriptorSetLayout(
-    VkDevice& logicalDevice) {
+    VkDevice& logical_device) {
     VkDescriptorSetLayout layout;
     // Binding 0 = InputBuffer
     VkDescriptorSetLayoutBinding inputBuffer{};
@@ -276,7 +276,7 @@ VkDescriptorSetLayout DescriptorSetHandler::CreateComputeDescriptorSetLayout(
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    if (vkCreateDescriptorSetLayout(logicalDevice, &layoutInfo, nullptr,
+    if (vkCreateDescriptorSetLayout(logical_device, &layoutInfo, nullptr,
                                     &layout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
     }
@@ -285,7 +285,7 @@ VkDescriptorSetLayout DescriptorSetHandler::CreateComputeDescriptorSetLayout(
 
 VkDescriptorSet DescriptorSetHandler::CreateDescriptorSetCompute(
     VkDescriptorPool& descriptorPool, VkDescriptorSetLayout& layout,
-    VkDevice& logicalDevice) {
+    VkDevice& logical_device) {
     VkDescriptorSet descriptorSet;
 
     std::vector<VkDescriptorSetLayout> layouts(1, layout);
@@ -296,7 +296,7 @@ VkDescriptorSet DescriptorSetHandler::CreateDescriptorSetCompute(
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = layouts.data();
 
-    if (vkAllocateDescriptorSets(logicalDevice, &allocInfo, &descriptorSet) !=
+    if (vkAllocateDescriptorSets(logical_device, &allocInfo, &descriptorSet) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
@@ -325,7 +325,7 @@ VkDescriptorSet DescriptorSetHandler::CreateDescriptorSetCompute(
     writes[1].dstBinding = 1;
     writes[1].pBufferInfo = &outInfo;
 
-    vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writes.size()),
+    vkUpdateDescriptorSets(logical_device, static_cast<uint32_t>(writes.size()),
                            writes.data(), 0, nullptr);
 
     return descriptorSet;
@@ -348,7 +348,7 @@ void DescriptorSetHandler::CreateShadowPassDescriptorSetLayout() {
     layoutInfo.pBindings = bindings.data();
 
     if (vkCreateDescriptorSetLayout(
-            m_deviceHandler->LogicalDevice, &layoutInfo, nullptr,
+            m_deviceHandler->m_logical_device, &layoutInfo, nullptr,
             &m_vulkanGlobalState->m_shadowPassDescriptorSetLayout) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
@@ -374,7 +374,7 @@ void DescriptorSetHandler::CreateSceneDescriptorSets() {
     m_vulkanGlobalState->m_sceneDescriptorSets.resize(
         m_vulkanGlobalState->m_maxFramesInFlight);
     if (vkAllocateDescriptorSets(
-            m_deviceHandler->LogicalDevice, &allocInfo,
+            m_deviceHandler->m_logical_device, &allocInfo,
             m_vulkanGlobalState->m_sceneDescriptorSets.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
@@ -410,9 +410,10 @@ void DescriptorSetHandler::CreateSceneDescriptorSets() {
         descriptorWrites[1].pBufferInfo = &lightUBOInfo;
 
         uint32_t descriptorCopyCount = 0;
-        vkUpdateDescriptorSets(
-            m_deviceHandler->LogicalDevice, (uint32_t)descriptorWrites.size(),
-            descriptorWrites.data(), descriptorCopyCount, nullptr);
+        vkUpdateDescriptorSets(m_deviceHandler->m_logical_device,
+                               (uint32_t)descriptorWrites.size(),
+                               descriptorWrites.data(), descriptorCopyCount,
+                               nullptr);
     }
 }
 
@@ -441,7 +442,7 @@ void DescriptorSetHandler::CreateTexturedMeshDescriptorSetLayout() {
     layoutInfo.pBindings = bindings.data();
 
     if (vkCreateDescriptorSetLayout(
-            m_deviceHandler->LogicalDevice, &layoutInfo, nullptr,
+            m_deviceHandler->m_logical_device, &layoutInfo, nullptr,
             &m_vulkanGlobalState->m_texturedMeshDescriptorSetLayout) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
@@ -460,7 +461,7 @@ void DescriptorSetHandler::CreateTexturedMeshDescriptorSets(Mesh3D* mesh) {
     allocInfo.pSetLayouts = layouts.data();
 
     mesh->m_descriptorSets.resize(m_vulkanGlobalState->m_maxFramesInFlight);
-    if (vkAllocateDescriptorSets(m_deviceHandler->LogicalDevice, &allocInfo,
+    if (vkAllocateDescriptorSets(m_deviceHandler->m_logical_device, &allocInfo,
                                  mesh->m_descriptorSets.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
@@ -495,9 +496,10 @@ void DescriptorSetHandler::CreateTexturedMeshDescriptorSets(Mesh3D* mesh) {
         descriptorWrites[1].pImageInfo = &imageInfo;
 
         uint32_t descriptorCopyCount = 0;
-        vkUpdateDescriptorSets(
-            m_deviceHandler->LogicalDevice, (uint32_t)descriptorWrites.size(),
-            descriptorWrites.data(), descriptorCopyCount, nullptr);
+        vkUpdateDescriptorSets(m_deviceHandler->m_logical_device,
+                               (uint32_t)descriptorWrites.size(),
+                               descriptorWrites.data(), descriptorCopyCount,
+                               nullptr);
     }
 }
 
@@ -517,7 +519,7 @@ void DescriptorSetHandler::CreateTexturedPBRDescriptorSetLayoutBindless() {
     layoutInfo.pBindings = bindings.data();
 
     if (vkCreateDescriptorSetLayout(
-            m_deviceHandler->LogicalDevice, &layoutInfo, nullptr,
+            m_deviceHandler->m_logical_device, &layoutInfo, nullptr,
             &m_vulkanGlobalState->m_texturedPBRDescriptorSetLayoutBindless) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
@@ -590,7 +592,7 @@ void DescriptorSetHandler::CreateTexturedPBRDescriptorSetLayout() {
     layoutInfo.pBindings = bindings.data();
 
     if (vkCreateDescriptorSetLayout(
-            m_deviceHandler->LogicalDevice, &layoutInfo, nullptr,
+            m_deviceHandler->m_logical_device, &layoutInfo, nullptr,
             &m_vulkanGlobalState->m_texturedPBRDescriptorSetLayout) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
@@ -611,7 +613,7 @@ void DescriptorSetHandler::CreateTexturedPBRDescriptorSetsBindless(
     allocInfo.pSetLayouts = layouts.data();
 
     mesh->m_descriptorSets.resize(m_vulkanGlobalState->m_maxFramesInFlight);
-    if (vkAllocateDescriptorSets(m_deviceHandler->LogicalDevice, &allocInfo,
+    if (vkAllocateDescriptorSets(m_deviceHandler->m_logical_device, &allocInfo,
                                  mesh->m_descriptorSets.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
@@ -634,9 +636,10 @@ void DescriptorSetHandler::CreateTexturedPBRDescriptorSetsBindless(
         int j = 1;
 
         uint32_t descriptorCopyCount = 0;
-        vkUpdateDescriptorSets(
-            m_deviceHandler->LogicalDevice, (uint32_t)descriptorWrites.size(),
-            descriptorWrites.data(), descriptorCopyCount, nullptr);
+        vkUpdateDescriptorSets(m_deviceHandler->m_logical_device,
+                               (uint32_t)descriptorWrites.size(),
+                               descriptorWrites.data(), descriptorCopyCount,
+                               nullptr);
     }
 }
 void DescriptorSetHandler::CreateTexturedPBRDescriptorSets(Mesh3D* mesh) {
@@ -651,7 +654,7 @@ void DescriptorSetHandler::CreateTexturedPBRDescriptorSets(Mesh3D* mesh) {
     allocInfo.pSetLayouts = layouts.data();
 
     mesh->m_descriptorSets.resize(m_vulkanGlobalState->m_maxFramesInFlight);
-    if (vkAllocateDescriptorSets(m_deviceHandler->LogicalDevice, &allocInfo,
+    if (vkAllocateDescriptorSets(m_deviceHandler->m_logical_device, &allocInfo,
                                  mesh->m_descriptorSets.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
@@ -739,9 +742,10 @@ void DescriptorSetHandler::CreateTexturedPBRDescriptorSets(Mesh3D* mesh) {
         }
 
         uint32_t descriptorCopyCount = 0;
-        vkUpdateDescriptorSets(
-            m_deviceHandler->LogicalDevice, (uint32_t)descriptorWrites.size(),
-            descriptorWrites.data(), descriptorCopyCount, nullptr);
+        vkUpdateDescriptorSets(m_deviceHandler->m_logical_device,
+                               (uint32_t)descriptorWrites.size(),
+                               descriptorWrites.data(), descriptorCopyCount,
+                               nullptr);
     }
 }
 
@@ -765,7 +769,7 @@ void DescriptorSetHandler::CreateShadowPassDescriptorSet() {
         m_vulkanGlobalState->m_maxFramesInFlight);
 
     if (vkAllocateDescriptorSets(
-            m_deviceHandler->LogicalDevice, &allocInfo,
+            m_deviceHandler->m_logical_device, &allocInfo,
             m_vulkanGlobalState->m_shadowPassDescriptorSets.data()) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
@@ -788,8 +792,9 @@ void DescriptorSetHandler::CreateShadowPassDescriptorSet() {
         descriptorWrites[0].pBufferInfo = &lightUBOInfo;
 
         uint32_t descriptorCopyCount = 0;
-        vkUpdateDescriptorSets(
-            m_deviceHandler->LogicalDevice, (uint32_t)descriptorWrites.size(),
-            descriptorWrites.data(), descriptorCopyCount, nullptr);
+        vkUpdateDescriptorSets(m_deviceHandler->m_logical_device,
+                               (uint32_t)descriptorWrites.size(),
+                               descriptorWrites.data(), descriptorCopyCount,
+                               nullptr);
     }
 }

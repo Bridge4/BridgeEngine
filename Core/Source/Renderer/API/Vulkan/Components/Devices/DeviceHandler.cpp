@@ -11,7 +11,7 @@
 #include "../../VulkanContext.h"
 #include "Source/Renderer/RendererTypes.h"
 
-void DeviceHandler::Initialize() {
+void DeviceHandler::init() {
     InitializePhysicalDevice();
     InitializeLogicalDevice();
     InitializeDebugMessenger();
@@ -76,7 +76,7 @@ void DeviceHandler::InitializePhysicalDevice() {
 
 void DeviceHandler::InitializeLogicalDevice() {
     // Specifying queues to be created
-    QueueFamilyIndices indices = FindQueueFamilies(this->PhysicalDevice);
+    QueueFamilyIndices indices = find_queue_families(this->PhysicalDevice);
     VkDeviceQueueCreateInfo queueCreateInfo{};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
@@ -132,20 +132,20 @@ void DeviceHandler::InitializeLogicalDevice() {
     }
 
     if (vkCreateDevice(this->PhysicalDevice, &createInfo, nullptr,
-                       &LogicalDevice) != VK_SUCCESS) {
+                       &m_logical_device) != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device!");
     }
 
-    vkGetDeviceQueue(LogicalDevice, indices.graphicsFamily.value(), 0,
+    vkGetDeviceQueue(m_logical_device, indices.graphicsFamily.value(), 0,
                      &m_vulkanGlobalState->m_graphicsQueue);
-    vkGetDeviceQueue(LogicalDevice, indices.presentFamily.value(), 0,
+    vkGetDeviceQueue(m_logical_device, indices.presentFamily.value(), 0,
                      &m_vulkanGlobalState->m_presentQueue);
-    vkGetDeviceQueue(LogicalDevice, indices.computeFamily.value(), 0,
+    vkGetDeviceQueue(m_logical_device, indices.computeFamily.value(), 0,
                      &m_vulkanGlobalState->m_computeQueue);
 }
 
 void DeviceHandler::Destroy() {
-    vkDestroyDevice(LogicalDevice, nullptr);
+    vkDestroyDevice(m_logical_device, nullptr);
     if (enableValidationLayers) {
         DestroyDebugUtilsMessengerEXT(nullptr);
     }
@@ -191,7 +191,7 @@ bool DeviceHandler::IsDeviceSuitable(VkPhysicalDevice device) {
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
     */
-    QueueFamilyIndices indices = FindQueueFamilies(device);
+    QueueFamilyIndices indices = find_queue_families(device);
 
     bool extensionsSupported = CheckDeviceExtensionSupport(device);
 
@@ -272,7 +272,7 @@ SwapChainSupportDetails DeviceHandler::QuerySwapChainSupport(
 }
 
 // isDeviceSuitable() + createLogicalDevice()
-QueueFamilyIndices DeviceHandler::FindQueueFamilies(
+QueueFamilyIndices DeviceHandler::find_queue_families(
     VkPhysicalDevice physicalDevice) {
     QueueFamilyIndices indices;
     uint32_t queueFamilyCount = 0;
