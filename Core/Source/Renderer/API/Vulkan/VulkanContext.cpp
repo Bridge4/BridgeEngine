@@ -1811,9 +1811,14 @@ void VulkanContext::CreateTextureImage(TextureResource props, Mesh3D* mesh,
         mesh->m_materialDataMap[materialType].m_textureImage,
         VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    CopyBufferToImage(
-        stagingBuffer, mesh->m_materialDataMap[materialType].m_textureImage,
+
+    backend_vk::images::copy_buffer_to_image(
+        m_device_handler->m_logical_device,
+        m_vulkan_global_state->m_commandPool,
+        m_vulkan_global_state->m_graphicsQueue, stagingBuffer,
+        mesh->m_materialDataMap[materialType].m_textureImage,
         static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+
     backend_vk::images::transition_image_layout(
         m_device_handler->m_logical_device,
         m_vulkan_global_state->m_commandPool,
@@ -2946,11 +2951,6 @@ VkShaderModule VulkanContext::CreateShaderModule(
     return shaderModule;
 }
 // Helpers
-
-bool HasStencilComponent(VkFormat format) {
-    return format == VK_FORMAT_D32_SFLOAT_S8_UINT ||
-           format == VK_FORMAT_D24_UNORM_S8_UINT;
-}
 
 void VulkanContext::CopyBufferToImage(VkBuffer buffer, VkImage image,
                                       uint32_t width, uint32_t height) {

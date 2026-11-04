@@ -60,9 +60,6 @@ VkFormat find_supported_format(VkPhysicalDevice& physical_device,
                                VkImageTiling tiling,
                                VkFormatFeatureFlags features);
 
-uint32_t find_memory_type(VkPhysicalDevice& physical_device,
-                          uint32_t type_filter,
-                          VkMemoryPropertyFlags properties);
 }  // namespace backend_vk::render_pass
 
 struct BrVkRenderPass {

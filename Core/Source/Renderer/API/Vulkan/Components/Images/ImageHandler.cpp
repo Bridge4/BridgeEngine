@@ -147,6 +147,29 @@ bool has_stencil_component(VkFormat format) {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT ||
            format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
+
+void copy_buffer_to_image(VkDevice& logical_device, VkCommandPool& command_pool,
+                          VkQueue& graphics_queue, VkBuffer buffer,
+                          VkImage image, uint32_t width, uint32_t height) {
+    VkCommandBuffer command_buffer =
+        backend_vk::begin_single_time_commands(logical_device, command_pool);
+    VkBufferImageCopy region{};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {width, height, 1};
+    vkCmdCopyBufferToImage(command_buffer, buffer, image,
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    backend_vk::end_single_time_commands(logical_device, command_pool,
+                                         graphics_queue, command_buffer);
+}
 }  // namespace backend_vk::images
 /*
  * lmao fuck you dude
@@ -173,8 +196,3 @@ bool has_stencil_component(VkFormat format) {
 //
 //     throw std::runtime_error("Failed to find suitable memory type");
 // }
-
-bool ImageHandler::HasStencilComponent(VkFormat format) {
-    return format == VK_FORMAT_D32_SFLOAT_S8_UINT ||
-           format == VK_FORMAT_D24_UNORM_S8_UINT;
-}

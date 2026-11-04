@@ -23,6 +23,10 @@ void create_image(VkPhysicalDevice& physical_device, VkDevice& logical_device,
                   VkDeviceMemory& imageMemory);
 
 bool has_stencil_component(VkFormat format);
+
+void copy_buffer_to_image(VkDevice& logical_device, VkCommandPool& command_pool,
+                          VkQueue& graphics_queue, VkBuffer buffer,
+                          VkImage image, uint32_t width, uint32_t height);
 }  // namespace backend_vk::images
 
 class ImageHandler {
@@ -34,8 +38,6 @@ class ImageHandler {
         this->m_vulkanGlobalState = vulkanGlobalState;
         this->m_deviceHandler = deviceHandler;
     }
-
-    bool HasStencilComponent(VkFormat format);
 
    private:
     VulkanContext* m_vulkanContext;
