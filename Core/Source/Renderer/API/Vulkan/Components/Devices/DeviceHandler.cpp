@@ -9,10 +9,175 @@
 #include "../VulkanGlobalState/VulkanGlobalState.h"
 // CORE FUNCTIONS
 #include "../../VulkanContext.h"
+#include "Source/Renderer/API/Vulkan/VkTypes.h"
 #include "Source/Renderer/RendererTypes.h"
 
+namespace backend_vk::devices {
+VkPhysicalDevice init_physical_device(VkInstance& instance,
+                                      VkSurfaceKHR window_surface) {
+    VkPhysicalDevice physical_device;
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+    // check if there are no compatible devices (GPUs)
+    if (deviceCount == 0) {
+        throw std::runtime_error("failed to find GPUs with Vulkan support.");
+    }
+
+    // Allocate array to hold all VKPhysicalDevice handles
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+    // check if there are no compatible devices (GPUs), &deviceCount,
+    // devices.data());
+
+    for (const auto& device : devices) {
+        VkPhysicalDeviceProperties properties{};
+        vkGetPhysicalDeviceProperties(device, &properties);
+        if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
+            physical_device = device;
+
+        } else {
+            if (is_device_suitable(device, window_surface)) {
+                physical_device = device;
+                break;
+            }
+        }
+    }
+
+    if (physical_device == VK_NULL_HANDLE) {
+        throw std::runtime_error("failed to find a suitable GPU!");
+    }
+
+    return physical_device;
+}
+
+bool is_device_suitable(VkPhysicalDevice physical_device,
+                        VkSurfaceKHR window_surface) {
+    // Fetching deviceProperties and deviceFeatures in case we want to check for
+    // specifics
+    /*
+    VkPhysicalDeviceProperties deviceProperties;
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+    */
+    QueueFamilyIndices indices =
+        find_queue_families(physical_device, window_surface);
+
+    bool extensionsSupported = check_device_extension_support(physical_device);
+
+    bool swapChainAdequate = false;
+
+    // if the extensions required are supported then we can check for swap chain
+    // compatibility otherwise there's no point
+    if (extensionsSupported) {
+        SwapChainSupportDetails swapChainSupport =
+            query_swap_chain_support(physical_device, window_surface);
+        swapChainAdequate = !swapChainSupport.formats.empty() &&
+                            !swapChainSupport.presentModes.empty();
+    }
+
+    VkPhysicalDeviceFeatures supportedFeatures;
+    vkGetPhysicalDeviceFeatures(physical_device, &supportedFeatures);
+
+    return indices.isComplete() && extensionsSupported && swapChainAdequate &&
+           supportedFeatures.samplerAnisotropy;
+}
+
+QueueFamilyIndices find_queue_families(VkPhysicalDevice physical_device,
+                                       VkSurfaceKHR window_surface) {
+    QueueFamilyIndices indices;
+    uint32_t queueFamilyCount = 0;
+
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queueFamilyCount,
+                                             nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queueFamilyCount,
+                                             queueFamilies.data());
+
+    int i = 0;
+    for (const auto& queueFamily : queueFamilies) {
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.graphicsFamily = i;
+        }
+
+        if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) {
+            indices.computeFamily = i;
+        }
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, window_surface,
+                                             &presentSupport);
+
+        if (presentSupport) {
+            indices.presentFamily = i;
+        }
+        if (indices.isComplete()) {
+            break;
+        }
+        i++;
+    }
+    return indices;
+}
+
+bool check_device_extension_support(VkPhysicalDevice physical_device) {
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(physical_device, nullptr,
+                                         &extensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(
+        physical_device, nullptr, &extensionCount, availableExtensions.data());
+
+    std::set<std::string> requiredExtensions(kDeviceExtensions.begin(),
+                                             kDeviceExtensions.end());
+
+    for (const auto& extension : availableExtensions) {
+        requiredExtensions.erase(extension.extensionName);
+    }
+
+    return requiredExtensions.empty();
+}
+
+SwapChainSupportDetails query_swap_chain_support(
+    VkPhysicalDevice physical_device, VkSurfaceKHR window_surface) {
+    // Fetching the capabilities of the device and surface
+
+    // Getting supported surface formats
+    SwapChainSupportDetails details;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, window_surface,
+                                              &details.capabilities);
+
+    uint32_t formatCount;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, window_surface,
+                                         &formatCount, nullptr);
+
+    if (formatCount != 0) {
+        details.formats.resize(formatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, window_surface,
+                                             &formatCount,
+                                             details.formats.data());
+    }
+
+    // Getting supported present modes
+    uint32_t presentModeCount;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, window_surface,
+                                              &presentModeCount, nullptr);
+
+    if (presentModeCount != 0) {
+        details.presentModes.resize(presentModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(
+            physical_device, window_surface, &presentModeCount,
+            details.presentModes.data());
+    }
+
+    return details;
+}
+
+}  // namespace backend_vk::devices
 void DeviceHandler::init() {
-    InitializePhysicalDevice();
+    m_physical_device = backend_vk::devices::init_physical_device(
+        m_vulkanGlobalState->m_instance, m_vulkanGlobalState->m_surface);
+    // InitializePhysicalDevice();
     InitializeLogicalDevice();
     InitializeDebugMessenger();
 }
@@ -36,41 +201,6 @@ void DeviceHandler::InitializeDebugMessenger() {
                                      &m_vulkanGlobalState->m_debugMessenger) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to set up debug messenger!");
-    }
-}
-
-void DeviceHandler::InitializePhysicalDevice() {
-    uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(m_vulkanGlobalState->GetVulkanInstance(),
-                               &deviceCount, nullptr);
-    // check if there are no compatible devices (GPUs)
-    if (deviceCount == 0) {
-        throw std::runtime_error("failed to find GPUs with Vulkan support.");
-    }
-
-    // Allocate array to hold all VKPhysicalDevice handles
-    std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(m_vulkanGlobalState->GetVulkanInstance(),
-                               &deviceCount, devices.data());
-    // check if there are no compatible devices (GPUs), &deviceCount,
-    // devices.data());
-
-    for (const auto& device : devices) {
-        VkPhysicalDeviceProperties properties{};
-        vkGetPhysicalDeviceProperties(device, &properties);
-        if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
-            this->m_physical_device = device;
-
-        } else {
-            if (IsDeviceSuitable(device)) {
-                this->m_physical_device = device;
-                break;
-            }
-        }
-    }
-
-    if (this->m_physical_device == VK_NULL_HANDLE) {
-        throw std::runtime_error("failed to find a suitable GPU!");
     }
 }
 

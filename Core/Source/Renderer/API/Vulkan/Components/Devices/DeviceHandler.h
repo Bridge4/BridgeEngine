@@ -8,6 +8,41 @@
 // class WindowHandler;
 // class VulkanContext;
 
+namespace backend_vk::devices {
+
+const std::vector<const char*> kValidationLayers = {
+    "VK_LAYER_KHRONOS_validation"};
+const std::vector<const char*> kDeviceExtensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+
+// Used by isDeviceSuitable() and createLogicalDevice()
+QueueFamilyIndices find_queue_families(VkPhysicalDevice physical_device,
+                                       VkSurfaceKHR window_surface);
+
+VkPhysicalDevice init_physical_device(VkInstance& instance);
+
+VkDevice init_logical_device();
+
+void init_debug_messenger();
+
+bool check_validation_layer_support();
+
+bool is_device_suitable(VkPhysicalDevice physical_device,
+                        VkSurfaceKHR window_surface);
+
+bool check_device_extension_support(VkPhysicalDevice device);
+
+SwapChainSupportDetails query_swap_chain_support(
+    VkPhysicalDevice physical_device, VkSurfaceKHR window_surface);
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
+
+void destroy_debug_utils_messenger_ext(const VkAllocationCallbacks* pAllocator);
+}  // namespace backend_vk::devices
+
 /*
  *   Provides Physical and Logical Devices for use in Vulkan Context
  *   This class also sets up validation layers and the debug messenger.Will
@@ -46,7 +81,6 @@ class DeviceHandler {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
     VulkanGlobalState* m_vulkanGlobalState = 0;
-    void InitializePhysicalDevice();
     void InitializeLogicalDevice();
     void InitializeDebugMessenger();
     // CORE FUNCTIONS
