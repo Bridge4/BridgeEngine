@@ -59,24 +59,24 @@ void DeviceHandler::InitializePhysicalDevice() {
         VkPhysicalDeviceProperties properties{};
         vkGetPhysicalDeviceProperties(device, &properties);
         if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
-            this->PhysicalDevice = device;
+            this->m_physical_device = device;
 
         } else {
             if (IsDeviceSuitable(device)) {
-                this->PhysicalDevice = device;
+                this->m_physical_device = device;
                 break;
             }
         }
     }
 
-    if (this->PhysicalDevice == VK_NULL_HANDLE) {
+    if (this->m_physical_device == VK_NULL_HANDLE) {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
 }
 
 void DeviceHandler::InitializeLogicalDevice() {
     // Specifying queues to be created
-    QueueFamilyIndices indices = find_queue_families(this->PhysicalDevice);
+    QueueFamilyIndices indices = find_queue_families(this->m_physical_device);
     VkDeviceQueueCreateInfo queueCreateInfo{};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
@@ -131,7 +131,7 @@ void DeviceHandler::InitializeLogicalDevice() {
         createInfo.enabledLayerCount = 0;
     }
 
-    if (vkCreateDevice(this->PhysicalDevice, &createInfo, nullptr,
+    if (vkCreateDevice(this->m_physical_device, &createInfo, nullptr,
                        &m_logical_device) != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device!");
     }

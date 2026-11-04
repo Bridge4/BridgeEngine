@@ -35,7 +35,7 @@ class DeviceHandler {
     // Used by isDeviceSuitable() and createLogicalDevice()
     QueueFamilyIndices find_queue_families(VkPhysicalDevice physicalDevice);
 
-    VkPhysicalDevice PhysicalDevice = nullptr;
+    VkPhysicalDevice m_physical_device = nullptr;
     VkDevice m_logical_device = nullptr;
 
    private:

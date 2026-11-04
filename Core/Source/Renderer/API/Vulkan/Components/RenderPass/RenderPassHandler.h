@@ -31,7 +31,7 @@ struct RenderPassData {
     VkRenderPass render_pass = VK_NULL_HANDLE;
     int attachment_count;
     std::vector<VkFramebuffer> framebuffers;
-    DepthResources depthResources;
+    DepthResources depth_resources;
 
     ERenderPassDataState GetRenderPassDataState() {
         if (this->framebuffers.empty())
@@ -54,6 +54,11 @@ struct RenderPassFramebuffer {
 RenderPassData create_render_pass(VkDevice& logical_device,
                                   VkFormat colorAttachmentImageFormat,
                                   VkFormat depthAttachmentFormat);
+
+VkFormat find_supported_format(VkPhysicalDevice& physical_device,
+                               const std::vector<VkFormat>& candidates,
+                               VkImageTiling tiling,
+                               VkFormatFeatureFlags features);
 }  // namespace context_vk::render_pass
 
 struct BrVkRenderPass {

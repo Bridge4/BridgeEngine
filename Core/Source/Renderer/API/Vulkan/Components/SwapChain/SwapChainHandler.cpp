@@ -19,7 +19,8 @@ void SwapChainHandler::init(int frameBufferWidth, int frameBufferHeight) {
     VkSurfaceKHR surface = m_vulkanGlobalState->GetSurface();
 
     SwapChainSupportDetails swapChainSupport =
-        m_deviceHandler->QuerySwapChainSupport(m_deviceHandler->PhysicalDevice);
+        m_deviceHandler->QuerySwapChainSupport(
+            m_deviceHandler->m_physical_device);
 
     VkSurfaceFormatKHR surfaceFormat =
         ChooseSwapSurfaceFormat(swapChainSupport.formats);
@@ -47,8 +48,8 @@ void SwapChainHandler::init(int frameBufferWidth, int frameBufferHeight) {
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndices indices =
-        m_deviceHandler->find_queue_families(m_deviceHandler->PhysicalDevice);
+    QueueFamilyIndices indices = m_deviceHandler->find_queue_families(
+        m_deviceHandler->m_physical_device);
     uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(),
                                      indices.presentFamily.value()};
 
@@ -114,14 +115,15 @@ void SwapChainHandler::Rebuild(int frameBufferWidth, int frameBufferHeight) {
 void SwapChainHandler::Destroy() {
     vkDestroyImageView(
         m_deviceHandler->m_logical_device,
-        m_vulkanGlobalState->m_render_pass_data->depthResources.imageView,
+        m_vulkanGlobalState->m_render_pass_data->depth_resources.imageView,
         nullptr);
     vkDestroyImage(
         m_deviceHandler->m_logical_device,
-        m_vulkanGlobalState->m_render_pass_data->depthResources.image, nullptr);
+        m_vulkanGlobalState->m_render_pass_data->depth_resources.image,
+        nullptr);
     vkFreeMemory(
         m_deviceHandler->m_logical_device,
-        m_vulkanGlobalState->m_render_pass_data->depthResources.imageMemory,
+        m_vulkanGlobalState->m_render_pass_data->depth_resources.imageMemory,
         nullptr);
 
     for (auto framebuffer :

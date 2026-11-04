@@ -103,7 +103,7 @@ void ImageHandler::CreateImage(uint32_t width, uint32_t height, VkFormat format,
 uint32_t ImageHandler::FindMemoryType(uint32_t typeFilter,
                                       VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(m_deviceHandler->PhysicalDevice,
+    vkGetPhysicalDeviceMemoryProperties(m_deviceHandler->m_physical_device,
                                         &memProperties);
 
     // Go over this section

@@ -361,7 +361,14 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     create_command_pool();
 
     VkFormat render_pass_depth_attachment_format =
-        m_render_pass_handler->find_supported_format(
+        // m_render_pass_handler->find_supported_format(
+        //     {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
+        //      VK_FORMAT_D24_UNORM_S8_UINT},
+        //     VK_IMAGE_TILING_OPTIMAL,
+        //     VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+        cvk_render_pass::find_supported_format(
+            m_device_handler->m_physical_device,
             {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
              VK_FORMAT_D24_UNORM_S8_UINT},
             VK_IMAGE_TILING_OPTIMAL,
@@ -388,7 +395,7 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
             m_vulkan_global_state->GetSwapChainImageFormat(),
             render_pass_depth_attachment_format);
 
-    render_pass_data.depthResources = render_pass_depth_resources;
+    render_pass_data.depth_resources = render_pass_depth_resources;
 
     m_vulkan_global_state->m_render_pass_data =
         std::make_unique<cvk_render_pass::RenderPassData>(render_pass_data);
@@ -402,7 +409,8 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     // m_renderPassHandler->CreateShadowPass();
 
     QueueFamilyIndices queue_family_indices =
-        m_device_handler->find_queue_families(m_device_handler->PhysicalDevice);
+        m_device_handler->find_queue_families(
+            m_device_handler->m_physical_device);
     m_vulkan_global_state->m_commandPoolCompute = create_command_pool_compute(
         m_device_handler->m_logical_device, queue_family_indices);
 
@@ -411,7 +419,7 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     std::vector<VkImageView> renderPassPerFrameImageViews = {};
 
     renderPassPerFrameImageViews.push_back(
-        m_vulkan_global_state->m_render_pass_data->depthResources.imageView);
+        m_vulkan_global_state->m_render_pass_data->depth_resources.imageView);
 
     m_vulkan_global_state->m_render_pass_data->framebuffers =
         context_vk::CreateSwapChainFramebuffers(
@@ -502,7 +510,7 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     // value of VkApplicationInfo::apiVersion, otherwise will default to
     // header / version.
     init_info.Instance = m_vulkan_global_state->m_instance;
-    init_info.PhysicalDevice = m_device_handler->PhysicalDevice;
+    init_info.PhysicalDevice = m_device_handler->m_physical_device;
     init_info.Device = m_device_handler->m_logical_device;
 
     init_info.QueueFamily = queue_family_indices.graphicsFamily.value();
@@ -1677,7 +1685,8 @@ void VulkanContext::CreateShadowPassPipelineBindless(
 }
 void VulkanContext::create_command_pool() {
     QueueFamilyIndices queueFamilyIndices =
-        m_device_handler->find_queue_families(m_device_handler->PhysicalDevice);
+        m_device_handler->find_queue_families(
+            m_device_handler->m_physical_device);
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -1791,7 +1800,7 @@ void VulkanContext::CreateTextureSampler(Mesh3D* mesh,
     samplerInfo.anisotropyEnable = VK_TRUE;
 
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(m_device_handler->PhysicalDevice,
+    vkGetPhysicalDeviceProperties(m_device_handler->m_physical_device,
                                   &properties);
     std::cout << "MAX COMPUTE WORK GROUP SIZE "
               << properties.limits.maxComputeWorkGroupSize[0] << "\n"
@@ -1834,7 +1843,7 @@ void VulkanContext::CreateTextureSamplerShadowPass() {
     samplerInfo.anisotropyEnable = VK_FALSE;
 
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(m_device_handler->PhysicalDevice,
+    vkGetPhysicalDeviceProperties(m_device_handler->m_physical_device,
                                   &properties);
     samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 
@@ -2540,7 +2549,14 @@ void VulkanContext::DrawFrame(float deltaTime) {
         // TODO: MUST NOT FORGET THIS
         // m_renderPassHandler->CreateRenderPass();
         VkFormat renderPassDepthAttachmentFormat =
-            m_render_pass_handler->find_supported_format(
+            // m_render_pass_handler->find_supported_format(
+            //     {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
+            //      VK_FORMAT_D24_UNORM_S8_UINT},
+            //     VK_IMAGE_TILING_OPTIMAL,
+            //     VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+            cvk_render_pass::find_supported_format(
+                m_device_handler->m_physical_device,
                 {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
                  VK_FORMAT_D24_UNORM_S8_UINT},
                 VK_IMAGE_TILING_OPTIMAL,
@@ -2567,7 +2583,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
                 m_vulkan_global_state->GetSwapChainImageFormat(),
                 renderPassDepthAttachmentFormat);
 
-        renderPassData.depthResources = renderPassDepthResources;
+        renderPassData.depth_resources = renderPassDepthResources;
 
         m_vulkan_global_state->m_render_pass_data =
             std::make_unique<cvk_render_pass::RenderPassData>(renderPassData);
@@ -2582,7 +2598,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
         std::vector<VkImageView> renderPassPerFrameImageViews = {};
 
         renderPassPerFrameImageViews.push_back(
-            m_vulkan_global_state->m_render_pass_data->depthResources
+            m_vulkan_global_state->m_render_pass_data->depth_resources
                 .imageView);
 
         m_vulkan_global_state->m_render_pass_data->framebuffers =
@@ -2685,12 +2701,18 @@ void VulkanContext::DrawFrame(float deltaTime) {
         // TODO: MUST NOT FORGET THIS
         // m_renderPassHandler->CreateRenderPass();
         VkFormat renderPassDepthAttachmentFormat =
-            m_render_pass_handler->find_supported_format(
+            // m_render_pass_handler->find_supported_format(
+            //     {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
+            //      VK_FORMAT_D24_UNORM_S8_UINT},
+            //     VK_IMAGE_TILING_OPTIMAL,
+            //     VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+            cvk_render_pass::find_supported_format(
+                m_device_handler->m_physical_device,
                 {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
                  VK_FORMAT_D24_UNORM_S8_UINT},
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-
         if (!renderPassDepthAttachmentFormat) {
             std::cout << "renderPassDepthAttachmentFormat invalid\n";
         }
@@ -2712,7 +2734,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
                 m_vulkan_global_state->GetSwapChainImageFormat(),
                 renderPassDepthAttachmentFormat);
 
-        renderPassData.depthResources = renderPassDepthResources;
+        renderPassData.depth_resources = renderPassDepthResources;
 
         m_vulkan_global_state->m_render_pass_data =
             std::make_unique<cvk_render_pass::RenderPassData>(renderPassData);
@@ -2726,7 +2748,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
         std::vector<VkImageView> renderPassPerFrameImageViews = {};
 
         renderPassPerFrameImageViews.push_back(
-            m_vulkan_global_state->m_render_pass_data->depthResources
+            m_vulkan_global_state->m_render_pass_data->depth_resources
                 .imageView);
 
         m_vulkan_global_state->m_render_pass_data->framebuffers =
