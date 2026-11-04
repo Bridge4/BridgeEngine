@@ -53,7 +53,7 @@ class CameraController;
 class VulkanGlobalState;
 class Mesh3D;
 
-namespace context_vk {
+namespace backend_vk {
 void RenderUI();
 
 VkPipeline CreateComputePipeline(
@@ -66,7 +66,7 @@ std::vector<VkFramebuffer> CreateSwapChainFramebuffers(
     std::vector<VkImageView> swapChainImageViews, uint32_t framebufferWidth,
     uint32_t framebufferHeight, VkDevice& logical_device,
     render_pass::RenderPassData renderPassData);
-}  // namespace context_vk
+}  // namespace backend_vk
 
 struct InputSSBO {
     float dataIn[1024];

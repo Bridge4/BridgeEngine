@@ -92,7 +92,7 @@ class VulkanGlobalState {
     VkFormat m_swapChainImageFormat = VK_FORMAT_UNDEFINED;
     VkExtent2D m_swapChainExtent;
 
-    std::unique_ptr<context_vk::render_pass::RenderPassData>
+    std::unique_ptr<backend_vk::render_pass::RenderPassData>
         m_render_pass_data = {};
 
     VkImage m_shadowPassDepthImage = 0;

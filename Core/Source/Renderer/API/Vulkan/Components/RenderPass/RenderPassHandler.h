@@ -14,7 +14,7 @@
 
 // enum VkFormat;
 
-namespace context_vk::render_pass {
+namespace backend_vk::render_pass {
 struct DepthResources {
     VkImage image;
     VkImageView imageView;
@@ -59,7 +59,7 @@ VkFormat find_supported_format(VkPhysicalDevice& physical_device,
                                const std::vector<VkFormat>& candidates,
                                VkImageTiling tiling,
                                VkFormatFeatureFlags features);
-}  // namespace context_vk::render_pass
+}  // namespace backend_vk::render_pass
 
 struct BrVkRenderPass {
     VkViewport viewport;
@@ -81,7 +81,7 @@ class RenderPassHandler {
         this->m_vulkanGlobalState = VulkanGlobalState;
     }
 
-    context_vk::render_pass::DepthResources create_render_pass_depth_resources(
+    backend_vk::render_pass::DepthResources create_render_pass_depth_resources(
         VkFormat depthFormat, uint32_t width, uint32_t height);
     // void CreateRenderPassFrameBuffers();
 

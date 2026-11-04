@@ -8,7 +8,7 @@
 #include "../VulkanGlobalState/VulkanGlobalState.h"
 #include "Source/Renderer/API/Vulkan/Components/Images/ImageHandler.h"
 
-namespace context_vk::render_pass {
+namespace backend_vk::render_pass {
 
 RenderPassData create_render_pass(VkDevice& logical_device,
                                   VkFormat color_attachment_image_format,
@@ -120,7 +120,7 @@ RenderPassData create_render_pass(VkDevice& logical_device,
         throw std::runtime_error("failed to create render pass!");
     }
 
-    context_vk::render_pass::RenderPassData render_pass_data = {};
+    backend_vk::render_pass::RenderPassData render_pass_data = {};
     render_pass_data.render_pass = render_pass;
     render_pass_data.attachment_count = render_pass_info.attachmentCount;
 
@@ -187,7 +187,7 @@ RenderPassData create_shadow_pass(VkDevice& logical_device,
         throw std::runtime_error("failed to create render pass!");
     }
 
-    context_vk::render_pass::RenderPassData shadow_pass_data = {};
+    backend_vk::render_pass::RenderPassData shadow_pass_data = {};
     shadow_pass_data.render_pass = shadow_pass;
     shadow_pass_data.attachment_count = shadow_pass_info.attachmentCount;
 
@@ -211,7 +211,7 @@ VkFormat find_supported_format(VkPhysicalDevice& physical_device,
     }
     throw std::runtime_error("failed to find supported format!");
 }
-}  // namespace context_vk::render_pass
+}  // namespace backend_vk::render_pass
 
 void RenderPassHandler::create_shadow_pass() {
     VkAttachmentDescription depthAttachment{};
@@ -272,7 +272,7 @@ void RenderPassHandler::create_shadow_pass() {
     }
 }
 
-context_vk::render_pass::DepthResources
+backend_vk::render_pass::DepthResources
 RenderPassHandler::create_render_pass_depth_resources(VkFormat depth_format,
                                                       uint32_t width,
                                                       uint32_t height) {
@@ -299,7 +299,7 @@ RenderPassHandler::create_render_pass_depth_resources(VkFormat depth_format,
                             VK_IMAGE_LAYOUT_UNDEFINED,
                             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-    context_vk::render_pass::DepthResources depthResources = {};
+    backend_vk::render_pass::DepthResources depthResources = {};
     depthResources.image = renderPassDepthImage;
     depthResources.imageView = renderPassDepthImageView;
     depthResources.imageMemory = renderPassDepthImageMemory;
