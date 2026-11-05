@@ -316,7 +316,7 @@ bool CheckRenderPassDataValidity(
         }
         return false;
     }
-    std::cout << "SUCCESS: RENDER PASS DATA VALID\n";
+    // std::cout << "SUCCESS: RENDER PASS DATA VALID\n";
     return true;
 }
 
@@ -501,13 +501,58 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
             m_vulkan_global_state->m_logical_device,
             *m_vulkan_global_state->m_render_pass_data);
     if (m_vulkan_global_state->m_renderingMode == ERenderingMode::Bindless) {
-        m_descriptor_set_handler->CreateDescriptorPoolBindless();
-        m_descriptor_set_handler->CreateDescriptorPoolBindlessScene();
+        backend_vk::descriptor_sets::DescriptorPoolData dsp_data = {};
+        dsp_data.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+        dsp_data.descriptor_types[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER] =
+            10000;
+        dsp_data.max_sets = 10000 * 2;
+        auto create_descriptor_pool_result =
+            backend_vk::descriptor_sets::create_descriptor_pool(
+                m_vulkan_global_state->m_logical_device, dsp_data);
+        if (!create_descriptor_pool_result.has_value()) {
+            std::cout << "failed to create bindless descriptor pool, cannot "
+                         "continue vulkan init\n";
+            return;
+        }
+        m_vulkan_global_state->m_descriptor_pool_bindless =
+            create_descriptor_pool_result.value();
+
+        backend_vk::descriptor_sets::DescriptorPoolData dsp_scene_data = {};
+        dsp_scene_data.descriptor_types.clear();
+        dsp_scene_data.descriptor_types[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER] =
+            100;
+        dsp_scene_data.max_sets = 100;
+
+        create_descriptor_pool_result =
+            backend_vk::descriptor_sets::create_descriptor_pool(
+                m_vulkan_global_state->m_logical_device, dsp_data);
+        if (!create_descriptor_pool_result.has_value()) {
+            std::cout << "failed to create bindless descriptor pool, cannot "
+                         "continue vulkan init\n";
+            return;
+        }
+        m_vulkan_global_state->m_descriptor_pool_bindless_scene =
+            create_descriptor_pool_result.value();
+
         m_descriptor_set_handler->CreateDescriptorPoolPerMeshBindless();
         m_descriptor_set_handler->CreateDescriptorSetLayoutBindless();
         m_descriptor_set_handler->CreateDescriptorSetBindless();
     } else {
-        m_descriptor_set_handler->CreateDescriptorPool();
+        // m_descriptor_set_handler->CreateDescriptorPool();
+        backend_vk::descriptor_sets::DescriptorPoolData dsp_data = {};
+        dsp_data.descriptor_types[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER] = 100;
+        dsp_data.descriptor_types[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER] =
+            100;
+        auto create_descriptor_pool_result =
+            backend_vk::descriptor_sets::create_descriptor_pool(
+                m_vulkan_global_state->m_logical_device, dsp_data);
+        if (!create_descriptor_pool_result.has_value()) {
+            std::cout << "failed to create bindless descriptor pool, cannot "
+                         "continue vulkan init\n";
+            return;
+        }
+        m_vulkan_global_state->m_descriptor_pool =
+            create_descriptor_pool_result.value();
     }
     // SceneDescriptorSets
     m_descriptor_set_handler->CreateSceneDescriptorSetLayout();
@@ -589,10 +634,10 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     // init_info.DescriptorPool = VK_NULL_HANDLE;
     if (m_vulkan_global_state->m_renderingMode == ERenderingMode::Bindless) {
         init_info.DescriptorPool =
-            m_vulkan_global_state->m_descriptorPoolBindlessScene;
+            m_vulkan_global_state->m_descriptor_pool_bindless_scene;
 
     } else {
-        init_info.DescriptorPool = m_vulkan_global_state->m_descriptorPool;
+        init_info.DescriptorPool = m_vulkan_global_state->m_descriptor_pool;
     }
     init_info.MinImageCount = 2;
     init_info.ImageCount = m_maxFramesInFlight;
@@ -858,7 +903,7 @@ void VulkanContext::unload_scene_objects() {
     if (!m_vulkan_global_state->m_meshList.empty()) {
         vkQueueWaitIdle(m_vulkan_global_state->m_presentQueue);
         vkDestroyDescriptorPool(m_vulkan_global_state->m_logical_device,
-                                m_vulkan_global_state->m_descriptorPool,
+                                m_vulkan_global_state->m_descriptor_pool,
                                 nullptr);
         for (auto& mesh : m_vulkan_global_state->m_meshList) {
             vkDestroySampler(m_vulkan_global_state->m_logical_device,
@@ -2753,7 +2798,7 @@ void VulkanContext::destroy() {
     }
 
     vkDestroyDescriptorPool(m_vulkan_global_state->m_logical_device,
-                            m_vulkan_global_state->m_descriptorPool, nullptr);
+                            m_vulkan_global_state->m_descriptor_pool, nullptr);
 
     vkDestroyDescriptorSetLayout(
         m_vulkan_global_state->m_logical_device,

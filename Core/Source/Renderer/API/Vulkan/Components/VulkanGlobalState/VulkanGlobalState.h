@@ -125,8 +125,8 @@ class VulkanGlobalState {
     VkDescriptorSetLayout m_texturedMeshDescriptorSetLayout;
     VkDescriptorSetLayout m_texturedPBRDescriptorSetLayout;
     // === BINDLESS === //
-    VkDescriptorPool m_descriptorPoolBindless;
-    VkDescriptorPool m_descriptorPoolBindlessScene;
+    VkDescriptorPool m_descriptor_pool_bindless;
+    VkDescriptorPool m_descriptor_pool_bindless_scene;
     VkDescriptorSetLayout m_bindlessDescriptorSetLayout;
     VkDescriptorSetLayout m_bindlessFrameBindingDescriptorSetLayout;
     VkDescriptorPool m_descriptorPoolPerMeshBindless;
@@ -136,7 +136,7 @@ class VulkanGlobalState {
 
     std::vector<VkDescriptorSetLayout> m_texturedMeshDescriptorSetLayouts;
     std::vector<VkDescriptorSetLayout> m_shadowPassDescriptorSetLayouts;
-    VkDescriptorPool m_descriptorPool;
+    VkDescriptorPool m_descriptor_pool;
     std::vector<VkDescriptorSet> m_descriptorSets;
     std::vector<VkDescriptorSet> m_lightDescriptorSets;
 
