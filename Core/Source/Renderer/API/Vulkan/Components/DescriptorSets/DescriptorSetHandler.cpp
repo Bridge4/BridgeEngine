@@ -112,25 +112,30 @@ std::optional<VkDescriptorSetLayout> create_descriptor_set_layout(
     //  VkMutableDescriptorTypeCreateInfoEXT structure, and
     //  mutableDescriptorTypeListCount must be greater than i
 }
-}  // namespace backend_vk::descriptor_sets
 
-void DescriptorSetHandler::CreateDescriptorSetBindless() {
-    std::vector<VkDescriptorSetLayout> layout(
-        1, m_vulkan_global_state->m_bindlessDescriptorSetLayout);
+std::optional<std::vector<VkDescriptorSet>> allocate_descriptor_sets(
+    VkDevice& logical_device, VkDescriptorSetLayout dsl, VkDescriptorPool& dsp,
+    uint32_t descriptor_count) {
+    std::vector<VkDescriptorSet> descriptor_sets = {};
+
+    std::vector<VkDescriptorSetLayout> layouts(descriptor_count, dsl);
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool =
-        m_vulkan_global_state->m_descriptor_pool_bindless;
-    allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = layout.data();
+    allocInfo.descriptorPool = dsp;
+    allocInfo.descriptorSetCount = descriptor_count;
 
-    if (vkAllocateDescriptorSets(
-            m_vulkan_global_state->m_logical_device, &allocInfo,
-            &m_vulkan_global_state->m_globalBindlessDescriptorSet) !=
-        VK_SUCCESS) {
+    allocInfo.pSetLayouts = layouts.data();
+
+    descriptor_sets.resize(descriptor_count);
+    if (vkAllocateDescriptorSets(logical_device, &allocInfo,
+                                 descriptor_sets.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
+
+    return descriptor_sets;
 }
+
+}  // namespace backend_vk::descriptor_sets
 
 void DescriptorSetHandler::CreateDescriptorSetLayout(
     DescriptorSetLayoutInfo* dsLayout,
@@ -322,6 +327,8 @@ void DescriptorSetHandler::CreateShadowPassDescriptorSetLayout() {
     }
 }
 
+// descriptor_set_layout
+// descriptor_count
 void DescriptorSetHandler::CreateSceneDescriptorSets() {
     std::vector<VkDescriptorSetLayout> layouts(
         m_vulkan_global_state->m_maxFramesInFlight,

@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
+#include <cstdint>
 #include <optional>
 #include <unordered_map>
 #include <variant>
@@ -65,6 +66,10 @@ std::optional<VkDescriptorPool> create_descriptor_pool(
 std::optional<VkDescriptorSetLayout> create_descriptor_set_layout(
     VkDevice& logical_device, DescriptorSetLayoutData dsl_data);
 
+std::optional<std::vector<VkDescriptorSet>> allocate_descriptor_sets(
+    VkDevice& logical_device, VkDescriptorSetLayout dsl, VkDescriptorPool& dsp,
+    uint32_t descriptor_count);
+
 }  // namespace backend_vk::descriptor_sets
 
 class DescriptorSetHandler {
@@ -86,7 +91,6 @@ class DescriptorSetHandler {
     void CreateTexturedPBRDescriptorSets(Mesh3D* mesh);
 
     // === BINDLESS === //
-    void CreateDescriptorSetBindless();
     void CreateTexturedPBRDescriptorSetLayoutBindless();
     void CreateTexturedPBRDescriptorSetsBindless(Mesh3D* mesh);
     void RegisterTexture();

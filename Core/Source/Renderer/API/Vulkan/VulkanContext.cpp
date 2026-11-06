@@ -562,6 +562,9 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
         m_vulkan_global_state->m_descriptor_pool_per_mesh_bindless =
             create_descriptor_pool_result.value();
 
+        /*
+         * Creating pbr_bindless descriptor set layout
+         */
         backend_vk::descriptor_sets::DescriptorSetLayoutData dsl_data;
         backend_vk::descriptor_sets::DescriptorSetLayoutExtension
             dsl_data_p_next;
@@ -605,8 +608,30 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
         m_vulkan_global_state->m_bindlessDescriptorSetLayout =
             create_descriptor_set_layout_bindless_result.value();
 
-        // m_descriptor_set_handler->CreateDescriptorSetLayoutBindless();
-        m_descriptor_set_handler->CreateDescriptorSetBindless();
+        /*
+         * Creating bindless descriptor set
+         *
+         * Creating descriptor sets is two steps:
+         *  - allocation
+         *  - writing
+         *
+         *  These two steps should be abstracted separately from each other as
+         * bindless does not write descriptors on allocation
+         */
+        auto allocate_descriptor_sets_result =
+            backend_vk::descriptor_sets::allocate_descriptor_sets(
+                m_vulkan_global_state->m_logical_device,
+                m_vulkan_global_state->m_bindlessDescriptorSetLayout,
+                m_vulkan_global_state->m_descriptor_pool_bindless, 1);
+
+        if (!allocate_descriptor_sets_result.has_value()) {
+            std::cout << "failed to allocate bindless descriptor sets cannot "
+                         "continue vulkan init\n";
+            return;
+        }
+        m_vulkan_global_state->m_globalBindlessDescriptorSet =
+            allocate_descriptor_sets_result.value()[0];
+        // m_descriptor_set_handler->CreateDescriptorSetBindless();
     } else {
         // m_descriptor_set_handler->CreateDescriptorPool();
         backend_vk::descriptor_sets::DescriptorPoolData dsp_data = {};
