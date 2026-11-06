@@ -47,83 +47,72 @@ std::optional<VkDescriptorPool> create_descriptor_pool(
     }
     return descriptor_pool;
 }
+
+// NOTE: Our bindings will be determined by our shaders so this function expects
+// that valid bindings have been generated outside and then passed in
+std::optional<VkDescriptorSetLayout> create_descriptor_set_layout(
+    VkDevice& logical_device, DescriptorSetLayoutData dsl_data) {
+    // lol
+    VkDescriptorSetLayout dsl;
+
+    bool has_mutable_binding = false;
+    uint32_t i = 0;
+    for (auto binding : dsl_data.bindings) {
+        if (binding.descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
+            has_mutable_binding = true;
+            if (dsl_data.p_next.type !=
+                DescriptorSetLayoutExtensionType::MUTABLE_DESCRIPTOR) {
+                std::cout << "vulkan spec states that if any binding is a "
+                             "mutable descriptor the pNext extension structure "
+                             "must be VK_DESCRIPTOR_TYPE_MUTABLE_EXT\n";
+                return nullptr;
+            }
+            if (dsl_data.p_next.data.mutable_descriptor_type_create_info
+                    .mutableDescriptorTypeListCount <= i) {
+                std::cout
+                    << "Vulkan spec error: If any element pBindings[i] has a "
+                       "descriptorType of "
+                       "VK_DESCRIPTOR_TYPE_MUTABLE_EXT, then the pNext chain "
+                       "must include a VkMutableDescriptorTypeCreateInfoEXT "
+                       "structure, and mutableDescriptorTypeListCount must be "
+                       "greater than i \n";
+            }
+        }
+        break;
+    }
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(dsl_data.bindings.size());
+    switch (dsl_data.p_next.type) {
+        case backend_vk::descriptor_sets::DescriptorSetLayoutExtensionType::
+            BINDING_FLAGS:
+            layoutInfo.pNext = &dsl_data.p_next.data.bindings_flags_create_info;
+            break;
+        case backend_vk::descriptor_sets::DescriptorSetLayoutExtensionType::
+            MUTABLE_DESCRIPTOR:
+            layoutInfo.pNext =
+                &dsl_data.p_next.data.mutable_descriptor_type_create_info;
+            break;
+        default:
+            break;
+    }
+    layoutInfo.flags = dsl_data.flags;
+    layoutInfo.pBindings = dsl_data.bindings.data();
+
+    if (vkCreateDescriptorSetLayout(logical_device, &layoutInfo, nullptr,
+                                    &dsl) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+
+    return dsl;
+    // NOTE: Vulkan Spec:
+    //  If any element pBindings[i] has a descriptorType of
+    //  VK_DESCRIPTOR_TYPE_MUTABLE_EXT, then the pNext chain must include a
+    //  VkMutableDescriptorTypeCreateInfoEXT structure, and
+    //  mutableDescriptorTypeListCount must be greater than i
+}
 }  // namespace backend_vk::descriptor_sets
-void DescriptorSetHandler::CreateDescriptorPool() {
-    // Get number of descriptor sets
-    // Create array poolSizes = # of descriptor types
-    // Need list of descriptor types used across all sets
-    // Need number of each type used
-    // Need number of frames in flight
-    std::array<VkDescriptorPoolSize, 2> poolSizes{};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount =
-        (2 * m_vulkan_global_state->m_maxFramesInFlight) +
-        (2 * m_vulkan_global_state->m_maxMeshes);
-
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount =
-        (2 * m_vulkan_global_state->m_maxFramesInFlight) +
-        (2 * m_vulkan_global_state->m_maxMeshes);
-
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-    poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = m_vulkan_global_state->m_maxFramesInFlight *
-                       m_vulkan_global_state->m_maxMeshes;
-
-    if (vkCreateDescriptorPool(
-            m_vulkan_global_state->m_logical_device, &poolInfo, nullptr,
-            &m_vulkan_global_state->m_descriptor_pool) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor pool!");
-    }
-}
-void DescriptorSetHandler::CreateDescriptorPoolBindless() {
-    std::array<VkDescriptorPoolSize, 1> poolSizes{};
-
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[0].descriptorCount = 10000;
-
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-    poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = 10000 * 2;
-
-    if (vkCreateDescriptorPool(
-            m_vulkan_global_state->m_logical_device, &poolInfo, nullptr,
-            &m_vulkan_global_state->m_descriptor_pool_bindless) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor pool!");
-    }
-}
-
-void DescriptorSetHandler::CreateDescriptorPoolBindlessScene() {
-    // Get number of descriptor sets
-    // Create array poolSizes = # of descriptor types
-    // Need list of descriptor types used across all sets
-    // Need number of each type used
-    // Need number of frames in flight
-    std::array<VkDescriptorPoolSize, 1> poolSizes{};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount =
-        (2 * m_vulkan_global_state->m_maxFramesInFlight) +
-        (2 * m_vulkan_global_state->m_maxMeshes);
-
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-    poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = m_vulkan_global_state->m_maxFramesInFlight *
-                       m_vulkan_global_state->m_maxMeshes;
-
-    if (vkCreateDescriptorPool(
-            m_vulkan_global_state->m_logical_device, &poolInfo, nullptr,
-            &m_vulkan_global_state->m_descriptor_pool_bindless_scene) !=
-        VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor pool!");
-    }
-}
 
 void DescriptorSetHandler::CreateDescriptorPoolPerMeshBindless() {
     // Get number of descriptor sets
@@ -149,41 +138,6 @@ void DescriptorSetHandler::CreateDescriptorPoolPerMeshBindless() {
             &m_vulkan_global_state->m_descriptorPoolPerMeshBindless) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
-    }
-}
-
-void DescriptorSetHandler::CreateDescriptorSetLayoutBindless() {
-    // Combined Image Samplers
-    VkDescriptorSetLayoutBinding samplers{};
-    samplers.binding = 0;
-    samplers.descriptorCount = 10000;
-    samplers.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplers.pImmutableSamplers = nullptr;
-    samplers.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    VkDescriptorBindingFlags flags =
-        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
-        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
-        VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
-
-    VkDescriptorSetLayoutBindingFlagsCreateInfo flagsInfo{
-        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO};
-    flagsInfo.bindingCount = 1;
-    flagsInfo.pBindingFlags = &flags;
-
-    std::array<VkDescriptorSetLayoutBinding, 1> bindings = {samplers};
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.flags =
-        VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-    layoutInfo.pNext = &flagsInfo;
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-    layoutInfo.pBindings = bindings.data();
-
-    if (vkCreateDescriptorSetLayout(
-            m_vulkan_global_state->m_logical_device, &layoutInfo, nullptr,
-            &m_vulkan_global_state->m_bindlessDescriptorSetLayout) !=
-        VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor set layout!");
     }
 }
 

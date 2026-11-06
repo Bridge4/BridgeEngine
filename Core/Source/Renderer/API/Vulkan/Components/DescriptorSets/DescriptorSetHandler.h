@@ -5,6 +5,7 @@
 
 #include <optional>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 #include "../ComponentDeclarations.h"
@@ -20,9 +21,49 @@ struct DescriptorPoolData {
     uint32_t max_sets;
 };
 
+enum class DescriptorSetLayoutExtensionType {
+    NONE,
+    BINDING_FLAGS,
+    MUTABLE_DESCRIPTOR
+};
+
+// Using tagged union instead of std::variant for compile time benefit
+struct DescriptorSetLayoutExtension {
+    DescriptorSetLayoutExtensionType type =
+        DescriptorSetLayoutExtensionType::NONE;
+
+    union Data {
+        VkDescriptorSetLayoutBindingFlagsCreateInfo bindings_flags_create_info;
+        VkMutableDescriptorTypeCreateInfoEXT
+            mutable_descriptor_type_create_info;
+    } data;
+
+    void set_null() { type = DescriptorSetLayoutExtensionType::NONE; }
+    void set_bindings_flags_create_info(
+        VkDescriptorSetLayoutBindingFlagsCreateInfo val) {
+        data.bindings_flags_create_info = val;
+        type = DescriptorSetLayoutExtensionType::BINDING_FLAGS;
+    }
+
+    void set_mutable_descriptor_type_create_info(
+        VkMutableDescriptorTypeCreateInfoEXT val) {
+        data.mutable_descriptor_type_create_info = val;
+        type = DescriptorSetLayoutExtensionType::MUTABLE_DESCRIPTOR;
+    }
+};
+
+struct DescriptorSetLayoutData {
+    std::vector<VkDescriptorSetLayoutBinding> bindings;
+    VkDescriptorSetLayoutCreateFlags flags;
+    // used for pNext
+    DescriptorSetLayoutExtension p_next;
+};
+
 std::optional<VkDescriptorPool> create_descriptor_pool(
     VkDevice& logical_device, DescriptorPoolData dsp_data);
 
+std::optional<VkDescriptorSetLayout> create_descriptor_set_layout(
+    VkDevice& logical_device, DescriptorSetLayoutData dsl_data);
 }  // namespace backend_vk::descriptor_sets
 
 class DescriptorSetHandler {
@@ -31,7 +72,6 @@ class DescriptorSetHandler {
         this->m_vulkan_global_state = VulkanGlobalState;
     }
 
-    void CreateDescriptorPool();
     void CreateDescriptorSetLayout(
         DescriptorSetLayoutInfo* dsLayout,
         std::vector<DescriptorSetBindingInfo> bindings);
@@ -45,10 +85,7 @@ class DescriptorSetHandler {
     void CreateTexturedPBRDescriptorSets(Mesh3D* mesh);
 
     // === BINDLESS === //
-    void CreateDescriptorPoolBindless();
-    void CreateDescriptorPoolBindlessScene();
     void CreateDescriptorPoolPerMeshBindless();
-    void CreateDescriptorSetLayoutBindless();
     void CreateDescriptorSetBindless();
     void CreateTexturedPBRDescriptorSetLayoutBindless();
     void CreateTexturedPBRDescriptorSetsBindless(Mesh3D* mesh);

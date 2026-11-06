@@ -177,7 +177,6 @@ void CameraController::HandleInputOrbit(float deltaTime) {
     if (glfwGetMouseButton(m_windowingBackend->m_window, GLFW_MOUSE_BUTTON_2) ==
             GLFW_RELEASE &&
         m_lookActive) {
-        std::cout << "shouldnt be here" << std::endl;
         m_lookActive = false;
         glfwSetInputMode(m_windowingBackend->m_window, GLFW_CURSOR,
                          GLFW_CURSOR_NORMAL);

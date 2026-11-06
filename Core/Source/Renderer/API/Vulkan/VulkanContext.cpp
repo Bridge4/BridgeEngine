@@ -535,7 +535,51 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
             create_descriptor_pool_result.value();
 
         m_descriptor_set_handler->CreateDescriptorPoolPerMeshBindless();
-        m_descriptor_set_handler->CreateDescriptorSetLayoutBindless();
+
+        backend_vk::descriptor_sets::DescriptorSetLayoutData dsl_data;
+        backend_vk::descriptor_sets::DescriptorSetLayoutExtension
+            dsl_data_p_next;
+
+        VkDescriptorSetLayoutBinding bindless_texture_heap_sampler_binding{};
+        bindless_texture_heap_sampler_binding.binding = 0;
+        bindless_texture_heap_sampler_binding.descriptorCount = 10000;
+        bindless_texture_heap_sampler_binding.descriptorType =
+            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        bindless_texture_heap_sampler_binding.pImmutableSamplers = nullptr;
+        bindless_texture_heap_sampler_binding.stageFlags =
+            VK_SHADER_STAGE_FRAGMENT_BIT;
+        dsl_data.bindings.push_back(bindless_texture_heap_sampler_binding);
+        dsl_data.flags =
+            VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+
+        VkDescriptorBindingFlags flags =
+            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+            VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
+            VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
+
+        VkDescriptorSetLayoutBindingFlagsCreateInfo flags_info{
+            VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO};
+
+        flags_info.bindingCount = 1;
+        flags_info.pBindingFlags = &flags;
+        dsl_data_p_next.set_bindings_flags_create_info(flags_info);
+        dsl_data.p_next = dsl_data_p_next;
+
+        auto create_descriptor_set_layout_bindless_result =
+            backend_vk::descriptor_sets::create_descriptor_set_layout(
+                m_vulkan_global_state->m_logical_device, dsl_data);
+
+        if (!create_descriptor_set_layout_bindless_result.has_value()) {
+            std::cout
+                << "failed to create bindless descriptor set layout, cannot"
+                   "continue vulkan init\n";
+            return;
+        }
+
+        m_vulkan_global_state->m_bindlessDescriptorSetLayout =
+            create_descriptor_set_layout_bindless_result.value();
+
+        // m_descriptor_set_handler->CreateDescriptorSetLayoutBindless();
         m_descriptor_set_handler->CreateDescriptorSetBindless();
     } else {
         // m_descriptor_set_handler->CreateDescriptorPool();
