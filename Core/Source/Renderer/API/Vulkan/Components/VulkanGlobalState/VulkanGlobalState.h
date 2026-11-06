@@ -132,7 +132,7 @@ class VulkanGlobalState {
     VkDescriptorPool m_descriptor_pool_per_mesh_bindless;
     // Per mesh model matrix
     VkDescriptorSetLayout m_texturedPBRDescriptorSetLayoutBindless;
-    VkDescriptorSet m_globalBindlessDescriptorSet;
+    VkDescriptorSet m_global_bindless_descriptor_set;
 
     std::vector<VkDescriptorSetLayout> m_texturedMeshDescriptorSetLayouts;
     std::vector<VkDescriptorSetLayout> m_shadowPassDescriptorSetLayouts;

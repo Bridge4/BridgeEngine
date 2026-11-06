@@ -70,6 +70,7 @@ std::optional<std::vector<VkDescriptorSet>> allocate_descriptor_sets(
     VkDevice& logical_device, VkDescriptorSetLayout dsl, VkDescriptorPool& dsp,
     uint32_t descriptor_count);
 
+void write_to_descriptor_sets(VkDevice& logical_device, );
 }  // namespace backend_vk::descriptor_sets
 
 class DescriptorSetHandler {
