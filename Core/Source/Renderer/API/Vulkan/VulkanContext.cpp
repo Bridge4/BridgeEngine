@@ -609,7 +609,7 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
             create_descriptor_set_layout_bindless_result.value();
 
         /*
-         * Allocating Bindless Descriptor Set
+         * Creating bindless descriptor set
          *
          * Creating descriptor sets is two steps:
          *  - allocation
@@ -629,8 +629,9 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
                          "continue vulkan init\n";
             return;
         }
-        m_vulkan_global_state->m_global_bindless_descriptor_set =
+        m_vulkan_global_state->m_globalBindlessDescriptorSet =
             allocate_descriptor_sets_result.value()[0];
+        // m_descriptor_set_handler->CreateDescriptorSetBindless();
     } else {
         // m_descriptor_set_handler->CreateDescriptorPool();
         backend_vk::descriptor_sets::DescriptorPoolData dsp_data = {};
@@ -802,7 +803,7 @@ uint32_t VulkanContext::register_texture(VkImageView* textureImageView,
                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     VkWriteDescriptorSet w{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
     // CREATE THE DESCRIPTOR SET YOU DOLT
-    w.dstSet = m_vulkan_global_state->m_global_bindless_descriptor_set;
+    w.dstSet = m_vulkan_global_state->m_globalBindlessDescriptorSet;
     w.dstBinding = 0;
     w.dstArrayElement = idx;
     w.descriptorCount = 1;
@@ -860,7 +861,6 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
     }
 
     DrawFrame(deltaTime);
-    // DRAW NEW LANDSCAPE
 }
 
 void VulkanContext::load_scene_objects() {
@@ -2224,8 +2224,7 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
         vkCmdBindDescriptorSets(
             commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
             m_vulkan_global_state->m_pbrPipelineLayout, 2, 1,
-            &m_vulkan_global_state->m_global_bindless_descriptor_set, 0,
-            nullptr);
+            &m_vulkan_global_state->m_globalBindlessDescriptorSet, 0, nullptr);
         std::vector<VkDescriptorSet> descriptorSetsToBind;
         if (!m_vulkan_global_state->m_meshList.empty()) {
             VkBuffer vertexBuffers[] = {m_buffer_handler->VertexBuffer};
