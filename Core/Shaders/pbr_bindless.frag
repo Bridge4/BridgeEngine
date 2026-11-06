@@ -117,7 +117,7 @@ const float ROCK_LEVEL  = 0.4;
 void main() {
     vec3  albedo    = vec3(1.0);   // white, or a base color factor
     float metallic  = 0.0;
-    float roughness = 0.5;
+    float roughness = 0.1;
     float ao        = 0.0;
     vec3  emissive  = vec3(0.0);
 
