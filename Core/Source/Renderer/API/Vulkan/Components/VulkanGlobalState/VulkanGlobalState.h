@@ -129,7 +129,7 @@ class VulkanGlobalState {
     VkDescriptorPool m_descriptor_pool_bindless_scene;
     VkDescriptorSetLayout m_bindlessDescriptorSetLayout;
     VkDescriptorSetLayout m_bindlessFrameBindingDescriptorSetLayout;
-    VkDescriptorPool m_descriptorPoolPerMeshBindless;
+    VkDescriptorPool m_descriptor_pool_per_mesh_bindless;
     // Per mesh model matrix
     VkDescriptorSetLayout m_texturedPBRDescriptorSetLayoutBindless;
     VkDescriptorSet m_globalBindlessDescriptorSet;

@@ -86,7 +86,6 @@ class DescriptorSetHandler {
     void CreateTexturedPBRDescriptorSets(Mesh3D* mesh);
 
     // === BINDLESS === //
-    void CreateDescriptorPoolPerMeshBindless();
     void CreateDescriptorSetBindless();
     void CreateTexturedPBRDescriptorSetLayoutBindless();
     void CreateTexturedPBRDescriptorSetsBindless(Mesh3D* mesh);

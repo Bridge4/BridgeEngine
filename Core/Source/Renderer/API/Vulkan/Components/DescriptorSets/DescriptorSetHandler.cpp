@@ -114,33 +114,6 @@ std::optional<VkDescriptorSetLayout> create_descriptor_set_layout(
 }
 }  // namespace backend_vk::descriptor_sets
 
-void DescriptorSetHandler::CreateDescriptorPoolPerMeshBindless() {
-    // Get number of descriptor sets
-    // Create array poolSizes = # of descriptor types
-    // Need list of descriptor types used across all sets
-    // Need number of each type used
-    // Need number of frames in flight
-    std::array<VkDescriptorPoolSize, 1> poolSizes{};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount =
-        (2 * m_vulkan_global_state->m_maxFramesInFlight) +
-        (2 * m_vulkan_global_state->m_maxMeshes);
-
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-    poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = m_vulkan_global_state->m_maxFramesInFlight *
-                       m_vulkan_global_state->m_maxMeshes;
-
-    if (vkCreateDescriptorPool(
-            m_vulkan_global_state->m_logical_device, &poolInfo, nullptr,
-            &m_vulkan_global_state->m_descriptorPoolPerMeshBindless) !=
-        VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor pool!");
-    }
-}
-
 void DescriptorSetHandler::CreateDescriptorSetBindless() {
     std::vector<VkDescriptorSetLayout> layout(
         1, m_vulkan_global_state->m_bindlessDescriptorSetLayout);
@@ -603,7 +576,7 @@ void DescriptorSetHandler::CreateTexturedPBRDescriptorSetsBindless(
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool =
-        m_vulkan_global_state->m_descriptorPoolPerMeshBindless;
+        m_vulkan_global_state->m_descriptor_pool_per_mesh_bindless;
     allocInfo.descriptorSetCount =
         static_cast<uint32_t>(m_vulkan_global_state->m_maxFramesInFlight);
     allocInfo.pSetLayouts = layouts.data();

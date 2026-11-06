@@ -501,6 +501,9 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
             m_vulkan_global_state->m_logical_device,
             *m_vulkan_global_state->m_render_pass_data);
     if (m_vulkan_global_state->m_renderingMode == ERenderingMode::Bindless) {
+        /*
+         * Creating the texture heap descriptor pool
+         */
         backend_vk::descriptor_sets::DescriptorPoolData dsp_data = {};
         dsp_data.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
         dsp_data.descriptor_types[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER] =
@@ -517,6 +520,9 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
         m_vulkan_global_state->m_descriptor_pool_bindless =
             create_descriptor_pool_result.value();
 
+        /*
+         * Creating scene data descriptor pool
+         */
         backend_vk::descriptor_sets::DescriptorPoolData dsp_scene_data = {};
         dsp_scene_data.descriptor_types.clear();
         dsp_scene_data.descriptor_types[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER] =
@@ -534,7 +540,27 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
         m_vulkan_global_state->m_descriptor_pool_bindless_scene =
             create_descriptor_pool_result.value();
 
-        m_descriptor_set_handler->CreateDescriptorPoolPerMeshBindless();
+        /*
+         * Creating per mesh descriptor pool
+         */
+        backend_vk::descriptor_sets::DescriptorPoolData
+            dsp_data_per_mesh_bindless = {};
+        dsp_data_per_mesh_bindless.flags =
+            VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+        dsp_data_per_mesh_bindless
+            .descriptor_types[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER] = 100;
+        dsp_data_per_mesh_bindless.max_sets = 100 * 2;
+        auto create_per_mesh_descriptor_pool_result =
+            backend_vk::descriptor_sets::create_descriptor_pool(
+                m_vulkan_global_state->m_logical_device, dsp_data);
+        if (!create_descriptor_pool_result.has_value()) {
+            std::cout
+                << "failed to create bindless per mesh descriptor pool, cannot "
+                   "continue vulkan init\n";
+            return;
+        }
+        m_vulkan_global_state->m_descriptor_pool_per_mesh_bindless =
+            create_descriptor_pool_result.value();
 
         backend_vk::descriptor_sets::DescriptorSetLayoutData dsl_data;
         backend_vk::descriptor_sets::DescriptorSetLayoutExtension
