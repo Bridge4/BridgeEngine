@@ -241,7 +241,7 @@ void SetIndices(std::vector<uint32_t>& indices, Vertex* vertices,
         }
     }
 }
-std::vector<VkFramebuffer> CreateSwapChainFramebuffers(
+std::vector<VkFramebuffer> create_swapchain_framebuffers(
     int numberOfFramebuffers, std::vector<VkImageView> perFrameImageViews,
     std::vector<VkImageView> swapChainImageViews, uint32_t framebufferWidth,
     uint32_t framebufferHeight, VkDevice& logical_device,
@@ -492,7 +492,7 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
         m_vulkan_global_state->m_render_pass_data->depth_resources.image_view);
 
     m_vulkan_global_state->m_render_pass_data->framebuffers =
-        backend_vk::CreateSwapChainFramebuffers(
+        backend_vk::create_swapchain_framebuffers(
             m_vulkan_global_state->m_swapChainImageViews.size(),
             renderPassPerFrameImageViews,
             m_vulkan_global_state->m_swapChainImageViews,
@@ -2590,7 +2590,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
                 .image_view);
 
         m_vulkan_global_state->m_render_pass_data->framebuffers =
-            backend_vk::CreateSwapChainFramebuffers(
+            backend_vk::create_swapchain_framebuffers(
                 m_vulkan_global_state->m_swapChainImageViews.size(),
                 renderPassPerFrameImageViews,
                 m_vulkan_global_state->m_swapChainImageViews,
@@ -2745,7 +2745,7 @@ void VulkanContext::DrawFrame(float deltaTime) {
                 .image_view);
 
         m_vulkan_global_state->m_render_pass_data->framebuffers =
-            backend_vk::CreateSwapChainFramebuffers(
+            backend_vk::create_swapchain_framebuffers(
                 m_vulkan_global_state->m_swapChainImageViews.size(),
                 renderPassPerFrameImageViews,
                 m_vulkan_global_state->m_swapChainImageViews,

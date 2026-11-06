@@ -64,6 +64,7 @@ std::optional<VkDescriptorPool> create_descriptor_pool(
 
 std::optional<VkDescriptorSetLayout> create_descriptor_set_layout(
     VkDevice& logical_device, DescriptorSetLayoutData dsl_data);
+
 }  // namespace backend_vk::descriptor_sets
 
 class DescriptorSetHandler {
