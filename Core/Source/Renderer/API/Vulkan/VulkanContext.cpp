@@ -588,9 +588,9 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
 
         VkDescriptorSetLayoutBindingFlagsCreateInfo flags_info{
             VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO};
-
         flags_info.bindingCount = 1;
         flags_info.pBindingFlags = &flags;
+
         dsl_data_p_next.set_bindings_flags_create_info(flags_info);
         dsl_data.p_next = dsl_data_p_next;
 
