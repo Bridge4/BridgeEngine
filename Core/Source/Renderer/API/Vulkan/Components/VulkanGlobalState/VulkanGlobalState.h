@@ -29,7 +29,6 @@ struct PBRPushConstants {
     glm::vec4 hasEmissive;
 };
 struct FragShaderPushConstantsBindless {
-    glm::vec4 bias;
     uint32_t albedoIdx;
     uint32_t metallicIdx;
     uint32_t roughnessIdx;
@@ -37,6 +36,17 @@ struct FragShaderPushConstantsBindless {
     uint32_t normalIdx;
     uint32_t emissiveIdx;
     uint32_t ormIdx;
+    // x = WATER_LEVEL
+    // y = SAND_LEVEL
+    // z = GRASS_LEVEL
+    // w = ROCK_LEVEL
+    glm::vec4 terrain_levels = glm::vec4(0.1f, 0.2f, 0.3, 0.4);
+    glm::vec3 water_color = glm::vec3(0.02, 0.45, 0.65);
+    glm::vec3 sand_color =
+        glm::vec3(0.98, 0.72, 0.35);  // Vivid orange-gold sunlit sand;
+    glm::vec3 grass_color = glm::vec3(0.38, 0.72, 0.12);
+    glm::vec3 rock_color = glm::vec3(0.75, 0.32, 0.22);
+    glm::vec3 snow_color = glm::vec3(1.00, 0.88, 0.65);
 };
 
 class VulkanGlobalState {

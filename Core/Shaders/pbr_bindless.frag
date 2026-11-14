@@ -29,7 +29,6 @@ layout(set = 2, binding = 0) uniform sampler2D textures[];
 //layout(set = 1, binding = 7) uniform sampler2D shadowMap;
 
 layout(push_constant) uniform PushConstants {
-    layout(offset = 64) vec4 bias; // x as bias
     int albedoIdx;
     int metallicIdx;
     int roughnessIdx;
@@ -37,6 +36,12 @@ layout(push_constant) uniform PushConstants {
     int normalIdx;
     int emissiveIdx;
     int ormIdx;
+    vec4 terrain_levels;
+    vec3 water_color;
+    vec3 sand_color;
+    vec3 grass_color;
+    vec3 rock_color;
+    vec3 snow_color;
 } pc;
 
 layout(location = 0) in vec3 fragPos;     // world-space position
@@ -109,10 +114,10 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness){
 //}
 bool has(int idx) { return idx >= 0; }
 
-const float WATER_LEVEL = 0.0;
-const float SAND_LEVEL  = 0.1;
-const float GRASS_LEVEL = 0.7;
-const float ROCK_LEVEL  = 0.4;
+float WATER_LEVEL = pc.terrain_levels.x;
+float SAND_LEVEL  = pc.terrain_levels.y;
+float GRASS_LEVEL = pc.terrain_levels.z;
+float ROCK_LEVEL  = pc.terrain_levels.w;
 
 void main() {
     vec3  albedo    = vec3(1.0);   // white, or a base color factor
@@ -121,14 +126,14 @@ void main() {
     float ao        = 0.0;
     vec3  emissive  = vec3(0.0);
 
-vec3 deepWater = vec3(0.02, 0.45, 0.65); // Vibrant tropical cyan / deep azure
-vec3 sand      = vec3(0.98, 0.72, 0.35); // Vivid orange-gold sunlit sand
-vec3 grass     = vec3(0.38, 0.72, 0.12); // Bright, luminous lime/apple green
-vec3 rock      = vec3(0.75, 0.32, 0.22); // Striking crimson/burnt terracotta
-vec3 snow      = vec3(1.00, 0.88, 0.65); // Intense golden-hour sunlight highlight
-    
+    vec3 deepWater = pc.water_color;
+    vec3 sand      = pc.sand_color;
+    vec3 grass     = pc.grass_color;
+    vec3 rock      = pc.rock_color;
+    vec3 snow      = pc.snow_color;
     vec3 finalColor;
     // Linearly interpolate (mix) colors based on fragPos.y height
+    
     if (fragPos.y < WATER_LEVEL) {
         finalColor = deepWater;
     } else if (fragPos.y < SAND_LEVEL) {
@@ -144,6 +149,22 @@ vec3 snow      = vec3(1.00, 0.88, 0.65); // Intense golden-hour sunlight highlig
         float t = clamp((fragPos.y - ROCK_LEVEL) / (1.0 - ROCK_LEVEL), 0.0, 1.0);
         finalColor = mix(rock, snow, t);
     }
+    if (fragPos.y < WATER_LEVEL) {
+        finalColor = deepWater;
+    } else if (fragPos.y < SAND_LEVEL) {
+        float t = smoothstep(WATER_LEVEL, SAND_LEVEL, fragPos.y);
+        finalColor = mix(deepWater, sand, t);
+    } else if (fragPos.y < GRASS_LEVEL) {
+        float t = smoothstep(SAND_LEVEL, GRASS_LEVEL, fragPos.y);
+        finalColor = mix(sand, grass, t);
+    } else if (fragPos.y < ROCK_LEVEL) {
+        float t = smoothstep(GRASS_LEVEL, ROCK_LEVEL, fragPos.y);
+        finalColor = mix(grass, rock, t);
+    } 
+    //else {
+    //    float t = smoothstep(ROCK_LEVEL, ROCK_LEVEL + 1.0f, fragPos.y);
+    //    finalColor = mix(rock, snow, t);
+    //}
 
     albedo = finalColor;
 

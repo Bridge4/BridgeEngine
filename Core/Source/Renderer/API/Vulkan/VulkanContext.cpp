@@ -71,10 +71,46 @@ void RenderUI(VulkanContext& context_vk) {
     ImGui::SliderFloat("Lacunarity", &landscape::LACUNARITY, 0.0f, 100.0f);
     ImGui::SliderFloat("Frequency", &landscape::FREQUENCY, 0.0f, 0.99f);
     ImGui::SliderInt("Octaves", &landscape::OCTAVES, 1, 32);
+    float MIN_LEVEL = -10.0;
+    float MAX_LEVEL = 10.0;
+    ImGui::SliderFloat(
+        "Water Level",
+        &context_vk.m_vulkan_global_state->m_fragShaderPushConstantsBindless
+             .terrain_levels.x,
+        MIN_LEVEL, MAX_LEVEL);
+    ImGui::SliderFloat(
+        "Sand Level",
+        &context_vk.m_vulkan_global_state->m_fragShaderPushConstantsBindless
+             .terrain_levels.y,
+        MIN_LEVEL, MAX_LEVEL);
 
-    if (context_vk.m_time_accumulator > 0.5) {
-        // context_vk.new_landscape();
-    }
+    ImGui::SliderFloat(
+        "Grass Level",
+        &context_vk.m_vulkan_global_state->m_fragShaderPushConstantsBindless
+             .terrain_levels.z,
+        MIN_LEVEL, MAX_LEVEL);
+
+    ImGui::SliderFloat(
+        "Rock Level",
+        &context_vk.m_vulkan_global_state->m_fragShaderPushConstantsBindless
+             .terrain_levels.w,
+        MIN_LEVEL, MAX_LEVEL);
+
+    ImGui::ColorPicker3("Water Color",
+                        &context_vk.m_vulkan_global_state
+                             ->m_fragShaderPushConstantsBindless.water_color.x);
+
+    ImGui::ColorPicker3("Sand Color",
+                        &context_vk.m_vulkan_global_state
+                             ->m_fragShaderPushConstantsBindless.sand_color.x);
+
+    ImGui::ColorPicker3("Grass Color",
+                        &context_vk.m_vulkan_global_state
+                             ->m_fragShaderPushConstantsBindless.grass_color.x);
+
+    ImGui::ColorPicker3("Rock Color",
+                        &context_vk.m_vulkan_global_state
+                             ->m_fragShaderPushConstantsBindless.rock_color.x);
     // Test frame rates (verifies NewFrame delta timing is working)
     ImGui::Text("Performance: %.3f ms/frame (%.1f FPS)",
                 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -2290,7 +2326,7 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
                     &m_vulkan_global_state->m_vertexShaderPushConstants);
                 vkCmdPushConstants(
                     commandBuffer, m_vulkan_global_state->m_pbrPipelineLayout,
-                    VK_SHADER_STAGE_FRAGMENT_BIT, 64,
+                    VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                     sizeof(FragShaderPushConstantsBindless),
                     &m_vulkan_global_state->m_fragShaderPushConstantsBindless);
 
