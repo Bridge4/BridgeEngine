@@ -41,7 +41,6 @@ class CameraController {
     bool m_isCalculatingCPU = false;
     bool m_isCalculatingGPU = false;
 
-   private:
     void Initialize();
     VulkanContext* m_vulkanContext = 0;
     WindowingBackend* m_windowingBackend = 0;
@@ -55,6 +54,8 @@ class CameraController {
     bool m_lookToggled = false;
     double m_prevMouseX, m_prevMouseY = 0.0;
     double m_mouseXBeforeLook, m_mouseYBeforeLook = 0.0;
+
+   private:
 };
 
 #endif  // !CAMERACONTROLLER_H

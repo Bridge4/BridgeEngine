@@ -156,11 +156,12 @@ class VulkanContext {
 
     float m_time_accumulator = 0.0f;
 
+    CameraController* m_cameraController;
+
    private:
     // DeviceHandler* m_deviceHandler;
     SwapChainHandler* m_swap_chain_handler;
     BufferHandler* m_buffer_handler;
-    CameraController* m_cameraController;
     DescriptorSetHandler* m_descriptor_set_handler;
 
     int m_textureHeap[22000] = {0};

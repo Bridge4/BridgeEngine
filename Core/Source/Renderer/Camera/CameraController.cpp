@@ -22,8 +22,8 @@
 
 glm::mat4 CameraController::GetViewMatrix() {
     m_viewDirection = glm::normalize(m_viewDirection);
-    return (glm::lookAt(orbitCam->GetEye(), glm::vec3(0.0f, 0.0f, 0.0f),
-                        m_upVector));
+    auto eye = orbitCam->GetEye();
+    return (glm::lookAt(eye, glm::vec3(0.0f, 0.0f, 0.0f), m_upVector));
 }
 
 void CameraController::Initialize() {
@@ -35,12 +35,13 @@ void CameraController::Initialize() {
         m_lookActive = false;
         m_lookToggled = false;
     } else if (m_cameraType == ORBIT) {
-        m_eyePosition = glm::vec3(0.0f, 0.0f, 2.0f);
-        m_viewDirection = glm::vec3(0.0f, 0.0f, -1.0f);
-        m_upVector = glm::vec3(0.0f, 1.0f, 0.0f);
         orbitCam = new OrbitCamera(glm::vec3(0.0f, 0.0f, 0.0f), m_upVector,
-                                   10.0f, 2.0f, 45.0f, 45.0f);
-        m_cameraViewMatrix = GetViewMatrix();
+                                   75.0f, 2.0f, 45.0f, 45.0f);
+        m_eyePosition = glm::vec3(1.0);
+        m_viewDirection = glm::vec3(1.0);
+        m_upVector = glm::vec3(0.0f, 1.0f, 0.0f);
+        // m_cameraViewMatrix = glm::mat4(1.0f);
+        //  m_cameraViewMatrix = GetViewMatrix();
         m_lookActive = false;
         m_lookToggled = false;
     }

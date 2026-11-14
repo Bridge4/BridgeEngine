@@ -1,3 +1,4 @@
+#include <combaseapi.h>
 #include <vulkan/vulkan_core.h>
 
 #include <cassert>
@@ -64,11 +65,18 @@ void RenderUI(VulkanContext& context_vk) {
     // ImGui::ShowDemoWindow(&show_demo_window);
     ImGui::Begin("Landscape Settings");
 
+    glm::mat4 mat = context_vk.m_cameraController->m_cameraUBO.view;
+    ImGui::Text("%s:", "Camera View");
+    for (int row = 0; row < 4; ++row) {
+        // Notice mat[col][row] to display in standard row-major visual order
+        ImGui::Text("[ %7.3f, %7.3f, %7.3f, %7.3f ]", mat[0][row], mat[1][row],
+                    mat[2][row], mat[3][row]);
+    }
     if (ImGui::Button("Generate New Landscape")) {
         context_vk.new_landscape();
     }
 
-    ImGui::SliderFloat("Lacunarity", &landscape::LACUNARITY, 0.0f, 100.0f);
+    ImGui::SliderFloat("Lacunarity", &landscape::LACUNARITY, -2.0f, 2.0f);
     ImGui::SliderFloat("Frequency", &landscape::FREQUENCY, 0.0f, 0.99f);
     ImGui::SliderInt("Octaves", &landscape::OCTAVES, 1, 32);
     float MIN_LEVEL = -10.0;
@@ -112,8 +120,8 @@ void RenderUI(VulkanContext& context_vk) {
                         &context_vk.m_vulkan_global_state
                              ->m_fragShaderPushConstantsBindless.rock_color.x);
     // Test frame rates (verifies NewFrame delta timing is working)
-    ImGui::Text("Performance: %.3f ms/frame (%.1f FPS)",
-                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    // ImGui::Text("Performance: %.3f ms/frame (%.1f FPS)",
+    //            1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
     ImGui::End();
 
@@ -796,6 +804,13 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     m_buffer_handler->CreateCommandBuffersCompute(
         m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_commandPoolCompute);
+    m_cameraController->m_cameraUBO.view[0] =
+        glm::vec4(0.711, 0.000, -0.703, -0.000);
+    m_cameraController->m_cameraUBO.view[1] =
+        glm::vec4(-0.331, 0.882, -0.334, -0.000);
+    m_cameraController->m_cameraUBO.view[1] =
+        glm::vec4(0.621, 0.470, 0.627, -90.355);
+    m_cameraController->m_cameraUBO.view[1] = glm::vec4(0.0, 0, 0, 1);
 }
 
 void VulkanContext::describe_scene(std::vector<ObjResource> objectsToRender,

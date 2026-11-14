@@ -122,7 +122,7 @@ float ROCK_LEVEL  = pc.terrain_levels.w;
 void main() {
     vec3  albedo    = vec3(1.0);   // white, or a base color factor
     float metallic  = 0.0;
-    float roughness = 0.4;
+    float roughness = 1.0;
     float ao        = 0.0;
     vec3  emissive  = vec3(0.0);
 
@@ -151,6 +151,7 @@ void main() {
     }
     if (fragPos.y < WATER_LEVEL) {
         finalColor = deepWater;
+        roughness = 0.1;
     } else if (fragPos.y < SAND_LEVEL) {
         float t = smoothstep(WATER_LEVEL, SAND_LEVEL, fragPos.y);
         finalColor = mix(deepWater, sand, t);
