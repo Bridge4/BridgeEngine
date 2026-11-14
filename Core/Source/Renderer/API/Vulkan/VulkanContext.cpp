@@ -44,34 +44,37 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
 
+namespace landscape {
+float LACUNARITY = 2.0f;
+float PERSISTENCE = 0.52f;
+float FREQUENCY = 0.2f;
+int OCTAVES = 8;
+}  // namespace landscape
+
 // This is our little safe playground to move things away from the vulkan global
 // state
 namespace backend_vk {
-void RenderUI() {
+
+void RenderUI(VulkanContext& context_vk) {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
     // bool show_demo_window = true;
     // ImGui::ShowDemoWindow(&show_demo_window);
-    ImGui::Begin("ImGui Sanity Check");
+    ImGui::Begin("Landscape Settings");
 
-    // Test static text
-    ImGui::Text("Hello, Vulkan + ImGui!");
-    ImGui::Separator();
-
-    // Test interactivity with a counter
-    static int counter = 0;
-    if (ImGui::Button("Click Me!")) {
-        counter++;
+    if (ImGui::Button("Generate New Landscape")) {
+        context_vk.new_landscape();
     }
-    ImGui::SameLine();
-    ImGui::Text("Button clicks = %d", counter);
 
-    // Test value tracking and color manipulation
-    static float color[3] = {0.45f, 0.55f, 0.60f};
-    ImGui::ColorEdit3("Clear Color Picker", color);
+    ImGui::SliderFloat("Lacunarity", &landscape::LACUNARITY, 0.0f, 100.0f);
+    ImGui::SliderFloat("Frequency", &landscape::FREQUENCY, 0.0f, 0.99f);
+    ImGui::SliderInt("Octaves", &landscape::OCTAVES, 1, 32);
 
+    if (context_vk.m_time_accumulator > 0.5) {
+        // context_vk.new_landscape();
+    }
     // Test frame rates (verifies NewFrame delta timing is working)
     ImGui::Text("Performance: %.3f ms/frame (%.1f FPS)",
                 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -816,15 +819,15 @@ uint32_t VulkanContext::register_texture(VkImageView* textureImageView,
 
 void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
                          float deltaTime) {
-    m_timeAccumulator += deltaTime;
+    m_time_accumulator += deltaTime;
 
-    if (m_timeAccumulator > 1.0f) {
-        // NewLandscape();
-        //  std::thread t([this]() { NewLandscape(); });
-        //  t.detach();
-        m_timeAccumulator = 0.0f;
-    }
-    backend_vk::RenderUI();
+    // if (m_time_accumulator > 3.0f) {
+    //     new_landscape();
+    //     //  std::thread t([this]() { NewLandscape(); });
+    //     //  t.detach();
+    //     m_time_accumulator = 0.0f;
+    // }
+    backend_vk::RenderUI(*this);
 
     m_cameraController->HandleInputOrbit(deltaTime);
 
@@ -979,17 +982,27 @@ void VulkanContext::load_scene_objects() {
 
 void VulkanContext::new_landscape() {
     run_compute_shader();
+
     Vertex* landscapeVertices = static_cast<Vertex*>(
         m_vulkan_global_state->m_computeOutputBufferMemoryMapped);
+
+    auto start = std::chrono::steady_clock::now();
     std::copy(
         landscapeVertices, landscapeVertices + (1024 * 1024),
         m_vertices.begin() +
             m_vulkan_global_state->m_meshList[0].m_vertexBufferStartIndex);
+    auto end = std::chrono::steady_clock::now();
+    auto duration =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << " TIME TO GENERATE LANDSCAPE: " << duration << "\n";
+
     vkDeviceWaitIdle(
         m_vulkan_global_state
             ->m_logical_device);  // GPU must not be reading the old buffer
     // destroy old vertex buffer + memory here (whatever your cleanup does)
+    //
     m_buffer_handler->CreateVertexBuffer(m_vertices);
+
     // m_vertices.assign(&landscapeVertices[0], &landscapeVertices[1024 *
     // 1024]);
 }
@@ -2471,10 +2484,9 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
     ImGui::EndFrame();
 }
 
-void VulkanContext::RecordCommandBufferCompute(VkCommandBuffer commandBuffer,
-                                               VkPipeline pipeline,
-                                               VkPipelineLayout pipelineLayout,
-                                               VkDescriptorSet* descriptorSet) {
+void VulkanContext::record_command_buffer_compute(
+    VkCommandBuffer commandBuffer, VkPipeline pipeline,
+    VkPipelineLayout pipelineLayout, VkDescriptorSet* descriptorSet) {
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -3040,21 +3052,26 @@ void VulkanContext::run_compute_shader() {
 
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<float> dist(0.0f, 200.0f);
-    std::uniform_real_distribution<float> amplitude(0.0f, 0.99f);
+    std::uniform_real_distribution<float> dist(0.0f, 10.0f);
+    std::uniform_real_distribution<float> amplitude(0.0f, 0.29f);
     std::uniform_real_distribution<float> freq(0.0f, 0.99f);
     std::uniform_real_distribution<float> octaves(1, 8);
 
-    float* in = static_cast<float*>(
+    Vertex* in = static_cast<Vertex*>(
         m_vulkan_global_state->m_computeInputBufferMemoryMapped);
-    in[0] = dist(gen);
-    in[1] = dist(gen);
-    in[2] = 2.0;
-    in[3] = 0.52;
-    in[4] = freq(gen);
-    in[5] = 8;
+    // Base Random
+    in[0].pos.x = dist(gen);
+    in[1].pos.x = dist(gen);
+    // Lacunarity
+    in[2].pos.x = landscape::LACUNARITY;
+    // Persistence
+    in[3].pos.x = landscape::PERSISTENCE;
+    // Frequency
+    in[4].pos.x = landscape::FREQUENCY;
+    // Octaves
+    in[5].pos.x = landscape::OCTAVES;
 
-    RecordCommandBufferCompute(
+    record_command_buffer_compute(
         m_vulkan_global_state->m_commandBuffersCompute[0], computePipeline,
         pipelineLayout, &descriptorSet);
     VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};

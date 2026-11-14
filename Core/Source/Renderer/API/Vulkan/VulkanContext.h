@@ -53,7 +53,7 @@ class VulkanGlobalState;
 class Mesh3D;
 
 namespace backend_vk {
-void RenderUI();
+void RenderUI(VulkanContext& context_vk);
 
 VkPipeline CreateComputePipeline(
     std::vector<char> shader, VkDevice& logical_device,
@@ -154,6 +154,8 @@ class VulkanContext {
         return buffer;
     }
 
+    float m_time_accumulator = 0.0f;
+
    private:
     // DeviceHandler* m_deviceHandler;
     SwapChainHandler* m_swap_chain_handler;
@@ -165,7 +167,6 @@ class VulkanContext {
 
     uint32_t m_windowWidth = 800;
     uint32_t m_windowHeight = 600;
-    float m_timeAccumulator = 0.0f;
 
     VkDebugUtilsMessengerEXT m_debugMessenger;
     int m_maxFramesInFlight = 2;
@@ -239,10 +240,10 @@ class VulkanContext {
     void RecordCommandBuffer(VkCommandBuffer commandBuffer,
                              uint32_t imageIndex);
 
-    void RecordCommandBufferCompute(VkCommandBuffer commandBuffer,
-                                    VkPipeline pipeline,
-                                    VkPipelineLayout pipelineLayout,
-                                    VkDescriptorSet* descriptorSet);
+    void record_command_buffer_compute(VkCommandBuffer commandBuffer,
+                                       VkPipeline pipeline,
+                                       VkPipelineLayout pipelineLayout,
+                                       VkDescriptorSet* descriptorSet);
 
     // SEMAPHORES AND FENCES
     // Creates semaphores and fences for each frame in flight

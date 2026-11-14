@@ -289,12 +289,7 @@ void CameraController::HandleInputOrbit(float deltaTime) {
             //  std::cout << "OUTPUT SSBO" << sizeof(OutputSSBO) << "\n";
 
             m_vulkanContext->new_landscape();
-            // auto start = std::chrono::steady_clock::now();
             // m_vulkanContext->RunComputeShader();
-            // auto end = std::chrono::steady_clock::now();
-            // auto duration =
-            // std::chrono::duration_cast<std::chrono::milliseconds>(end -
-            // start);
             // NOTE: We get a lag spike when we print the time as the detached
             // thread isnt actually detached, its just that the main thread
             // doesn't wait for it to rejoin. Since the console is a shared

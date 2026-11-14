@@ -6,16 +6,16 @@
 // A size of (128, 1, 1) means this group processes 128 items in parallel
 layout(local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
 
-// Optional Input Buffer
-layout(std430, binding = 0) readonly buffer InputBuffer {
-    float dataIn[];
-};
 struct Vertex {
     float px, py, pz, _p0;   // offset  0
     float cr, cg, cb, _p1;   // offset 16
     float nx, ny, nz, _p2;   // offset 32
     float tu, tv, _p3, _p4;  // offset 48
 };                           // 64 bytes
+// Optional Input Buffer
+layout(std430, binding = 0) readonly buffer InputBuffer {
+    Vertex dataIn[];
+};
 
 // We will write to the dataOut buffer, the vertex data of our high resolution landscape mesh
 layout(std430, binding = 1) writeonly buffer OutputBuffer {
@@ -94,18 +94,26 @@ float Perlin2D (float x, float z) {
 }
 
 float terrainHeight(float gx, float gy) {
-    vec2 base = vec2(gx, gy) * 0.01 + (dataIn[0], dataIn[1]);
-    float sum = 0.0, amp = 1.0, freq = 1.0, norm = 0.0;
-    float lacunarity = dataIn[2];
-    float persistence = dataIn[3];
-    int octaves = int(dataIn[5]);
+    vec2 base = vec2(gx, gy) * 0.01 + (dataIn[0].px, dataIn[1].px);
+    float sum = 0.0, amp = 1.0;
+    float freq = dataIn[4].px;
+    float  norm = 0.0;
+    float lacunarity = dataIn[2].px;
+    float persistence = dataIn[3].px;
+    int octaves = int(dataIn[5].px);
     for (int i = 0; i < octaves; ++i) {
-        sum  += amp * ImprovedPerlinNoise3D(base.x * freq, 0.37 + dataIn[2], base.y * freq);
+        sum  += amp * ImprovedPerlinNoise3D(base.x * freq, 0.37 + dataIn[2].px, base.y * freq);
         norm += amp;
         amp  *= persistence;
         freq *= lacunarity;
     }
     return (sum / norm) * 40.0;
+}
+
+
+void generate_animation_frames(int number_of_frames ) {
+
+
 }
 
 void main() {
