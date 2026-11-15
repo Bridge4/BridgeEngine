@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.7.0)
 project(Core)
 set(CMAKE_CXX_STANDARD 20)
 set(PROJECT_BINARY_DIR "Build/")
-find_package(Vulkan REQUIRED)
+find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
 
 add_library(Core)
 
@@ -82,4 +82,4 @@ target_sources(Core PRIVATE
                "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/WindowVK/WindowHandlerVK.cpp")
 
 target_link_libraries(imgui PRIVATE glfw Vulkan::Vulkan)
-target_link_libraries(${PROJECT_NAME} glfw ${GLFW_LIBRARIES} Vulkan::Vulkan glm imgui)
+target_link_libraries(${PROJECT_NAME} glfw ${GLFW_LIBRARIES} Vulkan::Vulkan glm imgui Vulkan::shaderc_combined)

@@ -53,6 +53,8 @@ class VulkanGlobalState;
 class Mesh3D;
 
 namespace backend_vk {
+
+std::string read_shader(const std::string& file_name);
 void RenderUI(VulkanContext& context_vk);
 
 VkPipeline CreateComputePipeline(
@@ -154,6 +156,24 @@ class VulkanContext {
         return buffer;
     }
 
+    static const std::string read_shader(const std::string& file_name) {
+        std::ifstream file(file_name, std::ios::ate | std::ios::binary);
+
+        if (!file.is_open()) {
+            throw std::runtime_error("failed to open file!");
+        }
+
+        size_t fileSize = (size_t)file.tellg();
+        std::string buffer;
+
+        file.seekg(0);
+        file.read(buffer.data(), fileSize);
+
+        file.close();
+
+        return buffer;
+    }
+
     float m_time_accumulator = 0.0f;
 
     CameraController* m_cameraController;
@@ -180,19 +200,19 @@ class VulkanContext {
      *   Create a graphics pipeline to render
      *
      */
-    void CreatePBRPipeline(std::vector<char> vertShaderCode,
-                           std::vector<char> fragShaderCode,
+    void CreatePBRPipeline(std::vector<uint32_t> vertShaderCode,
+                           std::vector<uint32_t> fragShaderCode,
                            VkPipeline* pipeline);
 
-    void CreateShadowPassPipeline(std::vector<char> vertShaderCode,
-                                  std::vector<char> fragShaderCode,
+    void CreateShadowPassPipeline(std::vector<uint32_t> vertShaderCode,
+                                  std::vector<uint32_t> fragShaderCode,
                                   VkPipeline* pipeline);
     // === BINDLESS === //
-    void CreatePBRPipelineBindless(std::vector<char> vertShaderCode,
-                                   std::vector<char> fragShaderCode,
+    void CreatePBRPipelineBindless(std::vector<uint32_t> vertShaderCode,
+                                   std::vector<uint32_t> fragShaderCode,
                                    VkPipeline* pipeline);
-    void CreateShadowPassPipelineBindless(std::vector<char> vertShaderCode,
-                                          std::vector<char> fragShaderCode,
+    void CreateShadowPassPipelineBindless(std::vector<uint32_t> vertShaderCode,
+                                          std::vector<uint32_t> fragShaderCode,
                                           VkPipeline* pipeline);
     // COMMAND POOL
     /*
@@ -256,6 +276,6 @@ class VulkanContext {
     // void updateUniformBuffer(uint32_t currentImage);
 
     // SHADER MODULES
-    VkShaderModule CreateShaderModule(const std::vector<char>& code);
+    VkShaderModule CreateShaderModule(std::vector<uint32_t>);
 };
 #endif  // !VULKANCONTEXT_H
