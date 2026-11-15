@@ -84,7 +84,7 @@ struct InputSSBO {
 };
 
 struct OutputSSBO {
-    Vertex dataOut[1024 * 1024];
+    Vertex dataOut[2048 * 2048];
 };
 
 class VulkanContext {
@@ -132,7 +132,7 @@ class VulkanContext {
     uint32_t register_texture(VkImageView* texture_image_view,
                               VkSampler* texture_sampler);
 
-    void run_compute_shader();
+    void run_compute_shader(bool is_random = false);
     std::vector<ObjResource> m_objects_to_render = {};
 
     // Reading in SPIRV shaders

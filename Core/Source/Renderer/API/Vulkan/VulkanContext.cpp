@@ -46,10 +46,17 @@
 #include "imgui_impl_vulkan.h"
 
 namespace landscape {
+int WIDTH = 1024u;
+int HEIGHT = 1024u;
+float SCALE = 200.0;
+float AMPLITUDE = 1.0;
+float BASE_0 = 5.4f;
+float BASE_1 = 2.4f;
 float LACUNARITY = 2.0f;
 float PERSISTENCE = 0.52f;
 float FREQUENCY = 0.2f;
 int OCTAVES = 8;
+
 }  // namespace landscape
 
 // This is our little safe playground to move things away from the vulkan global
@@ -73,14 +80,37 @@ void RenderUI(VulkanContext& context_vk) {
                     mat[2][row], mat[3][row]);
     }
     if (ImGui::Button("Generate New Landscape")) {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<float> dist(0.0f, 10.0f);
+        landscape::BASE_0 = dist(gen);
+        landscape::BASE_1 = dist(gen);
         context_vk.new_landscape();
     }
 
-    ImGui::SliderFloat("Lacunarity", &landscape::LACUNARITY, -2.0f, 2.0f);
-    ImGui::SliderFloat("Frequency", &landscape::FREQUENCY, 0.0f, 0.99f);
-    ImGui::SliderInt("Octaves", &landscape::OCTAVES, 1, 32);
-    float MIN_LEVEL = -10.0;
-    float MAX_LEVEL = 10.0;
+    bool width_changed =
+        ImGui::SliderInt("Width", &landscape::WIDTH, 128.0, 2048.0);
+    bool height_changed =
+        ImGui::SliderInt("HEIGHT", &landscape::HEIGHT, 128.0, 2048.0);
+    bool scale_changed =
+        ImGui::SliderFloat("Scale", &landscape::SCALE, 0.0f, 2000.0f);
+    bool amp_changed =
+        ImGui::SliderFloat("Amplitude", &landscape::AMPLITUDE, 0.0f, 4.0f);
+    bool lac_changed =
+        ImGui::SliderFloat("Lacunarity", &landscape::LACUNARITY, -2.0f, 2.0f);
+    // context_vk.new_landscape();
+    bool freq_changed =
+        ImGui::SliderFloat("Frequency", &landscape::FREQUENCY, 0.0f, 0.99f);
+    bool oct_changed = ImGui::SliderInt("Octaves", &landscape::OCTAVES, 1, 32);
+    if (lac_changed || freq_changed || oct_changed || width_changed ||
+        height_changed || scale_changed || amp_changed) {
+        if (context_vk.m_time_accumulator > 0.01) {
+            context_vk.new_landscape();
+            context_vk.m_time_accumulator = 0;
+        }
+    }
+    float MIN_LEVEL = -100.0 / landscape::AMPLITUDE;
+    float MAX_LEVEL = 100.0 / landscape::AMPLITUDE;
     ImGui::SliderFloat(
         "Water Level",
         &context_vk.m_vulkan_global_state->m_fragShaderPushConstantsBindless
@@ -820,7 +850,7 @@ void VulkanContext::describe_scene(std::vector<ObjResource> objectsToRender,
     LightUBO lightUBO;
     int i = 0;
     for (auto light : lightsToRender) {
-        light.position = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        light.position = glm::vec4(0.0f, 30.0f, 0.0f, 1.0f);
         lightUBO.lights[i] = light;
         i++;
         lightUBO.numLights.x = i;
@@ -978,16 +1008,19 @@ void VulkanContext::load_scene_objects() {
 
     Vertex* landscapeVertices = static_cast<Vertex*>(
         m_vulkan_global_state->m_computeOutputBufferMemoryMapped);
-    backend_vk::SetIndices(m_indices, landscapeVertices, 1024, 1024);
+    backend_vk::SetIndices(m_indices, landscapeVertices, landscape::HEIGHT,
+                           landscape::WIDTH);
 
-    for (int i : {0, 1, 1023, 1024, 500000})
-        printf("v%d pos %f %f %f  n %f %f %f\n", i, landscapeVertices[i].pos.x,
-               landscapeVertices[i].pos.y, landscapeVertices[i].pos.z,
-               landscapeVertices[i].normal.x, landscapeVertices[i].normal.y,
-               landscapeVertices[i].normal.z);
+    /// for (int i : {0, 1, 1023, 1024, 500000})
+    ///     printf("v%d pos %f %f %f  n %f %f %f\n", i,
+    ///     landscapeVertices[i].pos.x,
+    ///            landscapeVertices[i].pos.y, landscapeVertices[i].pos.z,
+    ///            landscapeVertices[i].normal.x, landscapeVertices[i].normal.y,
+    ///            landscapeVertices[i].normal.z);
 
-    m_vertices.insert(m_vertices.end(), landscapeVertices,
-                      landscapeVertices + (1024 * 1024));
+    m_vertices.insert(
+        m_vertices.end(), landscapeVertices,
+        landscapeVertices + (landscape::WIDTH * landscape::HEIGHT));
 
     // TODO: Textures in the engine textures folder should be loaded and
     // accessible through handles that can be passed into the create texture
@@ -1039,7 +1072,8 @@ void VulkanContext::new_landscape() {
 
     auto start = std::chrono::steady_clock::now();
     std::copy(
-        landscapeVertices, landscapeVertices + (1024 * 1024),
+        landscapeVertices,
+        landscapeVertices + (landscape::WIDTH * landscape::HEIGHT),
         m_vertices.begin() +
             m_vulkan_global_state->m_meshList[0].m_vertexBufferStartIndex);
     auto end = std::chrono::steady_clock::now();
@@ -2551,8 +2585,8 @@ void VulkanContext::record_command_buffer_compute(
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
                             pipelineLayout, 0, 1, descriptorSet, 0, NULL);
 
-    constexpr uint32_t kLocalSizeX = 1024;  // same as local_size_x in shader
-    constexpr uint32_t kVertexCount = 1024u * 1024u;
+    constexpr uint32_t kLocalSizeX = 128;  // same as local_size_x in shader
+    uint32_t kVertexCount = landscape::WIDTH * landscape::HEIGHT;
     vkCmdDispatch(commandBuffer, (kVertexCount + kLocalSizeX - 1) / kLocalSizeX,
                   1, 1);  // 1024 groups
     // vkCmdDispatch(commandBuffer, ((1024 * 2) + 1023) / 1024, 1, 1);
@@ -3075,7 +3109,7 @@ void VulkanContext::end_single_time_commands(VkCommandBuffer commandBuffer) {
                          &commandBuffer);
 }
 
-void VulkanContext::run_compute_shader() {
+void VulkanContext::run_compute_shader(bool is_random) {
     vkWaitForFences(m_vulkan_global_state->m_logical_device, 1,
                     &m_vulkan_global_state->m_computeFence, VK_TRUE,
                     UINT64_MAX);
@@ -3102,8 +3136,6 @@ void VulkanContext::run_compute_shader() {
         pipelineLayout);
 
     std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<float> dist(0.0f, 10.0f);
     std::uniform_real_distribution<float> amplitude(0.0f, 0.29f);
     std::uniform_real_distribution<float> freq(0.0f, 0.99f);
     std::uniform_real_distribution<float> octaves(1, 8);
@@ -3111,8 +3143,8 @@ void VulkanContext::run_compute_shader() {
     Vertex* in = static_cast<Vertex*>(
         m_vulkan_global_state->m_computeInputBufferMemoryMapped);
     // Base Random
-    in[0].pos.x = dist(gen);
-    in[1].pos.x = dist(gen);
+    in[0].pos.x = landscape::BASE_0;
+    in[1].pos.x = landscape::BASE_1;
     // Lacunarity
     in[2].pos.x = landscape::LACUNARITY;
     // Persistence
@@ -3121,6 +3153,10 @@ void VulkanContext::run_compute_shader() {
     in[4].pos.x = landscape::FREQUENCY;
     // Octaves
     in[5].pos.x = landscape::OCTAVES;
+    in[6].pos.x = landscape::WIDTH;
+    in[7].pos.x = landscape::HEIGHT;
+    in[8].pos.x = landscape::SCALE;
+    in[9].pos.x = landscape::AMPLITUDE;
 
     record_command_buffer_compute(
         m_vulkan_global_state->m_commandBuffersCompute[0], computePipeline,

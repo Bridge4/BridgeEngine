@@ -133,41 +133,65 @@ void main() {
     vec3 snow      = pc.snow_color;
     vec3 finalColor;
     // Linearly interpolate (mix) colors based on fragPos.y height
+    vec3 N = normalize(fragNormal);
+    vec3 worldUp = vec3(0.0, 1.0, 0.0);
+    // y2-y1/x2-x1
+
+    float y1 = fragNormal.y;
+    float y2 = worldUp.y;
+    float x1 = fragNormal.x;
+    float x2 = worldUp.x;
+
+    float slope = (y2-y1)/(x2-x1);
     
-    if (fragPos.y < WATER_LEVEL) {
-        finalColor = deepWater;
-    } else if (fragPos.y < SAND_LEVEL) {
-        float t = (fragPos.y - WATER_LEVEL) / (SAND_LEVEL - WATER_LEVEL);
-        finalColor = mix(deepWater, sand, t);
-    } else if (fragPos.y < GRASS_LEVEL) {
-        float t = (fragPos.y - SAND_LEVEL) / (GRASS_LEVEL - SAND_LEVEL);
-        finalColor = mix(grass, rock, t);
-    } else if (fragPos.y < ROCK_LEVEL) {
-        float t = (fragPos.y - GRASS_LEVEL) / (ROCK_LEVEL - GRASS_LEVEL);
-        finalColor = mix(rock, grass, t);
-    } else {
-        float t = clamp((fragPos.y - ROCK_LEVEL) / (1.0 - ROCK_LEVEL), 0.0, 1.0);
-        finalColor = mix(rock, snow, t);
-    }
+    //if (fragPos.y < WATER_LEVEL) {
+    //    finalColor = deepWater;
+    //} else if (fragPos.y < SAND_LEVEL) {
+    //    float t = (fragPos.y - WATER_LEVEL) / (SAND_LEVEL - WATER_LEVEL);
+    //    finalColor = mix(deepWater, sand, t);
+    //} else if (fragPos.y < GRASS_LEVEL) {
+    //    float t = (fragPos.y - SAND_LEVEL) / (GRASS_LEVEL - SAND_LEVEL);
+    //    finalColor = mix(grass, rock, t);
+    //} else if (fragPos.y < ROCK_LEVEL) {
+    //    float t = (fragPos.y - GRASS_LEVEL) / (ROCK_LEVEL - GRASS_LEVEL);
+    //    finalColor = mix(rock, grass, t);
+    //} else {
+    //    float t = clamp((fragPos.y - ROCK_LEVEL) / (1.0 - ROCK_LEVEL), 0.0, 1.0);
+    //    finalColor = mix(rock, snow, t);
+    //}
     if (fragPos.y < WATER_LEVEL) {
         finalColor = deepWater;
         roughness = 0.1;
-    } else if (fragPos.y < SAND_LEVEL) {
-        float t = smoothstep(WATER_LEVEL, SAND_LEVEL, fragPos.y);
-        finalColor = mix(deepWater, sand, t);
-    } else if (fragPos.y < GRASS_LEVEL) {
-        float t = smoothstep(SAND_LEVEL, GRASS_LEVEL, fragPos.y);
-        finalColor = mix(sand, grass, t);
-    } else if (fragPos.y < ROCK_LEVEL) {
-        float t = smoothstep(GRASS_LEVEL, ROCK_LEVEL, fragPos.y);
-        finalColor = mix(grass, rock, t);
-    } 
-    //else {
-    //    float t = smoothstep(ROCK_LEVEL, ROCK_LEVEL + 1.0f, fragPos.y);
-    //    finalColor = mix(rock, snow, t);
-    //}
+    }
+    else {
+       if (fragPos.y < SAND_LEVEL) {
+          float t = smoothstep(WATER_LEVEL, SAND_LEVEL, fragPos.y);
+          finalColor = mix(deepWater, sand, t);
+      } else if (fragPos.y < GRASS_LEVEL) {
+          float t = smoothstep(SAND_LEVEL, GRASS_LEVEL, fragPos.y);
+          finalColor = mix(sand, grass, t);
+      }
+
+      if (abs(slope) > 0.5){
+        float t = smoothstep(ROCK_LEVEL, ROCK_LEVEL + 1.0f, fragPos.y);
+        finalColor = mix(finalColor, snow, t);
+      }
+      else {
+          float t = smoothstep(GRASS_LEVEL, ROCK_LEVEL, fragPos.y);
+          finalColor = mix(finalColor, rock, t);
+      }
+    }
+
+
+    //else if (fragPos.y < ROCK_LEVEL) {
+    //    float t = smoothstep(GRASS_LEVEL, ROCK_LEVEL, fragPos.y);
+    //    finalColor = mix(grass, rock, t);
+    //} 
 
     albedo = finalColor;
+
+
+
 
     if (has(pc.albedoIdx))
         albedo = texture(textures[pc.albedoIdx], fragTexCoord).rgb;
@@ -193,7 +217,6 @@ void main() {
 
     roughness = clamp(roughness, 0.04, 1.0);
     // Normalize inputs
-    vec3 N = normalize(fragNormal);
     vec3 V = normalize(camera.cameraPos.xyz - fragPos);
 
     vec3 F0 = vec3(0.04);

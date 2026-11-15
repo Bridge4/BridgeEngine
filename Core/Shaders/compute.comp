@@ -4,7 +4,7 @@
 
 // Define the local workgroup size (X, Y, Z dimensions)
 // A size of (128, 1, 1) means this group processes 128 items in parallel
-layout(local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 
 struct Vertex {
     float px, py, pz, _p0;   // offset  0
@@ -118,11 +118,11 @@ void generate_animation_frames(int number_of_frames ) {
 
 void main() {
     uint idx = gl_GlobalInvocationID.x;
-    const uint gridWidth  = 1024;
-    const uint gridHeight = 1024;
+    const uint gridWidth  = int(dataIn[6].px);
+    const uint gridHeight = int(dataIn[7].px);
     if (idx >= gridWidth * gridHeight) return;
 
-    const float meshScale = 200.0;
+    const float meshScale = dataIn[8].px;
     uint x = idx % gridWidth;
     uint y = idx / gridWidth;
 
@@ -141,7 +141,7 @@ void main() {
     vec3 n = normalize(vec3(hL - hR, 2.0 * cell, hD - hU));
 
     dataOut[idx].px = (u - 0.5) * meshScale;
-    dataOut[idx].py = h;
+    dataOut[idx].py = h * dataIn[9].px;
     dataOut[idx].pz = (v - 0.5) * meshScale;
     dataOut[idx].cr = 1.0; dataOut[idx].cg = 1.0; dataOut[idx].cb = 1.0;
     dataOut[idx].nx = n.x; dataOut[idx].ny = n.y; dataOut[idx].nz = n.z;
