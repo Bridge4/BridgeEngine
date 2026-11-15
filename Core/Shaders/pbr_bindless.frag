@@ -127,6 +127,7 @@ void main() {
     vec3  emissive  = vec3(0.0);
 
     vec3 deepWater = pc.water_color;
+    //vec3 deepWater = vec3(1.0, 1.0, 1.0);
     vec3 sand      = pc.sand_color;
     vec3 grass     = pc.grass_color;
     vec3 rock      = pc.rock_color;
@@ -172,13 +173,14 @@ void main() {
           finalColor = mix(sand, grass, t);
       }
 
-      if (abs(slope) > 0.5){
+      if (abs(slope) < 0.3){
         float t = smoothstep(ROCK_LEVEL, ROCK_LEVEL + 1.0f, fragPos.y);
-        finalColor = mix(finalColor, snow, t);
+        finalColor = mix(rock, snow, t);
       }
       else {
           float t = smoothstep(GRASS_LEVEL, ROCK_LEVEL, fragPos.y);
-          finalColor = mix(finalColor, rock, t);
+          finalColor = mix(grass, rock, t);
+          roughness = 0.4;
       }
     }
 

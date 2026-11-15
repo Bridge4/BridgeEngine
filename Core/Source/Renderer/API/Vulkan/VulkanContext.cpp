@@ -3,7 +3,9 @@
 #include <vulkan/vulkan_core.h>
 
 #include <cassert>
+#include <filesystem>
 #include <random>
+#include <system_error>
 #include <thread>
 
 #include "Source/Engine.h"
@@ -80,6 +82,56 @@ std::string read_shader(const std::string& file_name) {
     file.close();
 
     return buffer;
+}
+
+std::vector<uint32_t> compile_shader(const std::string& source_name,
+                                     shaderc_shader_kind kind,
+                                     const std::string& source_code,
+                                     bool optimize = false) {
+    shaderc::Compiler compiler;
+    shaderc::CompileOptions options;
+
+    if (optimize) {
+        options.SetOptimizationLevel(shaderc_optimization_level_performance);
+    }
+
+    shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(
+        source_code, kind, source_name.c_str(), options);
+
+    if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
+        std::cout << "Shader compilation error:\n"
+                  << module.GetErrorMessage() << std::endl;
+        return {};
+    }
+
+    return {module.cbegin(), module.cend()};
+}
+namespace fs = std::filesystem;
+
+// TODO: We need a way to associate shaders with the pipeline layout and
+// pipeline that needs to be rebuilt after recompilation
+
+std::vector<WatchedShader> check_for_shader_recompilation(
+    std::vector<WatchedShader>& watched_shaders) {
+    std::vector<WatchedShader> shaders_requiring_recompilation = {};
+    if (watched_shaders.empty()) {
+        return {};
+    }
+    for (int i = 0; i < watched_shaders.size(); i++) {
+        std::error_code ec;
+        fs::file_time_type last_write =
+            fs::last_write_time(watched_shaders[i].file_path, ec);
+        if (ec) {
+            continue;
+        }
+        if (last_write != watched_shaders[i].current_write_time) {
+            // We need to mark for recompile this shader and mark its pipeline
+            // as dirty
+            shaders_requiring_recompilation.push_back(watched_shaders[i]);
+            watched_shaders[i].current_write_time = last_write;
+        }
+    }
+    return shaders_requiring_recompilation;
 }
 
 void RenderUI(VulkanContext& context_vk) {
@@ -169,6 +221,10 @@ void RenderUI(VulkanContext& context_vk) {
     ImGui::ColorPicker3("Rock Color",
                         &context_vk.m_vulkan_global_state
                              ->m_fragShaderPushConstantsBindless.rock_color.x);
+
+    ImGui::ColorPicker3("Snow Color",
+                        &context_vk.m_vulkan_global_state
+                             ->m_fragShaderPushConstantsBindless.snow_color.x);
     // Test frame rates (verifies NewFrame delta timing is working)
     // ImGui::Text("Performance: %.3f ms/frame (%.1f FPS)",
     //            1000.0f / ImGui::GetIO().Framerate,
@@ -474,28 +530,6 @@ uint32_t find_memory_type(VkPhysicalDevice& physical_device,
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-std::vector<uint32_t> compile_shader(const std::string& source_name,
-                                     shaderc_shader_kind kind,
-                                     const std::string& source_code,
-                                     bool optimize = false) {
-    shaderc::Compiler compiler;
-    shaderc::CompileOptions options;
-
-    if (optimize) {
-        options.SetOptimizationLevel(shaderc_optimization_level_performance);
-    }
-
-    shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(
-        source_code, kind, source_name.c_str(), options);
-
-    if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
-        std::cout << "Shader compilation error:\n"
-                  << module.GetErrorMessage() << std::endl;
-        return {};
-    }
-
-    return {module.cbegin(), module.cend()};
-}
 }  // namespace backend_vk
 
 void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
@@ -786,22 +820,43 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
             backend_vk::read_shader(SHADERS_DIR "scene.vert");
         std::string frag_bindless_code =
             backend_vk::read_shader(SHADERS_DIR "pbr_bindless.frag");
-        auto vert_scene = backend_vk::compile_shader(
+
+        std::vector<uint32_t> compiled_vert_scene = backend_vk::compile_shader(
             "Scene Vertex Shader",
             shaderc_shader_kind::shaderc_glsl_default_vertex_shader,
             vert_scene_code);
 
-        auto frag_bindless = backend_vk::compile_shader(
-            "Bindless Fragment Shader",
-            shaderc_shader_kind::shaderc_glsl_default_fragment_shader,
-            frag_bindless_code);
+        std::vector<uint32_t> compiled_frag_bindless =
+            backend_vk::compile_shader(
+                "Bindless Fragment Shader",
+                shaderc_shader_kind::shaderc_glsl_default_fragment_shader,
+                frag_bindless_code);
         // std::vector<char> vert_scene = read_file(SHADERS_DIR "scene.spv");
         // std::vector<char> frag_bindless =
         //     read_file(SHADERS_DIR "pbr_bindless.spv");
         m_descriptor_set_handler
             ->CreateTexturedPBRDescriptorSetLayoutBindless();
-        CreatePBRPipelineBindless(vert_scene, frag_bindless,
+        CreatePBRPipelineBindless(compiled_vert_scene, compiled_frag_bindless,
                                   &m_vulkan_global_state->m_pbrPipeline);
+
+        backend_vk::WatchedShader vs;
+        vs.file_path = SHADERS_DIR "scene.vert";
+        vs.pipeline = backend_vk::EVulkanPipeline::BindlessPBR;
+        vs.current_write_time =
+            std::filesystem::last_write_time(SHADERS_DIR "scene.vert");
+        vs.last_write_time =
+            std::filesystem::last_write_time(SHADERS_DIR "scene.vert");
+
+        backend_vk::WatchedShader fs;
+        fs.file_path = SHADERS_DIR "pbr_bindless.frag";
+        fs.pipeline = backend_vk::EVulkanPipeline::BindlessPBR;
+        fs.current_write_time =
+            std::filesystem::last_write_time(SHADERS_DIR "pbr_bindless.frag");
+        fs.last_write_time =
+            std::filesystem::last_write_time(SHADERS_DIR "pbr_bindless.frag");
+
+        m_watched_shaders.push_back(vs);
+        m_watched_shaders.push_back(fs);
     } else {
         // Create Per-Mesh Descriptor Set Layout
         // m_descriptor_set_handler->CreateTexturedPBRDescriptorSetLayout();
@@ -952,6 +1007,49 @@ uint32_t VulkanContext::register_texture(VkImageView* textureImageView,
 
 void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
                          float deltaTime) {
+    auto shaders_to_recompile =
+        backend_vk::check_for_shader_recompilation(m_watched_shaders);
+
+    if (!shaders_to_recompile.empty()) {
+        std::vector<int> indices_to_drop = {};
+        for (int i = 0; i < shaders_to_recompile.size(); i++) {
+            switch (shaders_to_recompile[i].pipeline) {
+                case (backend_vk::EVulkanPipeline::BindlessPBR): {
+                    std::string vert_scene_code =
+                        backend_vk::read_shader(SHADERS_DIR "scene.vert");
+                    std::string frag_bindless_code = backend_vk::read_shader(
+                        SHADERS_DIR "pbr_bindless.frag");
+
+                    auto vert_scene = backend_vk::compile_shader(
+                        "Scene Vertex Shader",
+                        shaderc_shader_kind::shaderc_glsl_default_vertex_shader,
+                        vert_scene_code);
+
+                    auto frag_bindless = backend_vk::compile_shader(
+                        "Bindless Fragment Shader",
+                        shaderc_shader_kind::
+                            shaderc_glsl_default_fragment_shader,
+                        frag_bindless_code);
+                    // std::vector<char> vert_scene = read_file(SHADERS_DIR
+                    // "scene.spv"); std::vector<char> frag_bindless =
+                    //     read_file(SHADERS_DIR "pbr_bindless.spv");
+                    // m_descriptor_set_handler
+                    //    ->CreateTexturedPBRDescriptorSetLayoutBindless();
+                    vkDeviceWaitIdle(m_vulkan_global_state->m_logical_device);
+                    vkDestroyPipeline(m_vulkan_global_state->m_logical_device,
+                                      m_vulkan_global_state->m_pbrPipeline,
+                                      nullptr);
+                    CreatePBRPipelineBindless(
+                        vert_scene, frag_bindless,
+                        &m_vulkan_global_state->m_pbrPipeline, true);
+
+                    indices_to_drop.push_back(i);
+                    break;
+                }
+            }
+        }
+    }
+
     m_time_accumulator += deltaTime;
 
     // if (m_time_accumulator > 3.0f) {
@@ -1608,8 +1706,8 @@ void VulkanContext::CreateShadowPassPipeline(
 }
 
 void VulkanContext::CreatePBRPipelineBindless(
-    std::vector<uint32_t> vertShaderCode, std::vector<uint32_t> fragShaderCode,
-    VkPipeline* pipeline) {
+    std::vector<uint32_t>& vertShaderCode,
+    std::vector<uint32_t>& fragShaderCode, VkPipeline* pipeline, bool rebuild) {
     VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
 
@@ -1802,12 +1900,14 @@ void VulkanContext::CreatePBRPipelineBindless(
     pipelineLayoutInfo.pushConstantRangeCount = 2;
     pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
 
-    if (vkCreatePipelineLayout(m_vulkan_global_state->m_logical_device,
-                               &pipelineLayoutInfo, nullptr,
-                               &m_vulkan_global_state->m_pbrPipelineLayout) !=
-        VK_SUCCESS) {
-        throw std::runtime_error("failed to create pipeline layout!");
-    };
+    if (!rebuild) {
+        if (vkCreatePipelineLayout(
+                m_vulkan_global_state->m_logical_device, &pipelineLayoutInfo,
+                nullptr,
+                &m_vulkan_global_state->m_pbrPipelineLayout) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create pipeline layout!");
+        };
+    }
 
     // Finally creating graphics pipeline object and populating with necessary
     // information
@@ -3086,7 +3186,7 @@ void VulkanContext::destroy() {
     m_windowing_backend->DestroyGLFW();
 }
 
-VkShaderModule VulkanContext::CreateShaderModule(std::vector<uint32_t> code) {
+VkShaderModule VulkanContext::CreateShaderModule(std::vector<uint32_t>& code) {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = (code.cend() - code.cbegin()) * sizeof(uint32_t);

@@ -41,9 +41,9 @@
 
 // C++ STANDARD INCLUDES
 #include <cstdint>  // Necessary for uint32_t
+#include <filesystem>
 #include <fstream>
 #include <vector>
-
 // Forward Declarations
 class SwapChainHandler;
 class BufferHandler;
@@ -53,6 +53,14 @@ class VulkanGlobalState;
 class Mesh3D;
 
 namespace backend_vk {
+
+enum EVulkanPipeline { BindlessPBR };
+struct WatchedShader {
+    std::string file_path;
+    std::filesystem::file_time_type last_write_time;
+    std::filesystem::file_time_type current_write_time;
+    EVulkanPipeline pipeline;
+};
 
 std::string read_shader(const std::string& file_name);
 void RenderUI(VulkanContext& context_vk);
@@ -178,6 +186,10 @@ class VulkanContext {
 
     CameraController* m_cameraController;
 
+    // We need some sort of shader watch list vector that we will loop through
+    // every renderer tick and check for changes to shaders
+    std::vector<backend_vk::WatchedShader> m_watched_shaders = {};
+
    private:
     // DeviceHandler* m_deviceHandler;
     SwapChainHandler* m_swap_chain_handler;
@@ -208,9 +220,9 @@ class VulkanContext {
                                   std::vector<uint32_t> fragShaderCode,
                                   VkPipeline* pipeline);
     // === BINDLESS === //
-    void CreatePBRPipelineBindless(std::vector<uint32_t> vertShaderCode,
-                                   std::vector<uint32_t> fragShaderCode,
-                                   VkPipeline* pipeline);
+    void CreatePBRPipelineBindless(std::vector<uint32_t>& vertShaderCode,
+                                   std::vector<uint32_t>& fragShaderCode,
+                                   VkPipeline* pipeline, bool rebuild = false);
     void CreateShadowPassPipelineBindless(std::vector<uint32_t> vertShaderCode,
                                           std::vector<uint32_t> fragShaderCode,
                                           VkPipeline* pipeline);
@@ -276,6 +288,6 @@ class VulkanContext {
     // void updateUniformBuffer(uint32_t currentImage);
 
     // SHADER MODULES
-    VkShaderModule CreateShaderModule(std::vector<uint32_t>);
+    VkShaderModule CreateShaderModule(std::vector<uint32_t>& code);
 };
 #endif  // !VULKANCONTEXT_H
