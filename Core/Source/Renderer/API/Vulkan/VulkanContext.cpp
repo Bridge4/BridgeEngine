@@ -60,12 +60,16 @@ float LACUNARITY = 2.0f;
 float PERSISTENCE = 0.52f;
 float FREQUENCY = 0.2f;
 int OCTAVES = 8;
+glm::vec3 CLEAR_COLOR = glm::vec3(69 / 255, 118 / 255, 135 / 255);
 
 }  // namespace landscape
 
 // This is our little safe playground to move things away from the vulkan global
 // state
 namespace backend_vk {
+
+VkPrimitiveTopology DRAW_TYPE = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
 std::string read_shader(const std::string& file_name) {
     std::ifstream file(file_name, std::ios::ate | std::ios::binary);
 
@@ -110,10 +114,9 @@ namespace fs = std::filesystem;
 
 // TODO: We need a way to associate shaders with the pipeline layout and
 // pipeline that needs to be rebuilt after recompilation
-
-std::vector<WatchedShader> check_for_shader_recompilation(
-    std::vector<WatchedShader>& watched_shaders) {
-    std::vector<WatchedShader> shaders_requiring_recompilation = {};
+std::vector<int> check_for_shader_recompilation(
+    std::vector<Shader>& watched_shaders) {
+    std::vector<int> shaders_requiring_recompilation = {};
     if (watched_shaders.empty()) {
         return {};
     }
@@ -127,14 +130,14 @@ std::vector<WatchedShader> check_for_shader_recompilation(
         if (last_write != watched_shaders[i].current_write_time) {
             // We need to mark for recompile this shader and mark its pipeline
             // as dirty
-            shaders_requiring_recompilation.push_back(watched_shaders[i]);
+            shaders_requiring_recompilation.push_back(i);
             watched_shaders[i].current_write_time = last_write;
         }
     }
     return shaders_requiring_recompilation;
 }
 
-void RenderUI(VulkanContext& context_vk) {
+void render_ui(VulkanContext& context_vk) {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -160,6 +163,37 @@ void RenderUI(VulkanContext& context_vk) {
         context_vk.new_landscape();
     }
 
+    const char* items[] = {"Mesh", "Line", "Point"};
+    static int current_item = 0;
+
+    if (ImGui::BeginCombo("Draw Type", items[current_item])) {
+        for (int n = 0; n < IM_ARRAYSIZE(items); n++) {
+            const bool is_selected = (current_item == n);
+            if (ImGui::Selectable(items[n], is_selected)) {
+                current_item = n;
+            }
+
+            if (is_selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+    switch (current_item) {
+        case 0: {
+            backend_vk::DRAW_TYPE = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            break;
+        }
+        case 1: {
+            backend_vk::DRAW_TYPE = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+            break;
+        }
+        case 2: {
+            backend_vk::DRAW_TYPE = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+            break;
+        }
+    }
+
     bool width_changed =
         ImGui::SliderInt("Width", &landscape::WIDTH, 128.0, 2048.0);
     bool height_changed =
@@ -183,6 +217,7 @@ void RenderUI(VulkanContext& context_vk) {
     }
     float MIN_LEVEL = -20.0;
     float MAX_LEVEL = 10.0;
+    ImGui::ColorPicker3("Background Clear Color", &landscape::CLEAR_COLOR.x);
     ImGui::SliderFloat(
         "Water Level",
         &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
@@ -821,10 +856,11 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     // CreateTextureSamplerShadowPass();
 
     if (m_vulkan_global_state->m_renderingMode == ERenderingMode::Bindless) {
-        std::string vert_scene_code =
-            backend_vk::read_shader(SHADERS_DIR "scene.vert");
+        std::string vert_file_path = SHADERS_DIR "scene.vert";
+        std::string frag_file_path = SHADERS_DIR "pbr_bindless.frag";
+        std::string vert_scene_code = backend_vk::read_shader(vert_file_path);
         std::string frag_bindless_code =
-            backend_vk::read_shader(SHADERS_DIR "pbr_bindless.frag");
+            backend_vk::read_shader(frag_file_path);
 
         std::vector<uint32_t> compiled_vert_scene = backend_vk::compile_shader(
             "Scene Vertex Shader",
@@ -841,27 +877,30 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
         //     read_file(SHADERS_DIR "pbr_bindless.spv");
         m_descriptor_set_handler
             ->CreateTexturedPBRDescriptorSetLayoutBindless();
-        CreatePBRPipelineBindless(compiled_vert_scene, compiled_frag_bindless,
-                                  &m_vulkan_global_state->m_pbrPipeline);
+        m_pipelines.push_back(CreatePBRPipelineBindless(
+            compiled_vert_scene, compiled_frag_bindless, vert_file_path,
+            frag_file_path, &m_vulkan_global_state->m_pbrPipeline));
 
-        backend_vk::WatchedShader vs;
-        vs.file_path = SHADERS_DIR "scene.vert";
-        vs.pipeline = backend_vk::EVulkanPipeline::BindlessPBR;
-        vs.current_write_time =
-            std::filesystem::last_write_time(SHADERS_DIR "scene.vert");
-        vs.last_write_time =
-            std::filesystem::last_write_time(SHADERS_DIR "scene.vert");
+        // backend_vk::Shader vs;
+        // vs.file_path = SHADERS_DIR "scene.vert";
+        // vs.pipeline = backend_vk::EVulkanPipeline::BindlessPBR;
+        // vs.current_write_time =
+        //     std::filesystem::last_write_time(SHADERS_DIR "scene.vert");
+        // vs.last_write_time =
+        //     std::filesystem::last_write_time(SHADERS_DIR "scene.vert");
 
-        backend_vk::WatchedShader fs;
-        fs.file_path = SHADERS_DIR "pbr_bindless.frag";
-        fs.pipeline = backend_vk::EVulkanPipeline::BindlessPBR;
-        fs.current_write_time =
-            std::filesystem::last_write_time(SHADERS_DIR "pbr_bindless.frag");
-        fs.last_write_time =
-            std::filesystem::last_write_time(SHADERS_DIR "pbr_bindless.frag");
+        // backend_vk::Shader fs;
+        // fs.file_path = SHADERS_DIR "pbr_bindless.frag";
+        // fs.pipeline = backend_vk::EVulkanPipeline::BindlessPBR;
+        // fs.current_write_time =
+        //     std::filesystem::last_write_time(SHADERS_DIR
+        //     "pbr_bindless.frag");
+        // fs.last_write_time =
+        //     std::filesystem::last_write_time(SHADERS_DIR
+        //     "pbr_bindless.frag");
 
-        m_watched_shaders.push_back(vs);
-        m_watched_shaders.push_back(fs);
+        // m_shaders.push_back(vs);
+        // m_shaders.push_back(fs);
     } else {
         // Create Per-Mesh Descriptor Set Layout
         // m_descriptor_set_handler->CreateTexturedPBRDescriptorSetLayout();
@@ -1012,51 +1051,87 @@ uint32_t VulkanContext::register_texture(VkImageView* textureImageView,
 
 void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
                          float deltaTime) {
-    auto shaders_to_recompile =
-        backend_vk::check_for_shader_recompilation(m_watched_shaders);
+    // Instead of checking shaders we need to recompile, we should check our
+    // pipeline states to see if they are CLEAN
 
-    if (!shaders_to_recompile.empty()) {
-        std::vector<int> indices_to_drop = {};
-        for (int i = 0; i < shaders_to_recompile.size(); i++) {
-            switch (shaders_to_recompile[i].pipeline) {
-                case (backend_vk::EVulkanPipeline::BindlessPBR): {
-                    std::string vert_scene_code =
-                        backend_vk::read_shader(SHADERS_DIR "scene.vert");
-                    std::string frag_bindless_code = backend_vk::read_shader(
-                        SHADERS_DIR "pbr_bindless.frag");
+    for (auto pipeline : m_pipelines) {
+        if (pipeline.type == backend_vk::GRAPHICS) {
+            VkGraphicsPipelineCreateInfo gfx_create_info =
+                pipeline.graphics_create_info;
 
-                    auto vert_scene = backend_vk::compile_shader(
-                        "Scene Vertex Shader",
+            // Recompile all edited shaders
+            std::vector<int> edited_shader_indices =
+                backend_vk::check_for_shader_recompilation(pipeline.shaders);
+            if (edited_shader_indices.empty()) {
+                continue;
+            } else {
+                pipeline.is_dirty = true;
+                for (int i = 0; i < edited_shader_indices.size(); i++) {
+                    backend_vk::Shader& shader = pipeline.shaders[i];
+                    std::string shader_code_glsl =
+                        backend_vk::read_shader(shader.file_path);
+
+                    auto shader_code_spirv = backend_vk::compile_shader(
+                        shader.source_name,
                         shaderc_shader_kind::shaderc_glsl_default_vertex_shader,
-                        vert_scene_code);
+                        shader_code_glsl);
 
-                    auto frag_bindless = backend_vk::compile_shader(
-                        "Bindless Fragment Shader",
-                        shaderc_shader_kind::
-                            shaderc_glsl_default_fragment_shader,
-                        frag_bindless_code);
-                    if (vert_scene.empty() || frag_bindless.empty()) {
-                        std::cout << "SHADERS INVALID\n";
+                    // If compilation fails we don't overwrite the
+                    // shader spirv code, and we set the pipeline to
+                    // clean so we dont infinitely loop
+                    if (!shader_code_spirv.empty()) {
+                        std::cout << "SHADER " << i
+                                  << " SUCCESSFULLY RECOMPILED\n";
+                        shader.spirv_code = shader_code_spirv;
                     }
-                    // std::vector<char> vert_scene = read_file(SHADERS_DIR
-                    // "scene.spv"); std::vector<char> frag_bindless =
-                    //     read_file(SHADERS_DIR "pbr_bindless.spv");
-                    // m_descriptor_set_handler
-                    //    ->CreateTexturedPBRDescriptorSetLayoutBindless();
-                    vkDeviceWaitIdle(m_vulkan_global_state->m_logical_device);
-                    vkDestroyPipeline(m_vulkan_global_state->m_logical_device,
-                                      m_vulkan_global_state->m_pbrPipeline,
-                                      nullptr);
-                    CreatePBRPipelineBindless(
-                        vert_scene, frag_bindless,
-                        &m_vulkan_global_state->m_pbrPipeline, true);
-
-                    indices_to_drop.push_back(i);
-                    break;
                 }
             }
+            if (pipeline.is_dirty) {
+                RebuildPBRPipelineBindless(pipeline);
+                pipeline.is_dirty = false;
+            }
+        } else if (pipeline.type == backend_vk::COMPUTE) {
         }
     }
+
+    // if (!shaders_to_recompile.empty()) {
+    //     std::vector<int> indices_to_drop = {};
+    //     for (int i = 0; i < shaders_to_recompile.size(); i++) {
+    //         switch (shaders_to_recompile[i].pipeline) {
+    //             case (backend_vk::EVulkanPipeline::BindlessPBR): {
+    //                 std::string vert_scene_code =
+    //                     backend_vk::read_shader(SHADERS_DIR "scene.vert");
+    //                 std::string frag_bindless_code = backend_vk::read_shader(
+    //                     SHADERS_DIR "pbr_bindless.frag");
+
+    //                auto vert_scene = backend_vk::compile_shader(
+    //                    "Scene Vertex Shader",
+    //                    shaderc_shader_kind::shaderc_glsl_default_vertex_shader,
+    //                    vert_scene_code);
+
+    //                auto frag_bindless = backend_vk::compile_shader(
+    //                    "Bindless Fragment Shader",
+    //                    shaderc_shader_kind::
+    //                        shaderc_glsl_default_fragment_shader,
+    //                    frag_bindless_code);
+    //                if (vert_scene.empty() || frag_bindless.empty()) {
+    //                    std::cout << "SHADERS INVALID\n";
+    //                }
+    //                // std::vector<char> vert_scene = read_file(SHADERS_DIR
+    //                // "scene.spv"); std::vector<char> frag_bindless =
+    //                //     read_file(SHADERS_DIR "pbr_bindless.spv");
+    //                // m_descriptor_set_handler
+    //                //    ->CreateTexturedPBRDescriptorSetLayoutBindless();
+    //                CreatePBRPipelineBindless(
+    //                    vert_scene, frag_bindless,
+    //                    &m_vulkan_global_state->m_pbrPipeline, true);
+
+    //                indices_to_drop.push_back(i);
+    //                break;
+    //            }
+    //        }
+    //    }
+    //}
 
     m_time_accumulator += deltaTime;
 
@@ -1066,7 +1141,7 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
     //     //  t.detach();
     //     m_time_accumulator = 0.0f;
     // }
-    backend_vk::RenderUI(*this);
+    backend_vk::render_ui(*this);
 
     m_cameraController->HandleInputOrbit(deltaTime);
 
@@ -1344,7 +1419,7 @@ void VulkanContext::CreatePBRPipeline(std::vector<uint32_t> vertShaderCode,
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType =
         VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssembly.topology = backend_vk::DRAW_TYPE;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
     // Viewports and Scissors
@@ -1571,7 +1646,7 @@ void VulkanContext::CreateShadowPassPipeline(
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType =
         VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssembly.topology = backend_vk::DRAW_TYPE;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
     // Viewports and Scissors
@@ -1713,35 +1788,83 @@ void VulkanContext::CreateShadowPassPipeline(
                           vertShaderModule, nullptr);
 }
 
-void VulkanContext::CreatePBRPipelineBindless(
-    std::vector<uint32_t>& vertShaderCode,
-    std::vector<uint32_t>& fragShaderCode, VkPipeline* pipeline, bool rebuild) {
-    VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
-    VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
+backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
+    std::vector<uint32_t>& vert_shader_code,
+    std::vector<uint32_t>& frag_shader_code, const std::string& vert_file_path,
+    const std::string& frag_file_path, VkPipeline* pipeline) {
+    backend_vk::Pipeline vk_pipeline;
+    // If the pipeline is being rebuilt we will expect a cached_pipeline to be
+    // passed with the necessary fields modified so the pipeline can be
+    // recreated
+    // VkPushConstantRange vertPushConstantRange{};
+    // vertPushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    // vertPushConstantRange.offset = 0;
+    // vertPushConstantRange.size = sizeof(VertexShaderPushConstants);
+
+    VkPushConstantRange fragPushConstantRange{};
+    fragPushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragPushConstantRange.offset = 0;
+    fragPushConstantRange.size = sizeof(FragShaderPushConstantsBindless);
+
+    std::array<VkPushConstantRange, 1> pushConstantRanges;
+    // pushConstantRanges[0] = vertPushConstantRange;
+    pushConstantRanges[0] = fragPushConstantRange;
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    std::vector<VkDescriptorSetLayout> bindlessDescriptorSetLayouts;
+    bindlessDescriptorSetLayouts.push_back(
+        m_vulkan_global_state->m_sceneDescriptorSetLayout);
+    bindlessDescriptorSetLayouts.push_back(
+        m_vulkan_global_state->m_texturedPBRDescriptorSetLayoutBindless);
+    bindlessDescriptorSetLayouts.push_back(
+        m_vulkan_global_state->m_bindlessDescriptorSetLayout);
+    pipelineLayoutInfo.setLayoutCount = bindlessDescriptorSetLayouts.size();
+    pipelineLayoutInfo.pSetLayouts = bindlessDescriptorSetLayouts.data();
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
+
+    if (vkCreatePipelineLayout(m_vulkan_global_state->m_logical_device,
+                               &pipelineLayoutInfo, nullptr,
+                               &m_vulkan_global_state->m_pbrPipelineLayout) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to create pipeline layout!");
+    };
+
+    VkShaderModule vert_shader_module = CreateShaderModule(vert_shader_code);
+    VkShaderModule frag_shader_module = CreateShaderModule(frag_shader_code);
+    backend_vk::Shader vs;
+    vs.file_path = vert_file_path;
+    // vs.pipeline = backend_vk::EVulkanPipeline::BindlessPBR;
+    vs.current_write_time = std::filesystem::last_write_time(vert_file_path);
+    vs.last_write_time = vs.current_write_time;
+    vs.spirv_code = vert_shader_code;
+
+    backend_vk::Shader fs;
+    fs.file_path = frag_file_path;
+    // fs.pipeline = backend_vk::EVulkanPipeline::BindlessPBR;
+    fs.current_write_time = std::filesystem::last_write_time(frag_file_path);
+    fs.last_write_time = fs.current_write_time;
+    fs.spirv_code = frag_shader_code;
+
+    // Add the shaders to the list of shaders associated with this pipeline
+    vk_pipeline.shaders.push_back(vs);
+    vk_pipeline.shaders.push_back(fs);
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType =
         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
 
-    // IMPORTANT NOTE!!!
-    /*
-        The next two members specify the shader module containing the code, and
-       the function to invoke, known as the entrypoint. That means that it's
-       possible to combine multiple fragment shaders into a single shader module
-       and use different entry points to differentiate between their behaviors.
-       In this case we'll stick to the standard main, however.
-    */
-
     // Shader module creation
-    vertShaderStageInfo.module = vertShaderModule;
+    vertShaderStageInfo.module = vert_shader_module;
     vertShaderStageInfo.pName = "main";
 
     VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
     fragShaderStageInfo.sType =
         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragShaderStageInfo.module = fragShaderModule;
+    fragShaderStageInfo.module = frag_shader_module;
     fragShaderStageInfo.pName = "main";
 
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo,
@@ -1776,13 +1899,15 @@ void VulkanContext::CreatePBRPipelineBindless(
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType =
         VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    // Rather than using the global variable we will use the pipeline data
+    inputAssembly.topology = backend_vk::DRAW_TYPE;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
     // Viewports and Scissors
 
     // The viewport takes the swapchain images and transforms them to
-    // framebuffers. Here we are setting the viewport to the swapchain images
+    // framebuffers. Here we are setting the viewport to the swapchain
+    // images
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -1809,11 +1934,11 @@ void VulkanContext::CreatePBRPipelineBindless(
     VkPipelineRasterizationStateCreateInfo rasterizer{};
     rasterizer.sType =
         VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    // depthClampEnable : Whether or not things outside the near and far planes
-    // are discarded or clamped to them
+    // depthClampEnable : Whether or not things outside the near and far
+    // planes are discarded or clamped to them
     rasterizer.depthClampEnable = VK_FALSE;
-    // rasterizerDiscardEnable : Allows geometry to pass through the rasterizer
-    // stage. If disabled, disables output to framebuffer.
+    // rasterizerDiscardEnable : Allows geometry to pass through the
+    // rasterizer stage. If disabled, disables output to framebuffer.
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
     // VK_POLYGON_MODE_FILL = Fill in shape
 
@@ -1880,45 +2005,10 @@ void VulkanContext::CreatePBRPipelineBindless(
     colorBlending.blendConstants[2] = 0.0f;  // Optional
     colorBlending.blendConstants[3] = 0.0f;  // Optional
 
-    VkPushConstantRange vertPushConstantRange{};
-    vertPushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    vertPushConstantRange.offset = 0;
-    vertPushConstantRange.size = sizeof(VertexShaderPushConstants);
+    vk_pipeline.pipeline_layout = &m_vulkan_global_state->m_pbrPipelineLayout;
 
-    VkPushConstantRange fragPushConstantRange{};
-    fragPushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragPushConstantRange.offset = 64;
-    fragPushConstantRange.size = sizeof(FragShaderPushConstantsBindless);
-
-    std::array<VkPushConstantRange, 2> pushConstantRanges;
-    pushConstantRanges[0] = vertPushConstantRange;
-    pushConstantRanges[1] = fragPushConstantRange;
-
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    std::vector<VkDescriptorSetLayout> bindlessDescriptorSetLayouts;
-    bindlessDescriptorSetLayouts.push_back(
-        m_vulkan_global_state->m_sceneDescriptorSetLayout);
-    bindlessDescriptorSetLayouts.push_back(
-        m_vulkan_global_state->m_texturedPBRDescriptorSetLayoutBindless);
-    bindlessDescriptorSetLayouts.push_back(
-        m_vulkan_global_state->m_bindlessDescriptorSetLayout);
-    pipelineLayoutInfo.setLayoutCount = bindlessDescriptorSetLayouts.size();
-    pipelineLayoutInfo.pSetLayouts = bindlessDescriptorSetLayouts.data();
-    pipelineLayoutInfo.pushConstantRangeCount = 2;
-    pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
-
-    if (!rebuild) {
-        if (vkCreatePipelineLayout(
-                m_vulkan_global_state->m_logical_device, &pipelineLayoutInfo,
-                nullptr,
-                &m_vulkan_global_state->m_pbrPipelineLayout) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create pipeline layout!");
-        };
-    }
-
-    // Finally creating graphics pipeline object and populating with necessary
-    // information
+    // Finally creating graphics pipeline object and populating with
+    // necessary information
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = 2;
@@ -1945,10 +2035,165 @@ void VulkanContext::CreatePBRPipelineBindless(
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
+    vk_pipeline.graphics_create_info.sType =
+        VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    vk_pipeline.graphics_create_info.stageCount = 2;
+
+    // auto bindingDescription = Vertex::GetBindingDescription();
+    // auto attributeDescriptions = Vertex::GetAttributeDescriptions();
+    vk_pipeline.graphics_pipeline_state_data.vertex_bindings = {
+        Vertex::GetBindingDescription()};
+
+    vk_pipeline.graphics_pipeline_state_data.vertex_attributes =
+        Vertex::GetAttributeDescriptions();
+
+    vk_pipeline.graphics_pipeline_state_data.color_blend_attachments = {
+        colorBlendAttachment};
+    vk_pipeline.graphics_pipeline_state_data.shader_stages = {shaderStages[0],
+                                                              shaderStages[1]};
+    vk_pipeline.graphics_pipeline_state_data.vertex_state_info =
+        vertexInputInfo;
+    vk_pipeline.graphics_pipeline_state_data.input_assembly_state_info =
+        inputAssembly;
+    vk_pipeline.graphics_pipeline_state_data.viewport_state_info =
+        viewportState;
+    vk_pipeline.graphics_pipeline_state_data.rasterization_state_info =
+        rasterizer;
+    vk_pipeline.graphics_pipeline_state_data.multisampler_state_info =
+        multisampling;
+    vk_pipeline.graphics_pipeline_state_data.depth_stencil_state_info =
+        depthStencil;
+    vk_pipeline.graphics_pipeline_state_data.color_blend_state_info =
+        colorBlending;
+    vk_pipeline.graphics_pipeline_state_data.dynamic_state_info = dynamicState;
+    vk_pipeline.graphics_pipeline_state_data.dynamic_states = dynamicStates;
+    vk_pipeline.graphics_create_info.pStages = shaderStages;
+    vk_pipeline.graphics_create_info.layout =
+        m_vulkan_global_state->m_pbrPipelineLayout;
+    vk_pipeline.graphics_create_info.renderPass =
+        m_vulkan_global_state->m_render_pass_data->render_pass;
+    vk_pipeline.graphics_create_info.subpass = 0;
+    vk_pipeline.graphics_create_info.basePipelineHandle =
+        VK_NULL_HANDLE;                                       // Optional
+    vk_pipeline.graphics_create_info.basePipelineIndex = -1;  // Optional
+    // vk_pipeline.creation_data.graphics_create_info = pipelineInfo;
+
     vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
-                          fragShaderModule, nullptr);
+                          frag_shader_module, nullptr);
     vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
-                          vertShaderModule, nullptr);
+                          vert_shader_module, nullptr);
+
+    vk_pipeline.pipeline = pipeline;
+
+    return vk_pipeline;
+}
+
+bool VulkanContext::RebuildPBRPipelineBindless(
+    backend_vk::Pipeline& cached_pipeline) {
+    VkShaderModule vert_shader_module =
+        CreateShaderModule(cached_pipeline.shaders[0].spirv_code);
+    VkShaderModule frag_shader_module =
+        CreateShaderModule(cached_pipeline.shaders[1].spirv_code);
+
+    VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+    vertShaderStageInfo.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+
+    // Shader module creation
+    vertShaderStageInfo.module = vert_shader_module;
+    vertShaderStageInfo.pName = "main";
+
+    VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+    fragShaderStageInfo.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderStageInfo.module = frag_shader_module;
+    fragShaderStageInfo.pName = "main";
+
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo,
+                                                      fragShaderStageInfo};
+
+    // Finally creating graphics pipeline object and populating with
+    // necessary information
+    cached_pipeline.graphics_create_info.stageCount = 2;
+    cached_pipeline.graphics_create_info.pStages = shaderStages;
+    // cached_pipeline.creation_data.graphics_create_info.pDynamicState->sType =
+    // VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+
+    vkDeviceWaitIdle(m_vulkan_global_state->m_logical_device);
+    vkDestroyPipeline(m_vulkan_global_state->m_logical_device,
+                      m_vulkan_global_state->m_pbrPipeline, nullptr);
+
+    VkGraphicsPipelineCreateInfo pipeline_info{};
+    pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipeline_info.stageCount = 2;
+    pipeline_info.pStages = shaderStages;
+    cached_pipeline.graphics_pipeline_state_data.vertex_state_info
+        .vertexAttributeDescriptionCount =
+        cached_pipeline.graphics_pipeline_state_data.vertex_attributes.size();
+    cached_pipeline.graphics_pipeline_state_data.vertex_state_info
+        .pVertexAttributeDescriptions =
+        cached_pipeline.graphics_pipeline_state_data.vertex_attributes.data();
+
+    cached_pipeline.graphics_pipeline_state_data.vertex_state_info
+        .vertexBindingDescriptionCount =
+        cached_pipeline.graphics_pipeline_state_data.vertex_bindings.size();
+    cached_pipeline.graphics_pipeline_state_data.vertex_state_info
+        .pVertexBindingDescriptions =
+        cached_pipeline.graphics_pipeline_state_data.vertex_bindings.data();
+
+    pipeline_info.pVertexInputState =
+        &cached_pipeline.graphics_pipeline_state_data.vertex_state_info;
+    pipeline_info.pInputAssemblyState =
+        &cached_pipeline.graphics_pipeline_state_data.input_assembly_state_info;
+    pipeline_info.pViewportState =
+        &cached_pipeline.graphics_pipeline_state_data.viewport_state_info;
+    pipeline_info.pRasterizationState =
+        &cached_pipeline.graphics_pipeline_state_data.rasterization_state_info;
+    pipeline_info.pMultisampleState =
+        &cached_pipeline.graphics_pipeline_state_data.multisampler_state_info;
+    pipeline_info.pDepthStencilState =
+        &cached_pipeline.graphics_pipeline_state_data.depth_stencil_state_info;
+
+    cached_pipeline.graphics_pipeline_state_data.color_blend_state_info
+        .attachmentCount = cached_pipeline.graphics_pipeline_state_data
+                               .color_blend_attachments.size();
+    cached_pipeline.graphics_pipeline_state_data.color_blend_state_info
+        .pAttachments = cached_pipeline.graphics_pipeline_state_data
+                            .color_blend_attachments.data();
+    pipeline_info.pColorBlendState =
+        &cached_pipeline.graphics_pipeline_state_data.color_blend_state_info;
+
+    cached_pipeline.graphics_pipeline_state_data.dynamic_state_info
+        .dynamicStateCount =
+        cached_pipeline.graphics_pipeline_state_data.dynamic_states.size();
+    cached_pipeline.graphics_pipeline_state_data.dynamic_state_info
+        .pDynamicStates =
+        cached_pipeline.graphics_pipeline_state_data.dynamic_states.data();
+    pipeline_info.pDynamicState =
+        &cached_pipeline.graphics_pipeline_state_data.dynamic_state_info;
+
+    pipeline_info.layout = *cached_pipeline.pipeline_layout;
+    pipeline_info.renderPass =
+        m_vulkan_global_state->m_render_pass_data->render_pass;
+
+    pipeline_info.subpass = 0;
+    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;  // Optional
+    pipeline_info.basePipelineIndex = -1;               // Optional
+    if (vkCreateGraphicsPipelines(m_vulkan_global_state->m_logical_device,
+                                  VK_NULL_HANDLE, 1, &pipeline_info, nullptr,
+                                  &m_vulkan_global_state->m_pbrPipeline) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to create graphics pipeline!");
+    }
+
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
+                          frag_shader_module, nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
+                          vert_shader_module, nullptr);
+
+    return true;
 }
 
 void VulkanContext::CreateShadowPassPipelineBindless(
@@ -2014,7 +2259,7 @@ void VulkanContext::CreateShadowPassPipelineBindless(
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType =
         VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssembly.topology = backend_vk::DRAW_TYPE;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
     // Viewports and Scissors
@@ -2463,7 +2708,9 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
 
         // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
         std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+        clearValues[0].color = {{landscape::CLEAR_COLOR.x,
+                                 landscape::CLEAR_COLOR.y,
+                                 landscape::CLEAR_COLOR.z, 1.0f}};
         clearValues[1].depthStencil = {1.0f, 0};
         renderPassInfo.clearValueCount =
             static_cast<uint32_t>(clearValues.size());
@@ -2528,11 +2775,12 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
                 m_vulkan_global_state->m_frag_shader_push_constants_bindless
                     .ormIdx = mesh.m_materialIndices[MaterialEnums::ORM];
 
-                vkCmdPushConstants(
-                    commandBuffer, m_vulkan_global_state->m_pbrPipelineLayout,
-                    VK_SHADER_STAGE_VERTEX_BIT, 0,
-                    sizeof(VertexShaderPushConstants),
-                    &m_vulkan_global_state->m_vertexShaderPushConstants);
+                // vkCmdPushConstants(
+                //     commandBuffer,
+                //     m_vulkan_global_state->m_pbrPipelineLayout,
+                //     VK_SHADER_STAGE_VERTEX_BIT, 0,
+                //     sizeof(VertexShaderPushConstants),
+                //     &m_vulkan_global_state->m_vertexShaderPushConstants);
                 vkCmdPushConstants(
                     commandBuffer, m_vulkan_global_state->m_pbrPipelineLayout,
                     VK_SHADER_STAGE_FRAGMENT_BIT, 0,

@@ -1,5 +1,7 @@
 #ifndef VKTYPES_H
 #define VKTYPES_H
+#include <vulkan/vulkan_core.h>
+
 #include <array>
 #include <optional>
 
@@ -28,25 +30,26 @@ struct Vertex {
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 4>
+    static std::vector<VkVertexInputAttributeDescription>
     GetAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 4>
-            attributeDescriptions{};
+        std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
         // position description
-        attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].binding = 0;
+        VkVertexInputAttributeDescription attribute_desc;
+        attribute_desc.location = 0;
+        attribute_desc.binding = 0;
+        attribute_desc.format = VK_FORMAT_R32G32B32_SFLOAT;
+        attribute_desc.offset = offsetof(Vertex, pos);
+        attributeDescriptions.push_back(attribute_desc);
         /*
             float: VK_FORMAT_R32_SFLOAT
             vec2:  VK_FORMAT_R32G32_SFLOAT
             vec3:  VK_FORMAT_R32G32B32_SFLOAT
             vec4:  VK_FORMAT_R32G32B32A32_SFLOAT
         */
-        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(Vertex, pos);
         // color description
-        attributeDescriptions[1].binding = 0;
-        attributeDescriptions[1].location = 1;
+        attribute_desc.binding = 0;
+        attribute_desc.location = 1;
         /*
             Color type (SFLOAT, UINT, SINT) and bit width should match to type
            of shader input ivec2: VK_FORMAT_R32G32_SINT, a 2-component vector of
@@ -54,18 +57,21 @@ struct Vertex {
            4-component vector of 32-bit unsigned integers double:
            VK_FORMAT_R64_SFLOAT, a double-precision (64-bit) float
         */
-        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(Vertex, color);
+        attribute_desc.format = VK_FORMAT_R32G32B32_SFLOAT;
+        attribute_desc.offset = offsetof(Vertex, color);
+        attributeDescriptions.push_back(attribute_desc);
 
-        attributeDescriptions[2].binding = 0;
-        attributeDescriptions[2].location = 2;
-        attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[2].offset = offsetof(Vertex, normal);
+        attribute_desc.binding = 0;
+        attribute_desc.location = 2;
+        attribute_desc.format = VK_FORMAT_R32G32B32_SFLOAT;
+        attribute_desc.offset = offsetof(Vertex, normal);
+        attributeDescriptions.push_back(attribute_desc);
 
-        attributeDescriptions[3].binding = 0;
-        attributeDescriptions[3].location = 3;
-        attributeDescriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[3].offset = offsetof(Vertex, texCoord);
+        attribute_desc.binding = 0;
+        attribute_desc.location = 3;
+        attribute_desc.format = VK_FORMAT_R32G32_SFLOAT;
+        attribute_desc.offset = offsetof(Vertex, texCoord);
+        attributeDescriptions.push_back(attribute_desc);
 
         return attributeDescriptions;
     }

@@ -150,8 +150,8 @@ void main() {
     float ao        = 0.0;
     vec3  emissive  = vec3(0.0);
 
-    vec3 deepWater = pc.water_color;
-    //vec3 deepWater = vec3(0.67, 0.67, 0.67);
+    //vec3 deepWater = pc.water_color;
+    vec3 deepWater = vec3(0.67, 0.67, 0.67);
     vec3 sand      = pc.sand_color;
     vec3 grass     = pc.grass_color;
     vec3 rock      = pc.rock_color;

@@ -55,15 +55,74 @@ class Mesh3D;
 namespace backend_vk {
 
 enum EVulkanPipeline { BindlessPBR };
-struct WatchedShader {
+struct Shader {
+    std::string source_name;
     std::string file_path;
     std::filesystem::file_time_type last_write_time;
     std::filesystem::file_time_type current_write_time;
+    std::vector<uint32_t> spirv_code;
     EVulkanPipeline pipeline;
+    std::string entry_point = "main";
+};
+
+// TODO: Create a tagged union to represent this
+enum EPipelineEditType { PIPELINE_INFO };
+
+enum EPipelineInfoType { INPUT_ASSEMBLY };
+
+// Contains the index of the edited shader
+struct ShaderEdit {
+    int idx;
+};
+
+// Contains the type of the pipeline info edited
+struct PipelineInfoEdit {
+    EPipelineInfoType type;
+};
+
+// Tagged Union to represent an edit made to a VkPipeline
+struct PipelineEdit {
+    EPipelineEditType edit_type;
+
+    union Data {
+        ShaderEdit shader;
+        PipelineInfoEdit pipeline_info;
+    } edit_data;
+};
+
+enum EPipelineType { GRAPHICS, COMPUTE };
+struct GraphicsPipelineStateData {
+    VkPipelineVertexInputStateCreateInfo vertex_state_info;
+    VkPipelineInputAssemblyStateCreateInfo input_assembly_state_info;
+    VkPipelineViewportStateCreateInfo viewport_state_info;
+    VkPipelineRasterizationStateCreateInfo rasterization_state_info;
+    VkPipelineMultisampleStateCreateInfo multisampler_state_info;
+    VkPipelineDepthStencilStateCreateInfo depth_stencil_state_info;
+    VkPipelineColorBlendStateCreateInfo color_blend_state_info;
+    VkPipelineDynamicStateCreateInfo dynamic_state_info;
+
+    std::vector<VkVertexInputBindingDescription> vertex_bindings;
+    std::vector<VkVertexInputAttributeDescription> vertex_attributes;
+    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments;
+    std::vector<VkDynamicState> dynamic_states;
+    std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
+};
+struct Pipeline {
+    EPipelineType type = GRAPHICS;
+
+    VkGraphicsPipelineCreateInfo graphics_create_info;
+    GraphicsPipelineStateData graphics_pipeline_state_data;
+    VkComputePipelineCreateInfo compute_create_info;
+
+    VkPipeline* pipeline;
+    VkPipelineLayout* pipeline_layout;
+    std::vector<Shader> shaders;
+    std::vector<PipelineEdit> edits;
+    bool is_dirty;
 };
 
 std::string read_shader(const std::string& file_name);
-void RenderUI(VulkanContext& context_vk);
+void render_ui(VulkanContext& context_vk);
 
 VkPipeline CreateComputePipeline(
     std::vector<char> shader, VkDevice& logical_device,
@@ -114,6 +173,7 @@ class VulkanContext {
     void unload_scene_objects();
 
     void new_landscape();
+    bool RebuildPBRPipelineBindless(backend_vk::Pipeline& cached_pipeline);
 
     VulkanGlobalState* m_vulkan_global_state;
     WindowingBackend* m_windowing_backend = nullptr;
@@ -188,7 +248,8 @@ class VulkanContext {
 
     // We need some sort of shader watch list vector that we will loop through
     // every renderer tick and check for changes to shaders
-    std::vector<backend_vk::WatchedShader> m_watched_shaders = {};
+    std::vector<backend_vk::Pipeline> m_pipelines = {};
+    std::vector<backend_vk::Shader> m_shaders = {};
 
    private:
     // DeviceHandler* m_deviceHandler;
@@ -220,9 +281,11 @@ class VulkanContext {
                                   std::vector<uint32_t> fragShaderCode,
                                   VkPipeline* pipeline);
     // === BINDLESS === //
-    void CreatePBRPipelineBindless(std::vector<uint32_t>& vertShaderCode,
-                                   std::vector<uint32_t>& fragShaderCode,
-                                   VkPipeline* pipeline, bool rebuild = false);
+    backend_vk::Pipeline CreatePBRPipelineBindless(
+        std::vector<uint32_t>& vert_shader_code,
+        std::vector<uint32_t>& frag_shader_code,
+        const std::string& vert_file_path, const std::string& frag_file_path,
+        VkPipeline* pipeline);
     void CreateShadowPassPipelineBindless(std::vector<uint32_t> vertShaderCode,
                                           std::vector<uint32_t> fragShaderCode,
                                           VkPipeline* pipeline);
