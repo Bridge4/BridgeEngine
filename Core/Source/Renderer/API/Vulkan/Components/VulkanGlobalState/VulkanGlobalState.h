@@ -43,7 +43,7 @@ struct FragShaderPushConstantsBindless {
     glm::vec4 terrain_levels = glm::vec4(-3.64f, -1.389f, 1.609f, 2.64f);
     glm::vec3 water_color = glm::vec3(0.02, 0.45, 0.65);
     glm::vec3 sand_color =
-        glm::vec3(0.98, 0.72, 0.35);  // Vivid orange-gold sunlit sand;
+        glm::vec3(0.1529, 0.4745, 0.1216);  // Vivid orange-gold sunlit sand;
     glm::vec3 grass_color = glm::vec3(0.38, 0.72, 0.12);
     glm::vec3 rock_color = glm::vec3(0.75, 0.32, 0.22);
     glm::vec3 snow_color = glm::vec3(1.00, 0.88, 0.65);

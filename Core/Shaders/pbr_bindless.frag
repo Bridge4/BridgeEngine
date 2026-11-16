@@ -119,6 +119,30 @@ float SAND_LEVEL  = pc.terrain_levels.y;
 float GRASS_LEVEL = pc.terrain_levels.z;
 float ROCK_LEVEL  = pc.terrain_levels.w;
 
+vec3 calculate_terrain_color(float height, float max_height, vec3 base_color) {
+  vec3 final_color = base_color * clamp((abs(height - max_height)), 0.8, 2.0);
+    //roughness = clamp(roughness, 0.04, 1.0);
+
+  return final_color;
+}
+
+vec3 calculate_water_color(float height, float max_height, vec3 base_color) {
+  vec3 final_color = base_color / clamp((abs(height - max_height)), 0.3, 10.0);
+    //roughness = clamp(roughness, 0.04, 1.0);
+
+  return final_color;
+}
+
+vec3 transition_terrain(float height) {
+  vec3 final_color = vec3(1.0);
+
+
+  //float t = smoothstep(WATER_LEVEL, SAND_LEVEL, fragPos.y);
+  //finalColor = mix(waterColor, sandColor, t);
+
+  return final_color;
+}
+
 void main() {
     vec3  albedo    = vec3(1.0);   // white, or a base color factor
     float metallic  = 0.0;
@@ -127,7 +151,7 @@ void main() {
     vec3  emissive  = vec3(0.0);
 
     vec3 deepWater = pc.water_color;
-    //vec3 deepWater = vec3(1.0, 1.0, 1.0);
+    //vec3 deepWater = vec3(0.67, 0.67, 0.67);
     vec3 sand      = pc.sand_color;
     vec3 grass     = pc.grass_color;
     vec3 rock      = pc.rock_color;
@@ -152,43 +176,64 @@ void main() {
     //    finalColor = mix(deepWater, sand, t);
     //} else if (fragPos.y < GRASS_LEVEL) {
     //    float t = (fragPos.y - SAND_LEVEL) / (GRASS_LEVEL - SAND_LEVEL);
-    //    finalColor = mix(grass, rock, t);
+    //    finalColor = mix(grass, sand, t);
     //} else if (fragPos.y < ROCK_LEVEL) {
     //    float t = (fragPos.y - GRASS_LEVEL) / (ROCK_LEVEL - GRASS_LEVEL);
     //    finalColor = mix(rock, grass, t);
-    //} else {
+    //}
+    //else {
     //    float t = clamp((fragPos.y - ROCK_LEVEL) / (1.0 - ROCK_LEVEL), 0.0, 1.0);
     //    finalColor = mix(rock, snow, t);
     //}
+    vec3 waterColor = calculate_water_color(fragPos.y, WATER_LEVEL, deepWater); 
+    vec3 sandColor = calculate_terrain_color(fragPos.y,  WATER_LEVEL, sand); 
+    vec3 grassColor = calculate_terrain_color(fragPos.y, WATER_LEVEL, grass); 
+    vec3 rockColor = calculate_terrain_color(fragPos.y,  WATER_LEVEL, rock); 
+
+
     if (fragPos.y < WATER_LEVEL) {
-        finalColor = deepWater;
+        finalColor = waterColor;
+        emissive = waterColor * 0.01;
         roughness = 0.1;
     }
-    else {
-       if (fragPos.y < SAND_LEVEL) {
-          float t = smoothstep(WATER_LEVEL, SAND_LEVEL, fragPos.y);
-          finalColor = mix(deepWater, sand, t);
-      } else if (fragPos.y < GRASS_LEVEL) {
-          float t = smoothstep(SAND_LEVEL, GRASS_LEVEL, fragPos.y);
-          finalColor = mix(sand, grass, t);
-      }
-
-      if (abs(slope) < 0.3){
-        float t = smoothstep(ROCK_LEVEL, ROCK_LEVEL + 1.0f, fragPos.y);
-        finalColor = mix(rock, snow, t);
-      }
-      else {
-          float t = smoothstep(GRASS_LEVEL, ROCK_LEVEL, fragPos.y);
-          finalColor = mix(grass, rock, t);
-          roughness = 0.4;
-      }
+    else{ 
+      float t = smoothstep(WATER_LEVEL, SAND_LEVEL, fragPos.y);
+      //emissive = sandColor * 0.01;
+      finalColor = mix(sandColor, waterColor, t);
+      metallic = 1.0;
+      //finalColor = sandColor;
     }
+    //else if (fragPos.y < GRASS_LEVEL){
+    //  float t = smoothstep(GRASS_LEVEL, WATER_LEVEL, fragPos.y);
+    //  emissive = grassColor * 0.01;
+    //  finalColor = mix(sandColor, grassColor, t);
+    //}
+    //else if (fragPos.y < ROCK_LEVEL){
+    //  float t = smoothstep(ROCK_LEVEL, WATER_LEVEL, fragPos.y);
+    //  emissive = rockColor * 0.01;
+    //  finalColor = mix(grassColor, rockColor, t);
+    //}
+    //else {
+    //   if (fragPos.y < SAND_LEVEL) {
+    //      float t = smoothstep(WATER_LEVEL, SAND_LEVEL, fragPos.y);
+    //      finalColor = mix(deepWater, sand, t);
+    //  } else if (fragPos.y < GRASS_LEVEL) {
+    //      float t = smoothstep(SAND_LEVEL, GRASS_LEVEL, fragPos.y);
+    //      finalColor = mix(sand, grass, t);
+    //  }
+
+    //  if (abs(slope) < 0.3){
+    //    float t = smoothstep(ROCK_LEVEL, ROCK_LEVEL + 1.0f, fragPos.y);
+    //    finalColor = mix(rock, snow, t);
+    //  }
+    //  else {
+    //      float t = smoothstep(GRASS_LEVEL, ROCK_LEVEL, fragPos.y);
+    //      finalColor = mix(finalColor, rock, t);
+    //      roughness = 0.4;
+    //  }
+    //}
 
 
-    //else if (fragPos.y < ROCK_LEVEL) {
-    //    float t = smoothstep(GRASS_LEVEL, ROCK_LEVEL, fragPos.y);
-    //    finalColor = mix(grass, rock, t);
-    //} 
 
     albedo = finalColor;
 

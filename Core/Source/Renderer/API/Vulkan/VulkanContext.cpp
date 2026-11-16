@@ -181,8 +181,8 @@ void RenderUI(VulkanContext& context_vk) {
             context_vk.m_time_accumulator = 0;
         }
     }
-    float MIN_LEVEL = -100.0 / landscape::AMPLITUDE;
-    float MAX_LEVEL = 100.0 / landscape::AMPLITUDE;
+    float MIN_LEVEL = -20.0;
+    float MAX_LEVEL = 10.0;
     ImGui::SliderFloat(
         "Water Level",
         &context_vk.m_vulkan_global_state->m_fragShaderPushConstantsBindless
@@ -1030,6 +1030,9 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
                         shaderc_shader_kind::
                             shaderc_glsl_default_fragment_shader,
                         frag_bindless_code);
+                    if (vert_scene.empty() || frag_bindless.empty()) {
+                        std::cout << "SHADERS INVALID\n";
+                    }
                     // std::vector<char> vert_scene = read_file(SHADERS_DIR
                     // "scene.spv"); std::vector<char> frag_bindless =
                     //     read_file(SHADERS_DIR "pbr_bindless.spv");
