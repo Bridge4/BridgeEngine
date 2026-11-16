@@ -185,46 +185,51 @@ void RenderUI(VulkanContext& context_vk) {
     float MAX_LEVEL = 10.0;
     ImGui::SliderFloat(
         "Water Level",
-        &context_vk.m_vulkan_global_state->m_fragShaderPushConstantsBindless
+        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
              .terrain_levels.x,
         MIN_LEVEL, MAX_LEVEL);
     ImGui::SliderFloat(
         "Sand Level",
-        &context_vk.m_vulkan_global_state->m_fragShaderPushConstantsBindless
+        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
              .terrain_levels.y,
         MIN_LEVEL, MAX_LEVEL);
 
     ImGui::SliderFloat(
         "Grass Level",
-        &context_vk.m_vulkan_global_state->m_fragShaderPushConstantsBindless
+        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
              .terrain_levels.z,
         MIN_LEVEL, MAX_LEVEL);
 
     ImGui::SliderFloat(
         "Rock Level",
-        &context_vk.m_vulkan_global_state->m_fragShaderPushConstantsBindless
+        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
              .terrain_levels.w,
         MIN_LEVEL, MAX_LEVEL);
 
-    ImGui::ColorPicker3("Water Color",
-                        &context_vk.m_vulkan_global_state
-                             ->m_fragShaderPushConstantsBindless.water_color.x);
+    ImGui::ColorPicker3(
+        "Water Color",
+        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
+             .water_color.x);
 
-    ImGui::ColorPicker3("Sand Color",
-                        &context_vk.m_vulkan_global_state
-                             ->m_fragShaderPushConstantsBindless.sand_color.x);
+    ImGui::ColorPicker3(
+        "Sand Color",
+        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
+             .sand_color.x);
 
-    ImGui::ColorPicker3("Grass Color",
-                        &context_vk.m_vulkan_global_state
-                             ->m_fragShaderPushConstantsBindless.grass_color.x);
+    ImGui::ColorPicker3(
+        "Grass Color",
+        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
+             .grass_color.x);
 
-    ImGui::ColorPicker3("Rock Color",
-                        &context_vk.m_vulkan_global_state
-                             ->m_fragShaderPushConstantsBindless.rock_color.x);
+    ImGui::ColorPicker3(
+        "Rock Color",
+        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
+             .rock_color.x);
 
-    ImGui::ColorPicker3("Snow Color",
-                        &context_vk.m_vulkan_global_state
-                             ->m_fragShaderPushConstantsBindless.snow_color.x);
+    ImGui::ColorPicker3(
+        "Snow Color",
+        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
+             .snow_color.x);
     // Test frame rates (verifies NewFrame delta timing is working)
     // ImGui::Text("Performance: %.3f ms/frame (%.1f FPS)",
     //            1000.0f / ImGui::GetIO().Framerate,
@@ -2502,25 +2507,25 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
                         0, nullptr);
                 }
 
-                m_vulkan_global_state->m_fragShaderPushConstantsBindless
+                m_vulkan_global_state->m_frag_shader_push_constants_bindless
                     .albedoIdx = mesh.m_materialIndices[MaterialEnums::ALBEDO];
                 // std::cout << m_vulkanGlobalState
                 //                  ->m_fragShaderPushConstantsBindless.albedoIdx
                 //           << "\n";
-                m_vulkan_global_state->m_fragShaderPushConstantsBindless
+                m_vulkan_global_state->m_frag_shader_push_constants_bindless
                     .metallicIdx =
                     mesh.m_materialIndices[MaterialEnums::METALLIC];
-                m_vulkan_global_state->m_fragShaderPushConstantsBindless
+                m_vulkan_global_state->m_frag_shader_push_constants_bindless
                     .roughnessIdx =
                     mesh.m_materialIndices[MaterialEnums::ROUGHNESS];
-                m_vulkan_global_state->m_fragShaderPushConstantsBindless.aoIdx =
-                    mesh.m_materialIndices[MaterialEnums::AO];
-                m_vulkan_global_state->m_fragShaderPushConstantsBindless
+                m_vulkan_global_state->m_frag_shader_push_constants_bindless
+                    .aoIdx = mesh.m_materialIndices[MaterialEnums::AO];
+                m_vulkan_global_state->m_frag_shader_push_constants_bindless
                     .normalIdx = mesh.m_materialIndices[MaterialEnums::NORMAL];
-                m_vulkan_global_state->m_fragShaderPushConstantsBindless
+                m_vulkan_global_state->m_frag_shader_push_constants_bindless
                     .emissiveIdx =
                     mesh.m_materialIndices[MaterialEnums::EMISSIVE];
-                m_vulkan_global_state->m_fragShaderPushConstantsBindless
+                m_vulkan_global_state->m_frag_shader_push_constants_bindless
                     .ormIdx = mesh.m_materialIndices[MaterialEnums::ORM];
 
                 vkCmdPushConstants(
@@ -2532,7 +2537,8 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
                     commandBuffer, m_vulkan_global_state->m_pbrPipelineLayout,
                     VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                     sizeof(FragShaderPushConstantsBindless),
-                    &m_vulkan_global_state->m_fragShaderPushConstantsBindless);
+                    &m_vulkan_global_state
+                         ->m_frag_shader_push_constants_bindless);
 
                 vkCmdDrawIndexed(commandBuffer,
                                  static_cast<uint32_t>(mesh.m_indexCount), 1,

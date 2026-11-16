@@ -119,7 +119,7 @@ class VulkanGlobalState {
     ShadowPassPushConstants m_shadowPassPushConstants;
     PBRPushConstants m_pbrPushConstants;
     VertexShaderPushConstants m_vertexShaderPushConstants;
-    FragShaderPushConstantsBindless m_fragShaderPushConstantsBindless;
+    FragShaderPushConstantsBindless m_frag_shader_push_constants_bindless;
 
     glm::vec4 m_shadowBias;
     VkSurfaceKHR m_surface;
