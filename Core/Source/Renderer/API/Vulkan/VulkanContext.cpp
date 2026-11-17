@@ -50,8 +50,8 @@
 #include "imgui_impl_vulkan.h"
 
 namespace landscape {
-int WIDTH = 1024u;
-int HEIGHT = 1024u;
+int WIDTH = 128;
+int HEIGHT = 128;
 float SCALE = 200.0;
 float AMPLITUDE = 1.0;
 float BASE_0 = 5.4f;
@@ -1054,7 +1054,7 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
     // Instead of checking shaders we need to recompile, we should check our
     // pipeline states to see if they are CLEAN
 
-    for (auto pipeline : m_pipelines) {
+    for (auto& pipeline : m_pipelines) {
         if (pipeline.type == backend_vk::GRAPHICS) {
             VkGraphicsPipelineCreateInfo gfx_create_info =
                 pipeline.graphics_create_info;
@@ -1062,18 +1062,30 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
             // Recompile all edited shaders
             std::vector<int> edited_shader_indices =
                 backend_vk::check_for_shader_recompilation(pipeline.shaders);
-            if (edited_shader_indices.empty()) {
-                continue;
-            } else {
+            if (!edited_shader_indices.empty()) {
                 pipeline.is_dirty = true;
                 for (int i = 0; i < edited_shader_indices.size(); i++) {
-                    backend_vk::Shader& shader = pipeline.shaders[i];
+                    backend_vk::Shader& shader =
+                        pipeline.shaders[edited_shader_indices[i]];
                     std::string shader_code_glsl =
                         backend_vk::read_shader(shader.file_path);
 
+                    std::cout << "COMPILING SHADER: " << shader.source_name
+                              << "\n"
+                              << "FILE_PATH::::: " << shader.file_path << "\n";
+
+                    shaderc_shader_kind shader_compile_type =
+                        shaderc_shader_kind::shaderc_glsl_anyhit_shader;
+                    if (shader.type == backend_vk::VERT) {
+                        shader_compile_type =
+                            shaderc_glsl_default_vertex_shader;
+
+                    } else {
+                        shader_compile_type =
+                            shaderc_glsl_default_fragment_shader;
+                    }
                     auto shader_code_spirv = backend_vk::compile_shader(
-                        shader.source_name,
-                        shaderc_shader_kind::shaderc_glsl_default_vertex_shader,
+                        shader.source_name, shader_compile_type,
                         shader_code_glsl);
 
                     // If compilation fails we don't overwrite the
@@ -1082,10 +1094,23 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
                     if (!shader_code_spirv.empty()) {
                         std::cout << "SHADER " << i
                                   << " SUCCESSFULLY RECOMPILED\n";
+                        std::cout << "SHADER: " << shader.source_name << "\n";
                         shader.spirv_code = shader_code_spirv;
                     }
                 }
             }
+            std::cout << "TOPOLOGYYYYYYYYYYYYYYYYY:::: "
+                      << pipeline.graphics_pipeline_state_data
+                             .input_assembly_state_info.topology
+                      << "\n";
+            if (pipeline.graphics_pipeline_state_data.input_assembly_state_info
+                    .topology != backend_vk::DRAW_TYPE) {
+                std::cout << "CHANGING TOPOLOGY:::::\n";
+                pipeline.is_dirty = true;
+                pipeline.graphics_pipeline_state_data.input_assembly_state_info
+                    .topology = backend_vk::DRAW_TYPE;
+            }
+
             if (pipeline.is_dirty) {
                 RebuildPBRPipelineBindless(pipeline);
                 pipeline.is_dirty = false;
@@ -1834,18 +1859,24 @@ backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
     VkShaderModule vert_shader_module = CreateShaderModule(vert_shader_code);
     VkShaderModule frag_shader_module = CreateShaderModule(frag_shader_code);
     backend_vk::Shader vs;
+    vs.source_name = "scene vertex shader";
     vs.file_path = vert_file_path;
     // vs.pipeline = backend_vk::EVulkanPipeline::BindlessPBR;
     vs.current_write_time = std::filesystem::last_write_time(vert_file_path);
     vs.last_write_time = vs.current_write_time;
     vs.spirv_code = vert_shader_code;
+    vs.entry_point = "main";
+    vs.type = backend_vk::VERT;
 
     backend_vk::Shader fs;
+    fs.source_name = "pbr frag shader";
     fs.file_path = frag_file_path;
     // fs.pipeline = backend_vk::EVulkanPipeline::BindlessPBR;
     fs.current_write_time = std::filesystem::last_write_time(frag_file_path);
     fs.last_write_time = fs.current_write_time;
     fs.spirv_code = frag_shader_code;
+    fs.entry_point = "main";
+    fs.type = backend_vk::FRAG;
 
     // Add the shaders to the list of shaders associated with this pipeline
     vk_pipeline.shaders.push_back(vs);
@@ -2094,6 +2125,8 @@ bool VulkanContext::RebuildPBRPipelineBindless(
         CreateShaderModule(cached_pipeline.shaders[0].spirv_code);
     VkShaderModule frag_shader_module =
         CreateShaderModule(cached_pipeline.shaders[1].spirv_code);
+    std::cout << "REBUILDING " << cached_pipeline.shaders[0].source_name << "\n"
+              << cached_pipeline.shaders[1].source_name << "\n";
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType =

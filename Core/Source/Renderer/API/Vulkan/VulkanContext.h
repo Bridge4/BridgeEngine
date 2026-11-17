@@ -55,9 +55,11 @@ class Mesh3D;
 namespace backend_vk {
 
 enum EVulkanPipeline { BindlessPBR };
+enum EShaderType { VERT, FRAG };
 struct Shader {
     std::string source_name;
     std::string file_path;
+    EShaderType type;
     std::filesystem::file_time_type last_write_time;
     std::filesystem::file_time_type current_write_time;
     std::vector<uint32_t> spirv_code;
