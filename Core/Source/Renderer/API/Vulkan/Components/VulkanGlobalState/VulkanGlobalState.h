@@ -154,6 +154,7 @@ class VulkanGlobalState {
     VkDescriptorSetLayout m_shadowPassDescriptorSetLayout;
 
     VkPipelineLayout m_pbrPipelineLayout;
+    VkPipelineLayout m_compute_pipeline_layout;
     VkPipelineLayout m_shadowPassPipelineLayout;
 
     VkPipeline m_pbrPipeline;
@@ -183,6 +184,10 @@ class VulkanGlobalState {
     VkBuffer m_computeOutputBuffer;
     VkDeviceMemory m_computeOutputBufferMemory = {};
     void* m_computeOutputBufferMemoryMapped = {};
+    std::vector<VkDescriptorSetLayout> m_compute_dsls = {};
+    VkDescriptorPool m_compute_dsp = {};
+    VkDescriptorSet m_compute_ds = {};
+    VkPipeline m_compute_pipeline = {};
 
     // === UBOS === //
     std::vector<VkBuffer> m_cameraUBO = {};

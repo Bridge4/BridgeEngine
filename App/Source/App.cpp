@@ -59,6 +59,7 @@ int main() {
     // TODO: Create shape primitives
     engine->m_renderer->DescribeScene(loadedObjects, lightsToRender);
 
+    windowingBackend->ShowWindow();
     while (!windowingBackend->ShouldCloseGLFW()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
         float deltaTime =

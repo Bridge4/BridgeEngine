@@ -7,6 +7,7 @@ class WindowingBackend {
    public:
     WindowingBackend() {};
 
+    void ShowWindow();
     void SetApiContext() {}
 
     void Create();

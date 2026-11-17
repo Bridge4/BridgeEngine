@@ -50,8 +50,8 @@
 #include "imgui_impl_vulkan.h"
 
 namespace landscape {
-int WIDTH = 128;
-int HEIGHT = 128;
+int WIDTH = 1024;
+int HEIGHT = 1024;
 float SCALE = 200.0;
 float AMPLITUDE = 1.0;
 float BASE_0 = 5.4f;
@@ -60,6 +60,7 @@ float LACUNARITY = 2.0f;
 float PERSISTENCE = 0.52f;
 float FREQUENCY = 0.2f;
 int OCTAVES = 8;
+bool SHOULD_ANIMATE = false;
 glm::vec3 CLEAR_COLOR = glm::vec3(69 / 255, 118 / 255, 135 / 255);
 
 }  // namespace landscape
@@ -163,14 +164,15 @@ void render_ui(VulkanContext& context_vk) {
         context_vk.new_landscape();
     }
 
-    const char* items[] = {"Mesh", "Line", "Point"};
-    static int current_item = 0;
+    const char* draw_type_options[] = {"Mesh", "Line", "Point"};
+    static int draw_type_selection = 0;
 
-    if (ImGui::BeginCombo("Draw Type", items[current_item])) {
-        for (int n = 0; n < IM_ARRAYSIZE(items); n++) {
-            const bool is_selected = (current_item == n);
-            if (ImGui::Selectable(items[n], is_selected)) {
-                current_item = n;
+    if (ImGui::BeginCombo("Draw Type",
+                          draw_type_options[draw_type_selection])) {
+        for (int n = 0; n < IM_ARRAYSIZE(draw_type_options); n++) {
+            const bool is_selected = (draw_type_selection == n);
+            if (ImGui::Selectable(draw_type_options[n], is_selected)) {
+                draw_type_selection = n;
             }
 
             if (is_selected) {
@@ -179,7 +181,7 @@ void render_ui(VulkanContext& context_vk) {
         }
         ImGui::EndCombo();
     }
-    switch (current_item) {
+    switch (draw_type_selection) {
         case 0: {
             backend_vk::DRAW_TYPE = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
             break;
@@ -194,10 +196,12 @@ void render_ui(VulkanContext& context_vk) {
         }
     }
 
+    ImGui::Checkbox("Animate Landscape", &landscape::SHOULD_ANIMATE);
+
     bool width_changed =
-        ImGui::SliderInt("Width", &landscape::WIDTH, 128.0, 2048.0);
+        ImGui::SliderInt("Width", &landscape::WIDTH, 128.0, 8192.0);
     bool height_changed =
-        ImGui::SliderInt("HEIGHT", &landscape::HEIGHT, 128.0, 2048.0);
+        ImGui::SliderInt("HEIGHT", &landscape::HEIGHT, 128.0, 8192.0);
     bool scale_changed =
         ImGui::SliderFloat("Scale", &landscape::SCALE, 0.0f, 2000.0f);
     bool amp_changed =
@@ -210,10 +214,7 @@ void render_ui(VulkanContext& context_vk) {
     bool oct_changed = ImGui::SliderInt("Octaves", &landscape::OCTAVES, 1, 32);
     if (lac_changed || freq_changed || oct_changed || width_changed ||
         height_changed || scale_changed || amp_changed) {
-        if (context_vk.m_time_accumulator > 0.01) {
-            context_vk.new_landscape();
-            context_vk.m_time_accumulator = 0;
-        }
+        // context_vk.new_landscape();
     }
     float MIN_LEVEL = -20.0;
     float MAX_LEVEL = 10.0;
@@ -275,12 +276,12 @@ void render_ui(VulkanContext& context_vk) {
     ImGui::Render();
 }
 
-VkShaderModule CreateShaderModule(const std::vector<char>& code,
+VkShaderModule CreateShaderModule(std::vector<uint32_t>& code,
                                   VkDevice& logical_device) {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = code.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+    createInfo.codeSize = (code.cend() - code.cbegin()) * sizeof(uint32_t);
+    createInfo.pCode = code.data();
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(logical_device, &createInfo, nullptr,
                              &shaderModule) != VK_SUCCESS) {
@@ -290,12 +291,26 @@ VkShaderModule CreateShaderModule(const std::vector<char>& code,
     return shaderModule;
 }
 
-VkPipeline CreateComputePipeline(
-    std::vector<char> shader, VkDevice& logical_device,
+Pipeline CreateComputePipeline(
+    std::vector<uint32_t> shader_code_spirv,
+    const std::string& shader_file_path, VkDevice& logical_device,
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts,
-    VkPipelineLayout& pipelineLayout) {
-    VkPipeline pipeline;
-    VkShaderModule computeShader = CreateShaderModule(shader, logical_device);
+    VkPipelineLayout& pipeline_layout) {
+    Pipeline cached_pipeline;
+    cached_pipeline.type = COMPUTE;
+    VkShaderModule computeShader =
+        CreateShaderModule(shader_code_spirv, logical_device);
+    backend_vk::Shader cs;
+    cs.source_name = "landscape compute shader";
+    cs.file_path = shader_file_path;
+    // vs.pipeline = backend_vk::EVulkanPipeline::BindlessPBR;
+    cs.current_write_time = std::filesystem::last_write_time(shader_file_path);
+    cs.last_write_time = cs.current_write_time;
+    cs.spirv_code = shader_code_spirv;
+    cs.entry_point = "main";
+    cs.type = backend_vk::COMP;
+
+    backend_vk::Pipeline vk_pipeline = {};
 
     VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
     shaderStageCreateInfo.sType =
@@ -310,27 +325,30 @@ VkPipeline CreateComputePipeline(
     pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
 
     if (vkCreatePipelineLayout(logical_device, &pipelineLayoutInfo, nullptr,
-                               &pipelineLayout) != VK_SUCCESS) {
+                               &cached_pipeline.pipeline_layout) !=
+        VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     };
 
     VkComputePipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-    pipelineInfo.layout = pipelineLayout;
+    pipelineInfo.layout = cached_pipeline.pipeline_layout;
     pipelineInfo.stage = shaderStageCreateInfo;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
 
-    VkResult result = vkCreateComputePipelines(
-        logical_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+    VkResult result = vkCreateComputePipelines(logical_device, VK_NULL_HANDLE,
+                                               1, &pipelineInfo, nullptr,
+                                               &cached_pipeline.pipeline);
 
     if (result != VK_SUCCESS) {
         throw std::runtime_error("failed to create compute pipeline!");
     }
 
     vkDestroyShaderModule(logical_device, computeShader, nullptr);
+    cached_pipeline.shaders.push_back(cs);
 
-    return pipeline;
+    return cached_pipeline;
 }
 
 // Courtesy of my code from college :)
@@ -380,8 +398,8 @@ void SetNormal(std::vector<Vertex>& vertices, unsigned int v1, unsigned int v2,
     vertices[v3].normal = normal;
 }
 
-void SetIndices(std::vector<uint32_t>& indices, Vertex* vertices,
-                int worldHeight, int worldWidth) {
+void set_indices(std::vector<uint32_t>& indices, Vertex* vertices,
+                 int worldHeight, int worldWidth) {
     // DRAW ORDER OF TRIANGLES
     // right facing triangle draw order
     unsigned int r1, r2, r3;
@@ -992,6 +1010,35 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     m_cameraController->m_cameraUBO.view[1] =
         glm::vec4(0.621, 0.470, 0.627, -90.355);
     m_cameraController->m_cameraUBO.view[1] = glm::vec4(0.0, 0, 0, 1);
+
+    // Do compute stuff
+    std::string compute_file_path = SHADERS_DIR "compute.comp";
+
+    std::string compute_shader_code_glsl =
+        backend_vk::read_shader(compute_file_path);
+
+    std::vector<uint32_t> compute_shader_code_spirv =
+        backend_vk::compile_shader(
+            "landscape compute shader",
+            shaderc_shader_kind::shaderc_glsl_default_compute_shader,
+            compute_shader_code_glsl);
+
+    VkDescriptorSetLayout compute_dsl =
+        m_descriptor_set_handler->CreateComputeDescriptorSetLayout(
+            m_vulkan_global_state->m_logical_device);
+    VkDescriptorPool compute_dsp =
+        m_descriptor_set_handler->CreateDescriptorPoolCompute(
+            m_vulkan_global_state->m_logical_device);
+
+    m_vulkan_global_state->m_compute_ds =
+        m_descriptor_set_handler->CreateDescriptorSetCompute(
+            compute_dsp, compute_dsl, m_vulkan_global_state->m_logical_device);
+    m_vulkan_global_state->m_compute_dsls.push_back(compute_dsl);
+    VkPipelineLayout compute_pipeline_layout;
+    m_pipelines.push_back(backend_vk::CreateComputePipeline(
+        compute_shader_code_spirv, SHADERS_DIR "compute.comp",
+        m_vulkan_global_state->m_logical_device,
+        m_vulkan_global_state->m_compute_dsls, compute_pipeline_layout));
 }
 
 void VulkanContext::describe_scene(std::vector<ObjResource> objectsToRender,
@@ -1099,10 +1146,6 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
                     }
                 }
             }
-            std::cout << "TOPOLOGYYYYYYYYYYYYYYYYY:::: "
-                      << pipeline.graphics_pipeline_state_data
-                             .input_assembly_state_info.topology
-                      << "\n";
             if (pipeline.graphics_pipeline_state_data.input_assembly_state_info
                     .topology != backend_vk::DRAW_TYPE) {
                 std::cout << "CHANGING TOPOLOGY:::::\n";
@@ -1116,6 +1159,48 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
                 pipeline.is_dirty = false;
             }
         } else if (pipeline.type == backend_vk::COMPUTE) {
+            // Recompile all edited shaders
+            std::vector<int> edited_shader_indices =
+                backend_vk::check_for_shader_recompilation(pipeline.shaders);
+            if (!edited_shader_indices.empty()) {
+                pipeline.is_dirty = true;
+                for (int i = 0; i < edited_shader_indices.size(); i++) {
+                    backend_vk::Shader& shader =
+                        pipeline.shaders[edited_shader_indices[i]];
+                    std::string shader_code_glsl =
+                        backend_vk::read_shader(shader.file_path);
+
+                    std::cout << "COMPILING SHADER: " << shader.source_name
+                              << "\n"
+                              << "FILE_PATH::::: " << shader.file_path << "\n";
+
+                    shaderc_shader_kind shader_compile_type =
+                        shaderc_shader_kind::
+                            shaderc_glsl_default_compute_shader;
+                    auto shader_code_spirv = backend_vk::compile_shader(
+                        shader.source_name, shader_compile_type,
+                        shader_code_glsl);
+
+                    // If compilation fails we don't overwrite the
+                    // shader spirv code, and we set the pipeline to
+                    // clean so we dont infinitely loop
+                    if (!shader_code_spirv.empty()) {
+                        std::cout << "SHADER " << i
+                                  << " SUCCESSFULLY RECOMPILED\n";
+                        std::cout << "SHADER: " << shader.source_name << "\n";
+                        shader.spirv_code = shader_code_spirv;
+                    }
+                }
+            }
+
+            if (pipeline.is_dirty) {
+                vkDeviceWaitIdle(m_vulkan_global_state->m_logical_device);
+                vkDestroyPipeline(m_vulkan_global_state->m_logical_device,
+                                  pipeline.pipeline, nullptr);
+                rebuild_compute_shader_pipeline(pipeline);
+                new_landscape();
+                pipeline.is_dirty = false;
+            }
         }
     }
 
@@ -1158,7 +1243,7 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
     //    }
     //}
 
-    m_time_accumulator += deltaTime;
+    if (landscape::SHOULD_ANIMATE) m_landscape_animation_time += deltaTime;
 
     // if (m_time_accumulator > 3.0f) {
     //     new_landscape();
@@ -1201,6 +1286,7 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
             count++;
         }
     }
+    new_landscape();
 
     DrawFrame(deltaTime);
 }
@@ -1222,10 +1308,10 @@ void VulkanContext::load_scene_objects() {
                     mesh.m_materialIndices[matType] = -1;
                     continue;
                 }
-                CreateTextureImage(obj.textureResourceMap[matType], &mesh,
-                                   matType);
-                CreateTextureImageView(&mesh, matType);
-                CreateTextureSampler(&mesh, matType);
+                create_texture_image(obj.textureResourceMap[matType], &mesh,
+                                     matType);
+                create_texture_image_view(&mesh, matType);
+                create_texture_sampler(&mesh, matType);
 
                 std::cout << "REGISTERING " << matType << "\n";
                 mesh.m_materialIndices[matType] = register_texture(
@@ -1241,10 +1327,10 @@ void VulkanContext::load_scene_objects() {
                 &mesh);
         } else {
             for (auto& matType : materialTypes) {
-                CreateTextureImage(obj.textureResourceMap[matType], &mesh,
-                                   matType);
-                CreateTextureImageView(&mesh, matType);
-                CreateTextureSampler(&mesh, matType);
+                create_texture_image(obj.textureResourceMap[matType], &mesh,
+                                     matType);
+                create_texture_image_view(&mesh, matType);
+                create_texture_sampler(&mesh, matType);
                 m_descriptor_set_handler->CreateTexturedPBRDescriptorSets(
                     &mesh);
             }
@@ -1262,12 +1348,20 @@ void VulkanContext::load_scene_objects() {
     landscape.MeshType = TEXTURED;
     landscape.m_indexBufferStartIndex = m_indices.size();
     landscape.m_vertexBufferStartIndex = m_vertices.size();
-    run_compute_shader();
+    backend_vk::Pipeline compute_pipeline_data = {};
+    for (auto pipeline : m_pipelines) {
+        if (pipeline.type == backend_vk::COMPUTE) {
+            compute_pipeline_data = pipeline;
+        }
+    }
+    run_compute_shader(compute_pipeline_data.pipeline,
+                       compute_pipeline_data.pipeline_layout,
+                       m_vulkan_global_state->m_compute_ds);
 
     Vertex* landscapeVertices = static_cast<Vertex*>(
         m_vulkan_global_state->m_computeOutputBufferMemoryMapped);
-    backend_vk::SetIndices(m_indices, landscapeVertices, landscape::HEIGHT,
-                           landscape::WIDTH);
+    backend_vk::set_indices(m_indices, landscapeVertices, landscape::HEIGHT,
+                            landscape::WIDTH);
 
     /// for (int i : {0, 1, 1023, 1024, 500000})
     ///     printf("v%d pos %f %f %f  n %f %f %f\n", i,
@@ -1283,12 +1377,12 @@ void VulkanContext::load_scene_objects() {
     // TODO: Textures in the engine textures folder should be loaded and
     // accessible through handles that can be passed into the create texture
     // image functions so we dont have to do filesystem shit in the future
-    TextureResource tex =
-        FileLoader::LoadTextureFile(MODELS_DIR "EngineDefault/DefaultTile.png");
+    TextureResource tex = FileLoader::load_texture_file(
+        MODELS_DIR "EngineDefault/DefaultTile.png");
 
-    CreateTextureImage(tex, &landscape, ALBEDO);
-    CreateTextureImageView(&landscape, ALBEDO);
-    CreateTextureSampler(&landscape, ALBEDO);
+    create_texture_image(tex, &landscape, ALBEDO);
+    create_texture_image_view(&landscape, ALBEDO);
+    create_texture_sampler(&landscape, ALBEDO);
 
     // std::vector<MaterialEnums> materialTypes = {
     //     ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL, EMISSIVE, ORM};
@@ -1323,28 +1417,40 @@ void VulkanContext::load_scene_objects() {
 }
 
 void VulkanContext::new_landscape() {
-    run_compute_shader();
+    // auto start = std::chrono::steady_clock::now();
+    backend_vk::Pipeline compute_pipeline_data = {};
+    for (auto pipeline : m_pipelines) {
+        if (pipeline.type == backend_vk::COMPUTE) {
+            compute_pipeline_data = pipeline;
+        }
+    }
+    run_compute_shader(compute_pipeline_data.pipeline,
+                       compute_pipeline_data.pipeline_layout,
+                       m_vulkan_global_state->m_compute_ds);
 
-    Vertex* landscapeVertices = static_cast<Vertex*>(
-        m_vulkan_global_state->m_computeOutputBufferMemoryMapped);
+    // auto end = std::chrono::steady_clock::now();
+    // auto duration =
+    //     std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    // std::cout << " TIME TO GENERATE LANDSCAPE: " << duration << "\n";
+    //  Vertex* landscapeVertices = static_cast<Vertex*>(
+    //      m_vulkan_global_state->m_computeOutputBufferMemoryMapped);
 
-    auto start = std::chrono::steady_clock::now();
-    std::copy(
-        landscapeVertices,
-        landscapeVertices + (landscape::WIDTH * landscape::HEIGHT),
-        m_vertices.begin() +
-            m_vulkan_global_state->m_meshList[0].m_vertexBufferStartIndex);
-    auto end = std::chrono::steady_clock::now();
-    auto duration =
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    std::cout << " TIME TO GENERATE LANDSCAPE: " << duration << "\n";
+    // std::copy(
+    //     landscapeVertices,
+    //     landscapeVertices + (landscape::WIDTH * landscape::HEIGHT),
+    //     m_vertices.begin() +
+    //         m_vulkan_global_state->m_meshList[0].m_vertexBufferStartIndex);
 
-    vkDeviceWaitIdle(
-        m_vulkan_global_state
-            ->m_logical_device);  // GPU must not be reading the old buffer
-    // destroy old vertex buffer + memory here (whatever your cleanup does)
-    //
-    m_buffer_handler->CreateVertexBuffer(m_vertices);
+    // vkDeviceWaitIdle(
+    //     m_vulkan_global_state
+    //         ->m_logical_device);  // GPU must not be reading the old buffer
+    //// destroy old vertex buffer + memory here (whatever your cleanup does)
+    ////
+    // vkDestroyBuffer(m_vulkan_global_state->m_logical_device,
+    //                 m_buffer_handler->VertexBuffer, nullptr);
+    // vkFreeMemory(m_vulkan_global_state->m_logical_device,
+    //              m_buffer_handler->VertexBufferMemory, nullptr);
+    // m_buffer_handler->CreateVertexBuffer(m_vertices);
 
     // m_vertices.assign(&landscapeVertices[0], &landscapeVertices[1024 *
     // 1024]);
@@ -1814,9 +1920,10 @@ void VulkanContext::CreateShadowPassPipeline(
 }
 
 backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
-    std::vector<uint32_t>& vert_shader_code,
-    std::vector<uint32_t>& frag_shader_code, const std::string& vert_file_path,
-    const std::string& frag_file_path, VkPipeline* pipeline) {
+    std::vector<uint32_t>& vert_shader_code_spirv,
+    std::vector<uint32_t>& frag_shader_code_spirv,
+    const std::string& vert_file_path, const std::string& frag_file_path,
+    VkPipeline* pipeline) {
     backend_vk::Pipeline vk_pipeline;
     // If the pipeline is being rebuilt we will expect a cached_pipeline to be
     // passed with the necessary fields modified so the pipeline can be
@@ -1856,15 +1963,17 @@ backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
         throw std::runtime_error("failed to create pipeline layout!");
     };
 
-    VkShaderModule vert_shader_module = CreateShaderModule(vert_shader_code);
-    VkShaderModule frag_shader_module = CreateShaderModule(frag_shader_code);
+    VkShaderModule vert_shader_module =
+        CreateShaderModule(vert_shader_code_spirv);
+    VkShaderModule frag_shader_module =
+        CreateShaderModule(frag_shader_code_spirv);
     backend_vk::Shader vs;
     vs.source_name = "scene vertex shader";
     vs.file_path = vert_file_path;
     // vs.pipeline = backend_vk::EVulkanPipeline::BindlessPBR;
     vs.current_write_time = std::filesystem::last_write_time(vert_file_path);
     vs.last_write_time = vs.current_write_time;
-    vs.spirv_code = vert_shader_code;
+    vs.spirv_code = vert_shader_code_spirv;
     vs.entry_point = "main";
     vs.type = backend_vk::VERT;
 
@@ -1874,7 +1983,7 @@ backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
     // fs.pipeline = backend_vk::EVulkanPipeline::BindlessPBR;
     fs.current_write_time = std::filesystem::last_write_time(frag_file_path);
     fs.last_write_time = fs.current_write_time;
-    fs.spirv_code = frag_shader_code;
+    fs.spirv_code = frag_shader_code_spirv;
     fs.entry_point = "main";
     fs.type = backend_vk::FRAG;
 
@@ -2036,7 +2145,8 @@ backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
     colorBlending.blendConstants[2] = 0.0f;  // Optional
     colorBlending.blendConstants[3] = 0.0f;  // Optional
 
-    vk_pipeline.pipeline_layout = &m_vulkan_global_state->m_pbrPipelineLayout;
+    vk_pipeline.pipeline_layout_ptr =
+        &m_vulkan_global_state->m_pbrPipelineLayout;
 
     // Finally creating graphics pipeline object and populating with
     // necessary information
@@ -2114,9 +2224,42 @@ backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
     vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
                           vert_shader_module, nullptr);
 
-    vk_pipeline.pipeline = pipeline;
+    vk_pipeline.pipeline_ptr = pipeline;
 
     return vk_pipeline;
+}
+
+bool VulkanContext::rebuild_compute_shader_pipeline(
+    backend_vk::Pipeline& cached_pipeline) {
+    VkShaderModule compute_shader =
+        CreateShaderModule(cached_pipeline.shaders[0].spirv_code);
+
+    VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
+    shaderStageCreateInfo.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStageCreateInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    shaderStageCreateInfo.module = compute_shader;
+    shaderStageCreateInfo.pName = "main";
+
+    VkComputePipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipelineInfo.layout = cached_pipeline.pipeline_layout;
+    pipelineInfo.stage = shaderStageCreateInfo;
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
+    pipelineInfo.basePipelineIndex = -1;               // Optional
+
+    VkResult result = vkCreateComputePipelines(
+        m_vulkan_global_state->m_logical_device, VK_NULL_HANDLE, 1,
+        &pipelineInfo, nullptr, &cached_pipeline.pipeline);
+
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to create compute pipeline!");
+    }
+
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
+                          compute_shader, nullptr);
+
+    return true;
 }
 
 bool VulkanContext::RebuildPBRPipelineBindless(
@@ -2207,7 +2350,7 @@ bool VulkanContext::RebuildPBRPipelineBindless(
     pipeline_info.pDynamicState =
         &cached_pipeline.graphics_pipeline_state_data.dynamic_state_info;
 
-    pipeline_info.layout = *cached_pipeline.pipeline_layout;
+    pipeline_info.layout = *cached_pipeline.pipeline_layout_ptr;
     pipeline_info.renderPass =
         m_vulkan_global_state->m_render_pass_data->render_pass;
 
@@ -2474,86 +2617,107 @@ VkCommandPool VulkanContext::create_command_pool_compute(
 }
 
 // Pass in the Model3D's texture path
-void VulkanContext::CreateTextureImage(TextureResource props, Mesh3D* mesh,
-                                       MaterialEnums materialType) {
-    auto pixels = props.pixels;
-    int texChannels = props.texChannels;
-    int texHeight = props.texHeight;
-    int texWidth = props.texWidth;
-    VkDeviceSize imageSize = texWidth * texHeight * 4;
+void VulkanContext::create_texture_image(TextureResource props, Mesh3D* mesh,
+                                         MaterialEnums material_type,
+                                         bool is_cube_map) {
+    auto pixels_sdr = props.pixels_sdr;
+    auto pixels_hdr = props.pixels_hdr;
+    int tex_channels = props.tex_channels;
+    int tex_height = props.tex_height;
+    int tex_width = props.tex_width;
+    VkDeviceSize image_size = tex_width * tex_height * 4;
 
-    if (!pixels) {
-        throw std::runtime_error("failed to load texture image!");
+    if (is_cube_map) {
+        if (!pixels_hdr) {
+            throw std::runtime_error("failed to load texture image!");
+        }
+    } else {
+        if (!pixels_sdr) {
+            throw std::runtime_error("failed to load texture image!");
+        }
     }
 
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_buffer_memory;
 
-    m_buffer_handler->CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    m_buffer_handler->CreateBuffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                   stagingBuffer, stagingBufferMemory);
+                                   staging_buffer, staging_buffer_memory);
 
     void* data;
-    vkMapMemory(m_vulkan_global_state->m_logical_device, stagingBufferMemory, 0,
-                imageSize, 0, &data);
-    memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vkUnmapMemory(m_vulkan_global_state->m_logical_device, stagingBufferMemory);
+    vkMapMemory(m_vulkan_global_state->m_logical_device, staging_buffer_memory,
+                0, image_size, 0, &data);
+    if (is_cube_map) {
+        memcpy(data, pixels_hdr, static_cast<size_t>(image_size));
+    } else {
+        memcpy(data, pixels_sdr, static_cast<size_t>(image_size));
+    }
+    vkUnmapMemory(m_vulkan_global_state->m_logical_device,
+                  staging_buffer_memory);
 
     // WARN: Potential for memory leak here
-    stbi_image_free(pixels);
+    if (is_cube_map) {
+        stbi_image_free(pixels_hdr);
+
+    } else {
+        stbi_image_free(pixels_sdr);
+    }
 
     backend_vk::images::create_image(
         m_vulkan_global_state->m_physical_device,
-        m_vulkan_global_state->m_logical_device, texWidth, texHeight,
+        m_vulkan_global_state->m_logical_device, tex_width, tex_height,
         VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        mesh->m_materialDataMap[materialType].m_textureImage,
-        mesh->m_materialDataMap[materialType].m_textureImageMemory);
+        mesh->m_materialDataMap[material_type].m_textureImage,
+        mesh->m_materialDataMap[material_type].m_textureImageMemory,
+        is_cube_map);
 
     backend_vk::images::transition_image_layout(
         m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_commandPool,
         m_vulkan_global_state->m_graphicsQueue,
-        mesh->m_materialDataMap[materialType].m_textureImage,
+        mesh->m_materialDataMap[material_type].m_textureImage,
         VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     backend_vk::images::copy_buffer_to_image(
         m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_commandPool,
-        m_vulkan_global_state->m_graphicsQueue, stagingBuffer,
-        mesh->m_materialDataMap[materialType].m_textureImage,
-        static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+        m_vulkan_global_state->m_graphicsQueue, staging_buffer,
+        mesh->m_materialDataMap[material_type].m_textureImage,
+        static_cast<uint32_t>(tex_width), static_cast<uint32_t>(tex_height),
+        is_cube_map);
 
     backend_vk::images::transition_image_layout(
         m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_commandPool,
         m_vulkan_global_state->m_graphicsQueue,
-        mesh->m_materialDataMap[materialType].m_textureImage,
+        mesh->m_materialDataMap[material_type].m_textureImage,
         VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    vkDestroyBuffer(m_vulkan_global_state->m_logical_device, stagingBuffer,
+    vkDestroyBuffer(m_vulkan_global_state->m_logical_device, staging_buffer,
                     nullptr);
-    vkFreeMemory(m_vulkan_global_state->m_logical_device, stagingBufferMemory,
+    vkFreeMemory(m_vulkan_global_state->m_logical_device, staging_buffer_memory,
                  nullptr);
 }
 
 // TEXTURE IMAGE VIEW
-void VulkanContext::CreateTextureImageView(Mesh3D* mesh,
-                                           MaterialEnums materialType) {
-    mesh->m_materialDataMap[materialType].m_textureImageView =
+void VulkanContext::create_texture_image_view(Mesh3D* mesh,
+                                              MaterialEnums material_type,
+                                              bool is_cube_map) {
+    mesh->m_materialDataMap[material_type].m_textureImageView =
         backend_vk::images::create_image_view(
             m_vulkan_global_state->m_logical_device,
-            mesh->m_materialDataMap[materialType].m_textureImage,
-            VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+            mesh->m_materialDataMap[material_type].m_textureImage,
+            VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, is_cube_map);
 }
 
 // TEXTURE SAMPLER
-void VulkanContext::CreateTextureSampler(Mesh3D* mesh,
-                                         MaterialEnums materialType) {
+void VulkanContext::create_texture_sampler(Mesh3D* mesh,
+                                           MaterialEnums materialType) {
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -2765,7 +2929,9 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
             &m_vulkan_global_state->m_globalBindlessDescriptorSet, 0, nullptr);
         std::vector<VkDescriptorSet> descriptorSetsToBind;
         if (!m_vulkan_global_state->m_meshList.empty()) {
-            VkBuffer vertexBuffers[] = {m_buffer_handler->VertexBuffer};
+            VkBuffer vertexBuffers[] = {
+                m_vulkan_global_state->m_computeOutputBuffer};
+            // VkBuffer vertexBuffers[] = {m_buffer_handler->VertexBuffer};
             VkDeviceSize offsets[] = {0};
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
@@ -3040,6 +3206,20 @@ void VulkanContext::record_command_buffer_compute(
                          VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                          VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &mb, 0, nullptr, 0,
                          nullptr);
+
+    VkBufferMemoryBarrier buffer_barrier{};
+    buffer_barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    buffer_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    buffer_barrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+    buffer_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    buffer_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    buffer_barrier.buffer = m_vulkan_global_state->m_computeOutputBuffer;
+    buffer_barrier.offset = 0;
+    buffer_barrier.size = VK_WHOLE_SIZE;
+
+    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                         VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, 1,
+                         &buffer_barrier, 0, nullptr);
 
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to record command buffer!");
@@ -3550,36 +3730,16 @@ void VulkanContext::end_single_time_commands(VkCommandBuffer commandBuffer) {
                          &commandBuffer);
 }
 
-void VulkanContext::run_compute_shader(bool is_random) {
+void VulkanContext::run_compute_shader(VkPipeline computePipeline,
+                                       VkPipelineLayout pipelineLayout,
+                                       VkDescriptorSet& descriptorSet,
+                                       bool is_random) {
     vkWaitForFences(m_vulkan_global_state->m_logical_device, 1,
                     &m_vulkan_global_state->m_computeFence, VK_TRUE,
                     UINT64_MAX);
 
     VkResult r = vkResetFences(m_vulkan_global_state->m_logical_device, 1,
                                &m_vulkan_global_state->m_computeFence);
-    // Do compute stuff
-    std::vector<char> computeShaderSpv = read_file(SHADERS_DIR "compute.spv");
-    VkDescriptorSetLayout layout =
-        m_descriptor_set_handler->CreateComputeDescriptorSetLayout(
-            m_vulkan_global_state->m_logical_device);
-    VkDescriptorPool descriptorPool =
-        m_descriptor_set_handler->CreateDescriptorPoolCompute(
-            m_vulkan_global_state->m_logical_device);
-
-    VkDescriptorSet descriptorSet =
-        m_descriptor_set_handler->CreateDescriptorSetCompute(
-            descriptorPool, layout, m_vulkan_global_state->m_logical_device);
-    std::vector<VkDescriptorSetLayout> layouts = {};
-    layouts.push_back(layout);
-    VkPipelineLayout pipelineLayout;
-    VkPipeline computePipeline = backend_vk::CreateComputePipeline(
-        computeShaderSpv, m_vulkan_global_state->m_logical_device, layouts,
-        pipelineLayout);
-
-    std::random_device rd;
-    std::uniform_real_distribution<float> amplitude(0.0f, 0.29f);
-    std::uniform_real_distribution<float> freq(0.0f, 0.99f);
-    std::uniform_real_distribution<float> octaves(1, 8);
 
     Vertex* in = static_cast<Vertex*>(
         m_vulkan_global_state->m_computeInputBufferMemoryMapped);
@@ -3598,6 +3758,9 @@ void VulkanContext::run_compute_shader(bool is_random) {
     in[7].pos.x = landscape::HEIGHT;
     in[8].pos.x = landscape::SCALE;
     in[9].pos.x = landscape::AMPLITUDE;
+    if (landscape::SHOULD_ANIMATE) {
+        in[10].pos.x = m_landscape_animation_time;
+    }
 
     record_command_buffer_compute(
         m_vulkan_global_state->m_commandBuffersCompute[0], computePipeline,

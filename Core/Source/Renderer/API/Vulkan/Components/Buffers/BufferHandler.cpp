@@ -218,11 +218,14 @@ void BufferHandler::CreateComputeSSBOs() {
                 &m_vulkan_global_state->m_computeInputBufferMemoryMapped);
 
     bufferSize = sizeof(OutputSSBO);
-    CreateBuffer(bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                 m_vulkan_global_state->m_computeOutputBuffer,
-                 m_vulkan_global_state->m_computeOutputBufferMemory);
+    CreateBuffer(
+        bufferSize,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        m_vulkan_global_state->m_computeOutputBuffer,
+        m_vulkan_global_state->m_computeOutputBufferMemory);
     vkMapMemory(m_vulkan_global_state->m_logical_device,
                 m_vulkan_global_state->m_computeOutputBufferMemory, 0,
                 bufferSize, 0,

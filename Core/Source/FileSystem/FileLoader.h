@@ -26,39 +26,54 @@ class FileLoader {
 
         if (!albedoTextureFilePath.empty())
             loadedObject.textureResourceMap[ALBEDO] =
-                LoadTextureFile(albedoTextureFilePath);
+                load_texture_file(albedoTextureFilePath);
         if (!metallicTextureFilePath.empty())
             loadedObject.textureResourceMap[METALLIC] =
-                LoadTextureFile(metallicTextureFilePath);
+                load_texture_file(metallicTextureFilePath);
         if (!roughnessTextureFilePath.empty())
             loadedObject.textureResourceMap[ROUGHNESS] =
-                LoadTextureFile(roughnessTextureFilePath);
+                load_texture_file(roughnessTextureFilePath);
         if (!aoTextureFilePath.empty())
             loadedObject.textureResourceMap[AO] =
-                LoadTextureFile(aoTextureFilePath);
+                load_texture_file(aoTextureFilePath);
         if (!normalTextureFilePath.empty())
             loadedObject.textureResourceMap[NORMAL] =
-                LoadTextureFile(normalTextureFilePath);
+                load_texture_file(normalTextureFilePath);
         if (!emissiveTextureFilePath.empty())
             loadedObject.textureResourceMap[EMISSIVE] =
-                LoadTextureFile(emissiveTextureFilePath);
+                load_texture_file(emissiveTextureFilePath);
         if (!ormTextureFilePath.empty())
             loadedObject.textureResourceMap[ORM] =
-                LoadTextureFile(ormTextureFilePath);
+                load_texture_file(ormTextureFilePath);
         return loadedObject;
     }
 
-    static TextureResource LoadTextureFile(std::string filePath) {
-        int texWidth, texHeight, texChannels;
+    static TextureResource load_texture_file(std::string file_path) {
+        int tex_width, tex_height, tex_channels;
 
-        stbi_uc* pixels = stbi_load(filePath.c_str(), &texWidth, &texHeight,
-                                    &texChannels, STBI_rgb_alpha);
+        stbi_uc* pixels = stbi_load(file_path.c_str(), &tex_width, &tex_height,
+                                    &tex_channels, STBI_rgb_alpha);
 
         TextureResource props;
-        props.texWidth = texWidth;
-        props.texHeight = texHeight;
-        props.texChannels = texChannels;
-        props.pixels = pixels;
+        props.tex_width = tex_width;
+        props.tex_height = tex_height;
+        props.tex_channels = tex_channels;
+        props.pixels_sdr = pixels;
+
+        return props;
+    }
+
+    static TextureResource load_cubemap_texture(std::string file_path) {
+        int tex_width, tex_height, tex_channels;
+
+        float* pixels = stbi_loadf(file_path.c_str(), &tex_width, &tex_height,
+                                   &tex_channels, STBI_rgb_alpha);
+
+        TextureResource props;
+        props.tex_width = tex_width;
+        props.tex_height = tex_height;
+        props.tex_channels = tex_channels;
+        props.pixels_hdr = pixels;
 
         return props;
     }

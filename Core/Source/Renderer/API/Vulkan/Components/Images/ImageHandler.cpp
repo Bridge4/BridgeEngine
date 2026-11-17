@@ -1,5 +1,7 @@
 #include "../Images/ImageHandler.h"
 
+#include <vulkan/vulkan_core.h>
+
 #include <stdexcept>
 
 #include "../../VulkanContext.h"
@@ -7,17 +9,19 @@
 namespace backend_vk::images {
 
 VkImageView create_image_view(VkDevice device, VkImage image, VkFormat format,
-                              VkImageAspectFlags aspectFlags) {
+                              VkImageAspectFlags aspectFlags,
+                              bool is_cube_map) {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = image;
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.viewType =
+        is_cube_map ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
     viewInfo.format = format;
     viewInfo.subresourceRange.aspectMask = aspectFlags;
     viewInfo.subresourceRange.baseMipLevel = 0;
     viewInfo.subresourceRange.levelCount = 1;
     viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = 1;
+    viewInfo.subresourceRange.layerCount = is_cube_map ? 6 : 1;
 
     VkImageView imageView;
     if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) !=
@@ -31,7 +35,7 @@ void create_image(VkPhysicalDevice& physical_device, VkDevice& logical_device,
                   uint32_t width, uint32_t height, VkFormat format,
                   VkImageTiling tiling, VkImageUsageFlags usage,
                   VkMemoryPropertyFlags properties, VkImage& image,
-                  VkDeviceMemory& imageMemory) {
+                  VkDeviceMemory& imageMemory, bool is_cube_map) {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -39,7 +43,12 @@ void create_image(VkPhysicalDevice& physical_device, VkDevice& logical_device,
     imageInfo.extent.height = static_cast<uint32_t>(height);
     imageInfo.extent.depth = 1;
     imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = 1;
+    if (is_cube_map) {
+        imageInfo.arrayLayers = 6;
+
+    } else {
+        imageInfo.arrayLayers = 1;
+    }
 
     // Be sure to match the image format with pixel format in the buffer
     // otherwise copy operation will fail
@@ -53,7 +62,12 @@ void create_image(VkPhysicalDevice& physical_device, VkDevice& logical_device,
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.flags = 0;  // Optional
+    if (is_cube_map) {
+        imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+
+    } else {
+        imageInfo.flags = 0;
+    }
 
     if (vkCreateImage(logical_device, &imageInfo, nullptr, &image) !=
         VK_SUCCESS) {
@@ -150,23 +164,29 @@ bool has_stencil_component(VkFormat format) {
 
 void copy_buffer_to_image(VkDevice& logical_device, VkCommandPool& command_pool,
                           VkQueue& graphics_queue, VkBuffer buffer,
-                          VkImage image, uint32_t width, uint32_t height) {
+                          VkImage image, uint32_t width, uint32_t height,
+                          VkDeviceSize layer_size, int layer_count) {
     VkCommandBuffer command_buffer =
         backend_vk::begin_single_time_commands(logical_device, command_pool);
-    VkBufferImageCopy region{};
-    region.bufferOffset = 0;
-    region.bufferRowLength = 0;
-    region.bufferImageHeight = 0;
+    std::vector<VkBufferImageCopy> buffer_image_copies = {};
+    for (int i = 0; i < layer_count; i++) {
+        VkBufferImageCopy buffer_image_copy{};
+        buffer_image_copy.bufferOffset = i * layer_size;
+        buffer_image_copy.bufferRowLength = 0;
+        buffer_image_copy.bufferImageHeight = 0;
 
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.mipLevel = 0;
-    region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount = 1;
+        buffer_image_copy.imageSubresource.aspectMask =
+            VK_IMAGE_ASPECT_COLOR_BIT;
+        buffer_image_copy.imageSubresource.mipLevel = 0;
+        buffer_image_copy.imageSubresource.baseArrayLayer = i;
+        buffer_image_copy.imageSubresource.layerCount = layer_count;
 
-    region.imageOffset = {0, 0, 0};
-    region.imageExtent = {width, height, 1};
-    vkCmdCopyBufferToImage(command_buffer, buffer, image,
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+        buffer_image_copy.imageOffset = {0, 0, 0};
+        buffer_image_copy.imageExtent = {width, height, 1};
+    }
+    vkCmdCopyBufferToImage(
+        command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        buffer_image_copies.size(), buffer_image_copies.data());
     backend_vk::end_single_time_commands(logical_device, command_pool,
                                          graphics_queue, command_buffer);
 }

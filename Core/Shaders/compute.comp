@@ -118,19 +118,27 @@ void generate_animation_frames(int number_of_frames ) {
 
 void main() {
     uint idx = gl_GlobalInvocationID.x;
-    const uint gridWidth  = int(dataIn[6].px);
-    const uint gridHeight = int(dataIn[7].px);
+    const uint gridWidth  = uint(dataIn[6].px);
+    const uint gridHeight = uint(dataIn[7].px);
+    float delta_time = dataIn[10].px;
+    float speed = 100 * delta_time;
     if (idx >= gridWidth * gridHeight) return;
 
     const float meshScale = dataIn[8].px;
     uint x = idx % gridWidth;
-    uint y = idx / gridWidth;
+    uint y = idx / gridHeight;
 
     float u = float(x) / float(gridWidth  - 1);
     float v = float(y) / float(gridHeight - 1);
 
-    float fx = float(x), fy = float(y);
-    float h  = terrainHeight(fx, fy);
+    float fx = float(x) + speed, fy = speed + float(y);
+    float h1  = terrainHeight(terrainHeight(fx, fy), terrainHeight(fx, fy)) * 10;
+    float h2  = terrainHeight(fx, fy);
+
+    float t = (h1 - h2);
+    float h  = h2;
+
+    float heightScale = dataIn[9].px;
 
     // central differences, one grid step = cell world size
     float cell = meshScale / float(gridWidth - 1);
@@ -138,10 +146,10 @@ void main() {
     float hR = terrainHeight(fx + 1.0, fy);
     float hD = terrainHeight(fx, fy - 1.0);
     float hU = terrainHeight(fx, fy + 1.0);
-    vec3 n = normalize(vec3(hL - hR, 2.0 * cell, hD - hU));
+    vec3 n = normalize(vec3( (hL - hR) * heightScale, 2.0 * cell, (hD - hU) * heightScale));
 
     dataOut[idx].px = (u - 0.5) * meshScale;
-    dataOut[idx].py = h * dataIn[9].px;
+    dataOut[idx].py = h * heightScale;
     dataOut[idx].pz = (v - 0.5) * meshScale;
     dataOut[idx].cr = 1.0; dataOut[idx].cg = 1.0; dataOut[idx].cb = 1.0;
     dataOut[idx].nx = n.x; dataOut[idx].ny = n.y; dataOut[idx].nz = n.z;

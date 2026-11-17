@@ -13,6 +13,7 @@ VkResult WindowingBackend::create_surface_vk_glfw(VkInstance instance,
     return glfwCreateWindowSurface(instance, m_window, nullptr, surface);
 }
 
+void WindowingBackend::ShowWindow() { glfwShowWindow(m_window); }
 void WindowingBackend::CreateWindowVkGLFW(uint32_t w, uint32_t h) {
     m_width = w, m_height = h;
     // GLFW creates an OpenGL context so we need to undo that
@@ -24,6 +25,7 @@ void WindowingBackend::CreateWindowVkGLFW(uint32_t w, uint32_t h) {
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
     m_window = glfwCreateWindow(w, h, "Bridge Engine", nullptr, nullptr);
+    glfwHideWindow(m_window);
     // Very important line, if you forget this then the callback with cause an
     // access violation due to nullptr
     glfwSetWindowUserPointer(m_window, this);

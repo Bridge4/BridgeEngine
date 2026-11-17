@@ -55,7 +55,7 @@ class Mesh3D;
 namespace backend_vk {
 
 enum EVulkanPipeline { BindlessPBR };
-enum EShaderType { VERT, FRAG };
+enum EShaderType { VERT, FRAG, COMP };
 struct Shader {
     std::string source_name;
     std::string file_path;
@@ -109,15 +109,35 @@ struct GraphicsPipelineStateData {
     std::vector<VkDynamicState> dynamic_states;
     std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
 };
+
+struct ComputePipelineStateData {
+    VkPipelineVertexInputStateCreateInfo vertex_state_info;
+    VkPipelineInputAssemblyStateCreateInfo input_assembly_state_info;
+    VkPipelineViewportStateCreateInfo viewport_state_info;
+    VkPipelineRasterizationStateCreateInfo rasterization_state_info;
+    VkPipelineMultisampleStateCreateInfo multisampler_state_info;
+    VkPipelineDepthStencilStateCreateInfo depth_stencil_state_info;
+    VkPipelineColorBlendStateCreateInfo color_blend_state_info;
+    VkPipelineDynamicStateCreateInfo dynamic_state_info;
+
+    std::vector<VkVertexInputBindingDescription> vertex_bindings;
+    std::vector<VkVertexInputAttributeDescription> vertex_attributes;
+    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments;
+    std::vector<VkDynamicState> dynamic_states;
+    std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
+};
 struct Pipeline {
     EPipelineType type = GRAPHICS;
 
     VkGraphicsPipelineCreateInfo graphics_create_info;
     GraphicsPipelineStateData graphics_pipeline_state_data;
     VkComputePipelineCreateInfo compute_create_info;
+    ComputePipelineStateData compute_pipeline_state_data;
 
-    VkPipeline* pipeline;
-    VkPipelineLayout* pipeline_layout;
+    VkPipeline* pipeline_ptr;
+    VkPipelineLayout* pipeline_layout_ptr;
+    VkPipeline pipeline;
+    VkPipelineLayout pipeline_layout;
     std::vector<Shader> shaders;
     std::vector<PipelineEdit> edits;
     bool is_dirty;
@@ -126,10 +146,11 @@ struct Pipeline {
 std::string read_shader(const std::string& file_name);
 void render_ui(VulkanContext& context_vk);
 
-VkPipeline CreateComputePipeline(
-    std::vector<char> shader, VkDevice& logical_device,
+Pipeline CreateComputePipeline(
+    std::vector<uint32_t> shader_code_spirv,
+    const std::string& shader_file_path, VkDevice& logical_device,
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts,
-    VkPipelineLayout& pipelineLayout);
+    VkPipelineLayout& pipeline_layout);
 
 std::vector<VkFramebuffer> create_swapchain_framebuffers(
     int numberOfFramebuffers, std::vector<VkImageView> perFrameImageViews,
@@ -204,7 +225,12 @@ class VulkanContext {
     uint32_t register_texture(VkImageView* texture_image_view,
                               VkSampler* texture_sampler);
 
-    void run_compute_shader(bool is_random = false);
+    void run_compute_shader(VkPipeline computePipeline,
+                            VkPipelineLayout pipelineLayout,
+                            VkDescriptorSet& descriptorSet,
+                            bool is_random = false);
+
+    bool rebuild_compute_shader_pipeline(backend_vk::Pipeline& cached_pipeline);
     std::vector<ObjResource> m_objects_to_render = {};
 
     // Reading in SPIRV shaders
@@ -244,7 +270,7 @@ class VulkanContext {
         return buffer;
     }
 
-    float m_time_accumulator = 0.0f;
+    float m_landscape_animation_time = 0.0f;
 
     CameraController* m_cameraController;
 
@@ -305,14 +331,16 @@ class VulkanContext {
     // VkImageTiling tiling, VkFormatFeatureFlags features);
 
     // TEXTURE IMAGE
-    void CreateTextureImage(TextureResource props, Mesh3D* mesh,
-                            MaterialEnums materialType);
+    void create_texture_image(TextureResource props, Mesh3D* mesh,
+                              MaterialEnums materialType,
+                              bool is_cube_map = false);
 
     // TEXTURE IMAGE VIEW
-    void CreateTextureImageView(Mesh3D* mesh, MaterialEnums materialType);
+    void create_texture_image_view(Mesh3D* mesh, MaterialEnums materialType,
+                                   bool is_cube_map = false);
 
     // TEXTURE SAMPLER
-    void CreateTextureSampler(Mesh3D* mesh, MaterialEnums materialType);
+    void create_texture_sampler(Mesh3D* mesh, MaterialEnums materialType);
     void CreateTextureSamplerShadowPass();
 
     // helper function used in createTextureImage();

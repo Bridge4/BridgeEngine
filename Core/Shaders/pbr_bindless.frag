@@ -75,7 +75,7 @@ float GeometrySchlickGGX(float NdotV, float roughness){
     float a1 = roughness + 1.0;
     float k = (a1*a1)/8.0;
 
-    return NdotV/( NdotV * (1.0-k) + k );
+    return (NdotV/( NdotV * (1.0-k)+ k ));
 }
 
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness){
@@ -127,7 +127,7 @@ vec3 calculate_terrain_color(float height, float max_height, vec3 base_color) {
 }
 
 vec3 calculate_water_color(float height, float max_height, vec3 base_color) {
-  vec3 final_color = base_color / clamp((abs(height - max_height)), 0.3, 10.0);
+    vec3 final_color = base_color / clamp((abs(height - max_height)), 0.3, 10.0);
     //roughness = clamp(roughness, 0.04, 1.0);
 
   return final_color;
@@ -192,13 +192,13 @@ void main() {
 
     if (fragPos.y < WATER_LEVEL) {
         finalColor = waterColor;
-        emissive = waterColor * 0.01;
-        roughness = 0.1;
+        emissive = finalColor * 0.006;
+        //roughness = 0.1;
     }
     else{ 
       float t = smoothstep(WATER_LEVEL, SAND_LEVEL, fragPos.y);
-      //emissive = sandColor * 0.01;
       finalColor = mix(sandColor, waterColor, t);
+      emissive = finalColor * 0.007;
       metallic = 1.0;
       //finalColor = sandColor;
     }
