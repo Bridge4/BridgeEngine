@@ -44,44 +44,11 @@ target_include_directories(imgui PUBLIC
     ${IMGUI_DIR}
     ${IMGUI_DIR}/backends
 )
+file(GLOB_RECURSE CORE_SOURCES CONFIGURE_DEPENDS
+     "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.cpp"
+     "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.h")
 
-target_sources(Core PRIVATE
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Engine.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Engine.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Window/WindowingBackend.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Window/WindowingBackend.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/FileSystem/FileLoader.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Math/Math.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/RendererTypes.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Lights/Lights.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Camera/Camera.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Renderer.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Renderer.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Camera/CameraController.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Camera/CameraController.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Camera/OrbitCamera.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Camera/OrbitCamera.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Camera/NoClipCamera.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Camera/NoClipCamera.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/Mesh/Mesh3D.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/VkTypes.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/VulkanContext.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/VulkanContext.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Buffers/BufferHandler.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Buffers/BufferHandler.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/DescriptorSets/DescriptorSetHandler.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Devices/DeviceHandler.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Devices/DeviceHandler.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Images/ImageHandler.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/Images/ImageHandler.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/RenderPass/RenderPassHandler.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/RenderPass/RenderPassHandler.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/SwapChain/SwapChainHandler.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/SwapChain/SwapChainHandler.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/VulkanGlobalState/VulkanGlobalState.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/VulkanGlobalState/VulkanGlobalState.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/WindowVK/WindowHandlerVK.h"
-               "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/WindowVK/WindowHandlerVK.cpp")
+target_sources(Core PRIVATE ${CORE_SOURCES})
+
 target_link_libraries(imgui PRIVATE glfw Vulkan::Vulkan)
 target_link_libraries(${PROJECT_NAME} glfw ${GLFW_LIBRARIES} Vulkan::Vulkan glm imgui Vulkan::shaderc_combined)

@@ -206,7 +206,8 @@ void main() {
       float grass_weight = 1 - clamp( (slope - grass_blend_height)/(slope_threshold - grass_blend_height), 0.0, 1.0);
       finalColor = grassColor * grass_weight + rockColor * (1-grass_weight);
       float t = smoothstep(GRASS_LEVEL, WATER_LEVEL, fragPos.y);
-      finalColor = mix(finalColor, waterColor, gcrass_blend_height);
+      finalColor = mix(finalColor, waterColor, grass_blend_height);
+      metallic = 1.0;
     }
     //else{ 
     //  float slope_threshold = 0.5;
