@@ -6,6 +6,9 @@ find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
 
 add_library(Core)
 
+if(WIN32)
+  target_link_options(Core PUBLIC "LINKER:/ignore:4099")
+endif()
 target_include_directories(Core PUBLIC
                                         "${VULKAN_INCLUDE_DIRS}"
                                         "../Dependencies/stb-master/stb"
@@ -80,8 +83,5 @@ target_sources(Core PRIVATE
                "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/VulkanGlobalState/VulkanGlobalState.cpp"
                "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/WindowVK/WindowHandlerVK.h"
                "${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderer/API/Vulkan/Components/WindowVK/WindowHandlerVK.cpp")
-if (MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
-  target_link_options(Core PRIVATE "/ignore:4099")
-endif()
 target_link_libraries(imgui PRIVATE glfw Vulkan::Vulkan)
 target_link_libraries(${PROJECT_NAME} glfw ${GLFW_LIBRARIES} Vulkan::Vulkan glm imgui Vulkan::shaderc_combined)
