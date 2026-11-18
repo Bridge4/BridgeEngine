@@ -113,8 +113,6 @@ std::vector<uint32_t> compile_shader(const std::string& source_name,
 }
 namespace fs = std::filesystem;
 
-// TODO: We need a way to associate shaders with the pipeline layout and
-// pipeline that needs to be rebuilt after recompilation
 std::vector<int> check_for_shader_recompilation(
     std::vector<Shader>& watched_shaders) {
     std::vector<int> shaders_requiring_recompilation = {};
@@ -1098,9 +1096,6 @@ uint32_t VulkanContext::register_texture(VkImageView* textureImageView,
 
 void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
                          float deltaTime) {
-    // Instead of checking shaders we need to recompile, we should check our
-    // pipeline states to see if they are CLEAN
-
     for (auto& pipeline : m_pipelines) {
         if (pipeline.type == backend_vk::GRAPHICS) {
             VkGraphicsPipelineCreateInfo gfx_create_info =
@@ -1204,53 +1199,8 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
         }
     }
 
-    // if (!shaders_to_recompile.empty()) {
-    //     std::vector<int> indices_to_drop = {};
-    //     for (int i = 0; i < shaders_to_recompile.size(); i++) {
-    //         switch (shaders_to_recompile[i].pipeline) {
-    //             case (backend_vk::EVulkanPipeline::BindlessPBR): {
-    //                 std::string vert_scene_code =
-    //                     backend_vk::read_shader(SHADERS_DIR "scene.vert");
-    //                 std::string frag_bindless_code = backend_vk::read_shader(
-    //                     SHADERS_DIR "pbr_bindless.frag");
-
-    //                auto vert_scene = backend_vk::compile_shader(
-    //                    "Scene Vertex Shader",
-    //                    shaderc_shader_kind::shaderc_glsl_default_vertex_shader,
-    //                    vert_scene_code);
-
-    //                auto frag_bindless = backend_vk::compile_shader(
-    //                    "Bindless Fragment Shader",
-    //                    shaderc_shader_kind::
-    //                        shaderc_glsl_default_fragment_shader,
-    //                    frag_bindless_code);
-    //                if (vert_scene.empty() || frag_bindless.empty()) {
-    //                    std::cout << "SHADERS INVALID\n";
-    //                }
-    //                // std::vector<char> vert_scene = read_file(SHADERS_DIR
-    //                // "scene.spv"); std::vector<char> frag_bindless =
-    //                //     read_file(SHADERS_DIR "pbr_bindless.spv");
-    //                // m_descriptor_set_handler
-    //                //    ->CreateTexturedPBRDescriptorSetLayoutBindless();
-    //                CreatePBRPipelineBindless(
-    //                    vert_scene, frag_bindless,
-    //                    &m_vulkan_global_state->m_pbrPipeline, true);
-
-    //                indices_to_drop.push_back(i);
-    //                break;
-    //            }
-    //        }
-    //    }
-    //}
-
     if (landscape::SHOULD_ANIMATE) m_landscape_animation_time += deltaTime;
 
-    // if (m_time_accumulator > 3.0f) {
-    //     new_landscape();
-    //     //  std::thread t([this]() { NewLandscape(); });
-    //     //  t.detach();
-    //     m_time_accumulator = 0.0f;
-    // }
     backend_vk::render_ui(*this);
 
     m_cameraController->HandleInputOrbit(deltaTime);

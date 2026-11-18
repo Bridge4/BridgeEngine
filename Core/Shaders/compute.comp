@@ -111,8 +111,9 @@ float terrainHeight(float gx, float gy) {
 }
 
 
-void generate_animation_frames(int number_of_frames ) {
-
+void hydraulic_erosion(){
+  // TODO:
+  //
 
 }
 

@@ -166,7 +166,8 @@ void main() {
     float x1 = fragNormal.x;
     float x2 = worldUp.x;
 
-    float slope = (y2-y1)/(x2-x1);
+    //float slope = (y2-y1)/(x2-x1);
+    float slope = 1 - fragNormal.y;
     
     //if (fragPos.y < WATER_LEVEL) {
     //    finalColor = deepWater;
@@ -190,18 +191,43 @@ void main() {
     vec3 rockColor = calculate_terrain_color(fragPos.y,  WATER_LEVEL, rock); 
 
 
+    float water_weight = 0;
     if (fragPos.y < WATER_LEVEL) {
-        finalColor = waterColor;
-        emissive = finalColor * 0.006;
+      water_weight = clamp(fragPos.y - WATER_LEVEL, 0.0, 1.0);
+      finalColor = waterColor;
+        //emissive = finalColor * 0.006;
         //roughness = 0.1;
     }
-    else{ 
-      float t = smoothstep(WATER_LEVEL, SAND_LEVEL, fragPos.y);
-      finalColor = mix(sandColor, waterColor, t);
-      emissive = finalColor * 0.007;
-      metallic = 1.0;
-      //finalColor = sandColor;
+
+    else {
+      float slope_threshold = 0.45;
+      float grass_blend_amount = 0.8;
+      float grass_blend_height = slope_threshold * (1 - grass_blend_amount);
+      float grass_weight = 1 - clamp( (slope - grass_blend_height)/(slope_threshold - grass_blend_height), 0.0, 1.0);
+      finalColor = grassColor * grass_weight + rockColor * (1-grass_weight);
+      float t = smoothstep(GRASS_LEVEL, WATER_LEVEL, fragPos.y);
+      finalColor = mix(finalColor, waterColor, gcrass_blend_height);
     }
+    //else{ 
+    //  float slope_threshold = 0.5;
+    //  float grass_blend_amount = 1.0;
+    //  float grass_blend_height = slope_threshold * (1 - grass_blend_amount);
+    //  float grass_weight = 1 - (clamp(slope - grass_blend_height, 0.0, 1.0)/clamp(slope_threshold - grass_blend_height, 0.0, 1.0));
+    //  finalColor = grassColor * grass_weight + rockColor * (grass_weight);
+    //  //if (abs(slope) < 0.5){
+    //  //  finalColor = sandColor;
+    //  //  emissive = finalColor * 0.007;
+    //  //  metallic = 1.0;
+    //  //}
+    //  //else {
+    //  //  float t = smoothstep(SAND_LEVEL, WATER_LEVEL, fragPos.y);
+    //  //  finalColor = mix(rockColor, snow, t);
+    //  //  emissive = finalColor * 0.007;
+    //  //  metallic = 1.0;
+
+    //  //}
+    //  //finalColor = sandColor;
+    //}
     //else if (fragPos.y < GRASS_LEVEL){
     //  float t = smoothstep(GRASS_LEVEL, WATER_LEVEL, fragPos.y);
     //  emissive = grassColor * 0.01;
