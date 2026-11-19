@@ -1,6 +1,7 @@
 #include <combaseapi.h>
 #include <shaderc/shaderc.h>
 #include <vulkan/vulkan_core.h>
+#include <windows.h>
 
 #include <cassert>
 #include <filesystem>
@@ -51,17 +52,18 @@
 
 namespace landscape {
 int WIDTH = 1024;
-int HEIGHT = 1024;
+int DEPTH = 1024;
 float SCALE = 200.0;
-float AMPLITUDE = 1.0;
+float MAX_AMPLITUDE = 4.0;
+float AMPLITUDE = 0.867;
 float BASE_0 = 5.4f;
 float BASE_1 = 2.4f;
 float LACUNARITY = 2.0f;
 float PERSISTENCE = 0.52f;
-float FREQUENCY = 0.2f;
-int OCTAVES = 8;
-bool SHOULD_ANIMATE = false;
-glm::vec3 CLEAR_COLOR = glm::vec3(69 / 255, 118 / 255, 135 / 255);
+float FREQUENCY = 0.108f;
+int OCTAVES = 14;
+bool SHOULD_ANIMATE = true;
+glm::vec3 CLEAR_COLOR = glm::vec3(25 / 255, 121 / 255, 155 / 255);
 
 }  // namespace landscape
 
@@ -144,6 +146,9 @@ void render_ui(VulkanContext& context_vk) {
     // bool show_demo_window = true;
     // ImGui::ShowDemoWindow(&show_demo_window);
     ImGui::Begin("Landscape Settings");
+    // Test frame rates (verifies NewFrame delta timing is working)
+    ImGui::Text("Performance: %.3f ms/frame (%.1f FPS)",
+                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
     glm::mat4 mat = context_vk.m_cameraController->m_cameraUBO.view;
     ImGui::Text("%s:", "Camera View");
@@ -165,6 +170,7 @@ void render_ui(VulkanContext& context_vk) {
     const char* draw_type_options[] = {"Mesh", "Line", "Point"};
     static int draw_type_selection = 0;
 
+    ImGui::SliderInt("Target FPS", &context_vk.m_target_fps, 1, 360);
     if (ImGui::BeginCombo("Draw Type",
                           draw_type_options[draw_type_selection])) {
         for (int n = 0; n < IM_ARRAYSIZE(draw_type_options); n++) {
@@ -195,24 +201,31 @@ void render_ui(VulkanContext& context_vk) {
     }
 
     ImGui::Checkbox("Animate Landscape", &landscape::SHOULD_ANIMATE);
+    ImGui::Checkbox("V-Sync", &context_vk.m_vsync);
+    if (context_vk.m_vsync) {
+        context_vk.m_target_fps = context_vk.m_monitor_refresh_rate;
+    }
 
-    bool width_changed =
-        ImGui::SliderInt("Width", &landscape::WIDTH, 128.0, 8192.0);
-    bool height_changed =
-        ImGui::SliderInt("HEIGHT", &landscape::HEIGHT, 128.0, 8192.0);
+    bool width_changed = ImGui::InputInt("Width", &landscape::WIDTH);
+    bool depth_changed = ImGui::InputInt("Depth", &landscape::DEPTH);
+    if (width_changed || depth_changed) {
+        // Recreate the landscape
+        context_vk.new_landscape(true);
+    }
     bool scale_changed =
         ImGui::SliderFloat("Scale", &landscape::SCALE, 0.0f, 2000.0f);
-    bool amp_changed =
-        ImGui::SliderFloat("Amplitude", &landscape::AMPLITUDE, 0.0f, 4.0f);
+    ImGui::InputFloat("Max Amplitude", &landscape::MAX_AMPLITUDE);
+    bool amp_changed = ImGui::SliderFloat("Amplitude", &landscape::AMPLITUDE,
+                                          0.0f, landscape::MAX_AMPLITUDE);
     bool lac_changed =
         ImGui::SliderFloat("Lacunarity", &landscape::LACUNARITY, -2.0f, 2.0f);
     // context_vk.new_landscape();
     bool freq_changed =
         ImGui::SliderFloat("Frequency", &landscape::FREQUENCY, 0.0f, 0.99f);
     bool oct_changed = ImGui::SliderInt("Octaves", &landscape::OCTAVES, 1, 32);
-    if (lac_changed || freq_changed || oct_changed || width_changed ||
-        height_changed || scale_changed || amp_changed) {
-        // context_vk.new_landscape();
+    if (lac_changed || freq_changed || oct_changed || scale_changed ||
+        amp_changed) {
+        context_vk.new_landscape();
     }
     float MIN_LEVEL = -20.0;
     float MAX_LEVEL = 10.0;
@@ -264,10 +277,6 @@ void render_ui(VulkanContext& context_vk) {
         "Snow Color",
         &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
              .snow_color.x);
-    // Test frame rates (verifies NewFrame delta timing is working)
-    // ImGui::Text("Performance: %.3f ms/frame (%.1f FPS)",
-    //            1000.0f / ImGui::GetIO().Framerate,
-    //            ImGui::GetIO().Framerate);
 
     ImGui::End();
 
@@ -422,9 +431,16 @@ void set_indices(std::vector<uint32_t>& indices, Vertex* vertices,
     for (int i = 0; i < worldHeight * worldWidth; i += 1) {
         if (drawnRight == limit && drawnLeft == limit) break;
         // Draw order for right-facing and left-facing triangles
-        SetIndex(indices, r3, r2, r1, l3, l2, l1);
-        // SetNormal(vertices, r3, r2, r1);
-        // SetNormal(vertices, l3, l2, l1);
+
+        indices.push_back(r3);
+        indices.push_back(r2);
+        indices.push_back(r1);
+        indices.push_back(l3);
+        indices.push_back(l2);
+        indices.push_back(l1);
+        // SetIndex(indices, r3, r2, r1, l3, l2, l1);
+        //  SetNormal(vertices, r3, r2, r1);
+        //  SetNormal(vertices, l3, l2, l1);
         inRowLeft++;
         drawnLeft++;
         inRowRight++;
@@ -589,6 +605,14 @@ uint32_t find_memory_type(VkPhysicalDevice& physical_device,
 }  // namespace backend_vk
 
 void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
+    DEVMODE dm = {};
+    dm.dmSize = sizeof(DEVMODE);
+    if (EnumDisplaySettings(nullptr, ENUM_CURRENT_SETTINGS, &dm)) {
+        m_monitor_refresh_rate = dm.dmDisplayFrequency;
+    } else {
+        m_monitor_refresh_rate = 60;
+    }
+
     m_vulkan_global_state = new VulkanGlobalState(this, rendering_mode);
 
     m_descriptor_set_handler = new DescriptorSetHandler(m_vulkan_global_state);
@@ -1096,6 +1120,7 @@ uint32_t VulkanContext::register_texture(VkImageView* textureImageView,
 
 void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
                          float deltaTime) {
+    m_frame_time += deltaTime;
     for (auto& pipeline : m_pipelines) {
         if (pipeline.type == backend_vk::GRAPHICS) {
             VkGraphicsPipelineCreateInfo gfx_create_info =
@@ -1199,10 +1224,6 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
         }
     }
 
-    if (landscape::SHOULD_ANIMATE) m_landscape_animation_time += deltaTime;
-
-    backend_vk::render_ui(*this);
-
     m_cameraController->HandleInputOrbit(deltaTime);
 
     memcpy(m_vulkan_global_state
@@ -1236,9 +1257,19 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
             count++;
         }
     }
-    new_landscape();
+    if (landscape::SHOULD_ANIMATE) {
+        m_landscape_animation_time += deltaTime;
+        new_landscape();
+    }
 
-    DrawFrame(deltaTime);
+    // 60 frames per second
+    // 1000ms per second
+    // Each frame is a chunk
+    if (m_frame_time > 1000.0f / m_target_fps / 1000.0f) {
+        backend_vk::render_ui(*this);
+        DrawFrame(deltaTime);
+        m_frame_time = 0;
+    }
 }
 
 void VulkanContext::load_scene_objects() {
@@ -1310,7 +1341,7 @@ void VulkanContext::load_scene_objects() {
 
     Vertex* landscapeVertices = static_cast<Vertex*>(
         m_vulkan_global_state->m_computeOutputBufferMemoryMapped);
-    backend_vk::set_indices(m_indices, landscapeVertices, landscape::HEIGHT,
+    backend_vk::set_indices(m_indices, landscapeVertices, landscape::DEPTH,
                             landscape::WIDTH);
 
     /// for (int i : {0, 1, 1023, 1024, 500000})
@@ -1322,7 +1353,7 @@ void VulkanContext::load_scene_objects() {
 
     m_vertices.insert(
         m_vertices.end(), landscapeVertices,
-        landscapeVertices + (landscape::WIDTH * landscape::HEIGHT));
+        landscapeVertices + (landscape::WIDTH * landscape::DEPTH));
 
     // TODO: Textures in the engine textures folder should be loaded and
     // accessible through handles that can be passed into the create texture
@@ -1366,7 +1397,7 @@ void VulkanContext::load_scene_objects() {
     m_buffer_handler->CreateIndexBuffer(m_indices);
 }
 
-void VulkanContext::new_landscape() {
+void VulkanContext::new_landscape(bool rebuild_indices) {
     // auto start = std::chrono::steady_clock::now();
     backend_vk::Pipeline compute_pipeline_data = {};
     for (auto pipeline : m_pipelines) {
@@ -1374,36 +1405,9 @@ void VulkanContext::new_landscape() {
             compute_pipeline_data = pipeline;
         }
     }
-    run_compute_shader(compute_pipeline_data.pipeline,
-                       compute_pipeline_data.pipeline_layout,
-                       m_vulkan_global_state->m_compute_ds);
-
-    // auto end = std::chrono::steady_clock::now();
-    // auto duration =
-    //     std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    // std::cout << " TIME TO GENERATE LANDSCAPE: " << duration << "\n";
-    //  Vertex* landscapeVertices = static_cast<Vertex*>(
-    //      m_vulkan_global_state->m_computeOutputBufferMemoryMapped);
-
-    // std::copy(
-    //     landscapeVertices,
-    //     landscapeVertices + (landscape::WIDTH * landscape::HEIGHT),
-    //     m_vertices.begin() +
-    //         m_vulkan_global_state->m_meshList[0].m_vertexBufferStartIndex);
-
-    // vkDeviceWaitIdle(
-    //     m_vulkan_global_state
-    //         ->m_logical_device);  // GPU must not be reading the old buffer
-    //// destroy old vertex buffer + memory here (whatever your cleanup does)
-    ////
-    // vkDestroyBuffer(m_vulkan_global_state->m_logical_device,
-    //                 m_buffer_handler->VertexBuffer, nullptr);
-    // vkFreeMemory(m_vulkan_global_state->m_logical_device,
-    //              m_buffer_handler->VertexBufferMemory, nullptr);
-    // m_buffer_handler->CreateVertexBuffer(m_vertices);
-
-    // m_vertices.assign(&landscapeVertices[0], &landscapeVertices[1024 *
-    // 1024]);
+    run_compute_shader(
+        compute_pipeline_data.pipeline, compute_pipeline_data.pipeline_layout,
+        m_vulkan_global_state->m_compute_ds, false, rebuild_indices);
 }
 
 void VulkanContext::unload_scene_objects() {
@@ -3129,7 +3133,8 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
 
 void VulkanContext::record_command_buffer_compute(
     VkCommandBuffer commandBuffer, VkPipeline pipeline,
-    VkPipelineLayout pipelineLayout, VkDescriptorSet* descriptorSet) {
+    VkPipelineLayout pipelineLayout, VkDescriptorSet* descriptorSet,
+    bool rebuild_indices) {
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -3144,7 +3149,7 @@ void VulkanContext::record_command_buffer_compute(
                             pipelineLayout, 0, 1, descriptorSet, 0, NULL);
 
     constexpr uint32_t kLocalSizeX = 128;  // same as local_size_x in shader
-    uint32_t kVertexCount = landscape::WIDTH * landscape::HEIGHT;
+    uint32_t kVertexCount = landscape::WIDTH * landscape::DEPTH;
     vkCmdDispatch(commandBuffer, (kVertexCount + kLocalSizeX - 1) / kLocalSizeX,
                   1, 1);  // 1024 groups
     // vkCmdDispatch(commandBuffer, ((1024 * 2) + 1023) / 1024, 1, 1);
@@ -3157,6 +3162,29 @@ void VulkanContext::record_command_buffer_compute(
                          VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &mb, 0, nullptr, 0,
                          nullptr);
 
+    if (rebuild_indices) {
+        std::cout << "REBUILDING INDICES\n";
+        Vertex* landscapeVertices = static_cast<Vertex*>(
+            m_vulkan_global_state->m_computeOutputBufferMemoryMapped);
+
+        vkQueueWaitIdle(m_vulkan_global_state->m_presentQueue);
+        vkDestroyBuffer(m_vulkan_global_state->m_logical_device,
+                        m_buffer_handler->IndexBuffer, nullptr);
+        vkFreeMemory(m_vulkan_global_state->m_logical_device,
+                     m_buffer_handler->IndexBufferMemory, nullptr);
+        m_indices.clear();
+        backend_vk::set_indices(m_indices, landscapeVertices, landscape::DEPTH,
+                                landscape::WIDTH);
+
+        m_vulkan_global_state->m_meshList[0].m_indexBufferStartIndex = 0;
+        m_vulkan_global_state->m_meshList[0].m_indexBufferEndIndex =
+            m_indices.size() - 1;
+
+        m_vulkan_global_state->m_meshList[0].m_indexCount =
+            m_indices.size() -
+            m_vulkan_global_state->m_meshList[0].m_indexBufferStartIndex;
+        m_buffer_handler->CreateIndexBuffer(m_indices);
+    }
     VkBufferMemoryBarrier buffer_barrier{};
     buffer_barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
     buffer_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
@@ -3683,7 +3711,7 @@ void VulkanContext::end_single_time_commands(VkCommandBuffer commandBuffer) {
 void VulkanContext::run_compute_shader(VkPipeline computePipeline,
                                        VkPipelineLayout pipelineLayout,
                                        VkDescriptorSet& descriptorSet,
-                                       bool is_random) {
+                                       bool is_random, bool rebuild_indices) {
     vkWaitForFences(m_vulkan_global_state->m_logical_device, 1,
                     &m_vulkan_global_state->m_computeFence, VK_TRUE,
                     UINT64_MAX);
@@ -3705,7 +3733,7 @@ void VulkanContext::run_compute_shader(VkPipeline computePipeline,
     // Octaves
     in[5].pos.x = landscape::OCTAVES;
     in[6].pos.x = landscape::WIDTH;
-    in[7].pos.x = landscape::HEIGHT;
+    in[7].pos.x = landscape::DEPTH;
     in[8].pos.x = landscape::SCALE;
     in[9].pos.x = landscape::AMPLITUDE;
     if (landscape::SHOULD_ANIMATE) {
@@ -3714,7 +3742,7 @@ void VulkanContext::run_compute_shader(VkPipeline computePipeline,
 
     record_command_buffer_compute(
         m_vulkan_global_state->m_commandBuffersCompute[0], computePipeline,
-        pipelineLayout, &descriptorSet);
+        pipelineLayout, &descriptorSet, rebuild_indices);
     VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
     si.commandBufferCount = 1;
     si.pCommandBuffers = &m_vulkan_global_state->m_commandBuffersCompute[0];

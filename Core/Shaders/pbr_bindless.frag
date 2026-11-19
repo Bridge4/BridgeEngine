@@ -127,7 +127,7 @@ vec3 calculate_terrain_color(float height, float max_height, vec3 base_color) {
 }
 
 vec3 calculate_water_color(float height, float max_height, vec3 base_color) {
-    vec3 final_color = base_color / clamp((abs(height - max_height)), 0.3, 10.0);
+    vec3 final_color = base_color / clamp((abs(height - max_height)), -10000.0, 10000.0);
     //roughness = clamp(roughness, 0.04, 1.0);
 
   return final_color;
@@ -191,73 +191,28 @@ void main() {
     vec3 rockColor = calculate_terrain_color(fragPos.y,  WATER_LEVEL, rock); 
 
 
-    float water_weight = 0;
     if (fragPos.y < WATER_LEVEL) {
-      water_weight = clamp(fragPos.y - WATER_LEVEL, 0.0, 1.0);
-      finalColor = waterColor;
-        //emissive = finalColor * 0.006;
-        //roughness = 0.1;
+      float water_blend_amount = 0.05;
+      float water_blend_height = WATER_LEVEL * (1-water_blend_amount);
+      float water_weight = clamp(abs(fragPos.y - WATER_LEVEL), 0.0, 1.0);
+      finalColor = waterColor * (water_weight) + sandColor * (1-water_weight);
+      //t = smoothstep(WATER_LEVEL, GRASS_LEVEL, fragPos.y);
+      //finalColor = waterColor;
+      //emissive = finalColor * 0.006;
+      roughness = 0.3;
     }
 
     else {
-      float slope_threshold = 0.45;
+      float slope_threshold = 0.65;
       float grass_blend_amount = 0.8;
       float grass_blend_height = slope_threshold * (1 - grass_blend_amount);
-      float grass_weight = 1 - clamp( (slope - grass_blend_height)/(slope_threshold - grass_blend_height), 0.0, 1.0);
+      float grass_weight = 1 - clamp( (slope - grass_blend_height)/(slope_threshold - grass_blend_height), -1.0, 1.0);
       finalColor = grassColor * grass_weight + rockColor * (1-grass_weight);
       float t = smoothstep(GRASS_LEVEL, WATER_LEVEL, fragPos.y);
-      finalColor = mix(finalColor, waterColor, grass_blend_height);
-      metallic = 1.0;
+      //finalColor = mix(finalColor, waterColor, grass_blend_height);
+      //roughness = 0.2;
+      //metallic = 0.0;
     }
-    //else{ 
-    //  float slope_threshold = 0.5;
-    //  float grass_blend_amount = 1.0;
-    //  float grass_blend_height = slope_threshold * (1 - grass_blend_amount);
-    //  float grass_weight = 1 - (clamp(slope - grass_blend_height, 0.0, 1.0)/clamp(slope_threshold - grass_blend_height, 0.0, 1.0));
-    //  finalColor = grassColor * grass_weight + rockColor * (grass_weight);
-    //  //if (abs(slope) < 0.5){
-    //  //  finalColor = sandColor;
-    //  //  emissive = finalColor * 0.007;
-    //  //  metallic = 1.0;
-    //  //}
-    //  //else {
-    //  //  float t = smoothstep(SAND_LEVEL, WATER_LEVEL, fragPos.y);
-    //  //  finalColor = mix(rockColor, snow, t);
-    //  //  emissive = finalColor * 0.007;
-    //  //  metallic = 1.0;
-
-    //  //}
-    //  //finalColor = sandColor;
-    //}
-    //else if (fragPos.y < GRASS_LEVEL){
-    //  float t = smoothstep(GRASS_LEVEL, WATER_LEVEL, fragPos.y);
-    //  emissive = grassColor * 0.01;
-    //  finalColor = mix(sandColor, grassColor, t);
-    //}
-    //else if (fragPos.y < ROCK_LEVEL){
-    //  float t = smoothstep(ROCK_LEVEL, WATER_LEVEL, fragPos.y);
-    //  emissive = rockColor * 0.01;
-    //  finalColor = mix(grassColor, rockColor, t);
-    //}
-    //else {
-    //   if (fragPos.y < SAND_LEVEL) {
-    //      float t = smoothstep(WATER_LEVEL, SAND_LEVEL, fragPos.y);
-    //      finalColor = mix(deepWater, sand, t);
-    //  } else if (fragPos.y < GRASS_LEVEL) {
-    //      float t = smoothstep(SAND_LEVEL, GRASS_LEVEL, fragPos.y);
-    //      finalColor = mix(sand, grass, t);
-    //  }
-
-    //  if (abs(slope) < 0.3){
-    //    float t = smoothstep(ROCK_LEVEL, ROCK_LEVEL + 1.0f, fragPos.y);
-    //    finalColor = mix(rock, snow, t);
-    //  }
-    //  else {
-    //      float t = smoothstep(GRASS_LEVEL, ROCK_LEVEL, fragPos.y);
-    //      finalColor = mix(finalColor, rock, t);
-    //      roughness = 0.4;
-    //  }
-    //}
 
 
 
@@ -295,6 +250,7 @@ void main() {
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
     vec3 Lo = vec3(0.0);
+    vec3 radiance = vec3(1.0);
     for (int i = 0; i < lightData.numLights.x; ++i){
         vec3 L = normalize(lightData.lights[i].position.xyz - fragPos);
         vec3 H = normalize(V + L);
@@ -302,7 +258,7 @@ void main() {
         float distance = length(lightData.lights[i].position.xyz - fragPos);
         float attenuation = 1.0 / (distance * distance );
 
-        vec3 radiance = lightData.lights[i].color.rgb * 1.0 * lightData.lights[i].intensity.x * attenuation;
+        radiance = lightData.lights[i].color.rgb * 1.0 * lightData.lights[i].intensity.x * attenuation;
 
         float NDF = DistributionGGX(N, H, roughness);
         float G = GeometrySmith(N, V, L, roughness);
@@ -326,7 +282,7 @@ void main() {
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    vec3 ambient = vec3(0.03) * albedo;
+    vec3 ambient =  vec3(0.03)*  albedo;
     vec3 emissiveColor = emissive * 20.0;
     vec3 color = ambient + Lo + emissiveColor;
 

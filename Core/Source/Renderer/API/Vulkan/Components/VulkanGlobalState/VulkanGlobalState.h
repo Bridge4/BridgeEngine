@@ -40,7 +40,7 @@ struct FragShaderPushConstantsBindless {
     // y = SAND_LEVEL
     // z = GRASS_LEVEL
     // w = ROCK_LEVEL
-    glm::vec4 terrain_levels = glm::vec4(-3.64f, -1.389f, 1.609f, 2.64f);
+    glm::vec4 terrain_levels = glm::vec4(1.631f, -1.389f, 1.609f, 2.64f);
     glm::vec3 water_color = glm::vec3(0.02, 0.45, 0.65);
     glm::vec3 sand_color =
         glm::vec3(0.1529, 0.4745, 0.1216);  // Vivid orange-gold sunlit sand;

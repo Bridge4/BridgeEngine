@@ -169,6 +169,9 @@ void end_single_time_commands(VkDevice& logical_device,
 uint32_t find_memory_type(VkPhysicalDevice& physical_device,
                           uint32_t type_filter,
                           VkMemoryPropertyFlags properties);
+
+void set_indices(std::vector<uint32_t>& indices, Vertex* vertices,
+                 int worldHeight, int worldWidth);
 }  // namespace backend_vk
 
 struct InputSSBO {
@@ -195,7 +198,7 @@ class VulkanContext {
 
     void unload_scene_objects();
 
-    void new_landscape();
+    void new_landscape(bool rebuild_indices = false);
     bool RebuildPBRPipelineBindless(backend_vk::Pipeline& cached_pipeline);
 
     VulkanGlobalState* m_vulkan_global_state;
@@ -228,7 +231,8 @@ class VulkanContext {
     void run_compute_shader(VkPipeline computePipeline,
                             VkPipelineLayout pipelineLayout,
                             VkDescriptorSet& descriptorSet,
-                            bool is_random = false);
+                            bool is_random = false,
+                            bool rebuild_indices = false);
 
     bool rebuild_compute_shader_pipeline(backend_vk::Pipeline& cached_pipeline);
     std::vector<ObjResource> m_objects_to_render = {};
@@ -271,6 +275,10 @@ class VulkanContext {
     }
 
     float m_landscape_animation_time = 0.0f;
+    float m_frame_time = 0.0f;
+    int m_target_fps = 60;
+    float m_monitor_refresh_rate = 60;
+    bool m_vsync = false;
 
     CameraController* m_cameraController;
 
@@ -369,7 +377,8 @@ class VulkanContext {
     void record_command_buffer_compute(VkCommandBuffer commandBuffer,
                                        VkPipeline pipeline,
                                        VkPipelineLayout pipelineLayout,
-                                       VkDescriptorSet* descriptorSet);
+                                       VkDescriptorSet* descriptorSet,
+                                       bool rebuild_indices = false);
 
     // SEMAPHORES AND FENCES
     // Creates semaphores and fences for each frame in flight
