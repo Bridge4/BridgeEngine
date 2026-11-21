@@ -15,6 +15,7 @@ class Renderer {
 
     void Tick(std::vector<ObjResource> loadedObjects, float deltaTime);
     void Destroy();
+    void set_clear_color(float r, float g, float b);
     ERenderingMode m_renderingMode;
     std::vector<ObjResource> m_loadedObjects = {};
 

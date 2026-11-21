@@ -17,4 +17,8 @@ void Renderer::DescribeScene(std::vector<ObjResource> objectsToRender,
     m_vulkanContext->describe_scene(objectsToRender, lightsToRender);
 }
 
+void Renderer::set_clear_color(float r, float g, float b) {
+    m_vulkanContext->CLEAR_COLOR = glm::vec3(r, g, b);
+}
+
 void Renderer::Destroy() {}

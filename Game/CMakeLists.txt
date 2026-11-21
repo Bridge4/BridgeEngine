@@ -5,11 +5,10 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_library(Game SHARED
     Source/game.cpp
-    Source/game.h
 )
 
 target_include_directories(Game
-    PUBLIC 
+    PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Source>
         $<INSTALL_INTERFACE:Source>
 )

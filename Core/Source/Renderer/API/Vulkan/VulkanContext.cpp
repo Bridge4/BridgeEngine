@@ -65,7 +65,6 @@ int OCTAVES = 14;
 bool SHOULD_ANIMATE = true;
 float MAX_ANIMATION_SPEED = 100.0f;
 float ANIMATION_SPEED = 100.0f;
-glm::vec3 CLEAR_COLOR = glm::vec3(25 / 255, 121 / 255, 155 / 255);
 
 }  // namespace landscape
 
@@ -233,7 +232,7 @@ void render_ui(VulkanContext& context_vk) {
     }
     float MIN_LEVEL = -20.0;
     float MAX_LEVEL = 10.0;
-    ImGui::ColorPicker3("Background Clear Color", &landscape::CLEAR_COLOR.x);
+    // ImGui::ColorPicker3("Background Clear Color", &context_vk.CLEAR_COLOR.x);
     ImGui::SliderFloat(
         "Water Level",
         &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
@@ -2860,9 +2859,8 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
 
         // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
         std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {{landscape::CLEAR_COLOR.x,
-                                 landscape::CLEAR_COLOR.y,
-                                 landscape::CLEAR_COLOR.z, 1.0f}};
+        clearValues[0].color = {
+            {CLEAR_COLOR.x, CLEAR_COLOR.y, CLEAR_COLOR.z, 1.0f}};
         clearValues[1].depthStencil = {1.0f, 0};
         renderPassInfo.clearValueCount =
             static_cast<uint32_t>(clearValues.size());

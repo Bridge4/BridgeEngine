@@ -18,3 +18,7 @@ void Engine::Tick(float deltaTime) {
 }
 
 void Engine::Destroy() { m_renderer->Destroy(); }
+
+void Engine::set_clear_color(float r, float g, float b) {
+    m_renderer->set_clear_color(r, g, b);
+}

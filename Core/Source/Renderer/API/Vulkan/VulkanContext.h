@@ -209,6 +209,7 @@ class VulkanContext {
     const std::vector<const char*> m_deviceExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
+    glm::vec3 CLEAR_COLOR = glm::vec3(25 / 255, 121 / 255, 155 / 255);
     std::vector<Vertex> m_vertices;
     std::vector<uint32_t> m_indices;
     // TODO: Figure out what the fuck this does

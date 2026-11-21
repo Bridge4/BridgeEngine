@@ -18,5 +18,7 @@ class Engine {
     // void SetWindowRef(WindowHandler* window);
     void Tick(float deltaTime);
     void Destroy();
+    void set_clear_color(float r, float g, float b);
+
     ERenderingMode m_renderingMode;
 };
