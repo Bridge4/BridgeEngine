@@ -63,6 +63,8 @@ float PERSISTENCE = 0.52f;
 float FREQUENCY = 0.108f;
 int OCTAVES = 14;
 bool SHOULD_ANIMATE = true;
+float MAX_ANIMATION_SPEED = 100.0f;
+float ANIMATION_SPEED = 100.0f;
 glm::vec3 CLEAR_COLOR = glm::vec3(25 / 255, 121 / 255, 155 / 255);
 
 }  // namespace landscape
@@ -215,8 +217,10 @@ void render_ui(VulkanContext& context_vk) {
     bool scale_changed =
         ImGui::SliderFloat("Scale", &landscape::SCALE, 0.0f, 2000.0f);
     ImGui::InputFloat("Max Amplitude", &landscape::MAX_AMPLITUDE);
+    // ImGui::InputFloat("Amplitude", &landscape::AMPLITUDE);
     bool amp_changed = ImGui::SliderFloat("Amplitude", &landscape::AMPLITUDE,
                                           0.0f, landscape::MAX_AMPLITUDE);
+    ImGui::InputFloat("Animation Speed", &landscape::ANIMATION_SPEED);
     bool lac_changed =
         ImGui::SliderFloat("Lacunarity", &landscape::LACUNARITY, -2.0f, 2.0f);
     // context_vk.new_landscape();
@@ -1247,12 +1251,9 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
             modelUBO.model =
                 glm::scale(modelUBO.model, glm::vec3(0.5f, 0.5f, 0.5f));
             // glm::scale(modelUBO.model, glm::vec3(00.1f, 00.1f, 00.1f));
-            if (glfwGetMouseButton(m_windowing_backend->m_window,
-                                   GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
-            }
 
-            memcpy(mesh.m_uniformBuffersMapped[m_vulkan_global_state
-                                                   ->m_currentFrame],
+            memcpy(mesh.m_uniform_buffers_mapped[m_vulkan_global_state
+                                                     ->m_currentFrame],
                    &modelUBO, sizeof(modelUBO));
             count++;
         }
@@ -1286,7 +1287,7 @@ void VulkanContext::load_scene_objects() {
             for (auto& matType : materialTypes) {
                 if (!obj.textureResourceMap.contains(matType)) {
                     std::cout << "DOES NOT CONTAIN " << matType << "\n";
-                    mesh.m_materialIndices[matType] = -1;
+                    mesh.m_material_indices[matType] = -1;
                     continue;
                 }
                 create_texture_image(obj.textureResourceMap[matType], &mesh,
@@ -1295,9 +1296,9 @@ void VulkanContext::load_scene_objects() {
                 create_texture_sampler(&mesh, matType);
 
                 std::cout << "REGISTERING " << matType << "\n";
-                mesh.m_materialIndices[matType] = register_texture(
-                    &mesh.m_materialDataMap[matType].m_textureImageView,
-                    &mesh.m_materialDataMap[matType].m_textureSampler);
+                mesh.m_material_indices[matType] = register_texture(
+                    &mesh.m_material_data_map[matType].m_texture_image_view,
+                    &mesh.m_material_data_map[matType].m_texture_sampler);
             }
 
             // Create Mesh Uniform Buffers
@@ -1326,9 +1327,9 @@ void VulkanContext::load_scene_objects() {
     }
 
     Mesh3D landscape = Mesh3D();
-    landscape.MeshType = TEXTURED;
-    landscape.m_indexBufferStartIndex = m_indices.size();
-    landscape.m_vertexBufferStartIndex = m_vertices.size();
+    landscape.m_mesh_type = TEXTURED;
+    landscape.m_index_buffer_start_idx = m_indices.size();
+    landscape.m_vertex_buffer_start_idx = m_vertices.size();
     backend_vk::Pipeline compute_pipeline_data = {};
     for (auto pipeline : m_pipelines) {
         if (pipeline.type == backend_vk::COMPUTE) {
@@ -1367,13 +1368,13 @@ void VulkanContext::load_scene_objects() {
 
     // std::vector<MaterialEnums> materialTypes = {
     //     ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL, EMISSIVE, ORM};
-    landscape.m_materialIndices[ALBEDO] = -1;
-    landscape.m_materialIndices[METALLIC] = -1;
-    landscape.m_materialIndices[ROUGHNESS] = -1;
-    landscape.m_materialIndices[AO] = -1;
-    landscape.m_materialIndices[EMISSIVE] = -1;
-    landscape.m_materialIndices[NORMAL] = -1;
-    landscape.m_materialIndices[ORM] = -1;
+    landscape.m_material_indices[ALBEDO] = -1;
+    landscape.m_material_indices[METALLIC] = -1;
+    landscape.m_material_indices[ROUGHNESS] = -1;
+    landscape.m_material_indices[AO] = -1;
+    landscape.m_material_indices[EMISSIVE] = -1;
+    landscape.m_material_indices[NORMAL] = -1;
+    landscape.m_material_indices[ORM] = -1;
     // RegisterTexture(&landscape.m_materialDataMap[ALBEDO].m_textureImageView,
     //                 &landscape.m_materialDataMap[ALBEDO].m_textureSampler);
 
@@ -1384,10 +1385,10 @@ void VulkanContext::load_scene_objects() {
 
     int vertexBufferEndIndex = m_vertices.size() - 1;
     int indexBufferEndIndex = m_indices.size() - 1;
-    landscape.m_indexBufferEndIndex = indexBufferEndIndex;
-    landscape.m_vertexBufferEndIndex = vertexBufferEndIndex;
-    landscape.m_indexCount =
-        m_indices.size() - landscape.m_indexBufferStartIndex;
+    landscape.m_index_buffer_end_idx = indexBufferEndIndex;
+    landscape.m_vertex_buffer_end_idx = vertexBufferEndIndex;
+    landscape.m_index_count =
+        m_indices.size() - landscape.m_index_buffer_start_idx;
 
     // Loop through all the vertices spat out by our compute shader and
     // create indices buffer
@@ -1418,19 +1419,19 @@ void VulkanContext::unload_scene_objects() {
                                 nullptr);
         for (auto& mesh : m_vulkan_global_state->m_meshList) {
             vkDestroySampler(m_vulkan_global_state->m_logical_device,
-                             mesh.m_textureSampler, nullptr);
+                             mesh.m_texture_sampler, nullptr);
             vkDestroyImageView(m_vulkan_global_state->m_logical_device,
-                               mesh.m_textureImageView, nullptr);
+                               mesh.m_texture_image_view, nullptr);
             vkDestroyImage(m_vulkan_global_state->m_logical_device,
-                           mesh.m_textureImage, nullptr);
+                           mesh.m_texture_image, nullptr);
             vkFreeMemory(m_vulkan_global_state->m_logical_device,
-                         mesh.m_textureImageMemory, nullptr);
+                         mesh.m_texture_image_memory, nullptr);
             int bufCount = 0;
-            for (auto& buffer : mesh.m_uniformBuffers) {
+            for (auto& buffer : mesh.m_uniform_buffers) {
                 vkDestroyBuffer(m_vulkan_global_state->m_logical_device, buffer,
                                 nullptr);
                 vkFreeMemory(m_vulkan_global_state->m_logical_device,
-                             mesh.m_uniformBuffersMemory[bufCount], nullptr);
+                             mesh.m_uniform_buffers_memory[bufCount], nullptr);
                 bufCount++;
             }
         }
@@ -2624,15 +2625,15 @@ void VulkanContext::create_texture_image(TextureResource props, Mesh3D* mesh,
         VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        mesh->m_materialDataMap[material_type].m_textureImage,
-        mesh->m_materialDataMap[material_type].m_textureImageMemory,
+        mesh->m_material_data_map[material_type].m_texture_image,
+        mesh->m_material_data_map[material_type].m_texture_image_memory,
         is_cube_map);
 
     backend_vk::images::transition_image_layout(
         m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_commandPool,
         m_vulkan_global_state->m_graphicsQueue,
-        mesh->m_materialDataMap[material_type].m_textureImage,
+        mesh->m_material_data_map[material_type].m_texture_image,
         VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
@@ -2640,7 +2641,7 @@ void VulkanContext::create_texture_image(TextureResource props, Mesh3D* mesh,
         m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_commandPool,
         m_vulkan_global_state->m_graphicsQueue, staging_buffer,
-        mesh->m_materialDataMap[material_type].m_textureImage,
+        mesh->m_material_data_map[material_type].m_texture_image,
         static_cast<uint32_t>(tex_width), static_cast<uint32_t>(tex_height),
         is_cube_map);
 
@@ -2648,7 +2649,7 @@ void VulkanContext::create_texture_image(TextureResource props, Mesh3D* mesh,
         m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_commandPool,
         m_vulkan_global_state->m_graphicsQueue,
-        mesh->m_materialDataMap[material_type].m_textureImage,
+        mesh->m_material_data_map[material_type].m_texture_image,
         VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
@@ -2662,10 +2663,10 @@ void VulkanContext::create_texture_image(TextureResource props, Mesh3D* mesh,
 void VulkanContext::create_texture_image_view(Mesh3D* mesh,
                                               MaterialEnums material_type,
                                               bool is_cube_map) {
-    mesh->m_materialDataMap[material_type].m_textureImageView =
+    mesh->m_material_data_map[material_type].m_texture_image_view =
         backend_vk::images::create_image_view(
             m_vulkan_global_state->m_logical_device,
-            mesh->m_materialDataMap[material_type].m_textureImage,
+            mesh->m_material_data_map[material_type].m_texture_image,
             VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, is_cube_map);
 }
 
@@ -2708,7 +2709,7 @@ void VulkanContext::create_texture_sampler(Mesh3D* mesh,
 
     if (vkCreateSampler(
             m_vulkan_global_state->m_logical_device, &samplerInfo, nullptr,
-            &mesh->m_materialDataMap[materialType].m_textureSampler) !=
+            &mesh->m_material_data_map[materialType].m_texture_sampler) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
@@ -2795,12 +2796,12 @@ Mesh3D VulkanContext::LoadMesh(ObjProperties props, glm::vec3 scenePosition,
         }
     }
     Mesh3D mesh = Mesh3D();
-    mesh.MeshType = TEXTURED;
-    mesh.m_indexBufferStartIndex = indexBufferStartIndex;
-    mesh.m_vertexBufferStartIndex = vertexBufferStartIndex;
-    mesh.m_indexBufferEndIndex = indexBufferEndIndex;
-    mesh.m_vertexBufferEndIndex = vertexBufferEndIndex;
-    mesh.m_indexCount = indexBufferEndIndex - indexBufferStartIndex;
+    mesh.m_mesh_type = TEXTURED;
+    mesh.m_index_buffer_start_idx = indexBufferStartIndex;
+    mesh.m_vertex_buffer_start_idx = vertexBufferStartIndex;
+    mesh.m_index_buffer_end_idx = indexBufferEndIndex;
+    mesh.m_vertex_buffer_end_idx = vertexBufferEndIndex;
+    mesh.m_index_count = indexBufferEndIndex - indexBufferStartIndex;
     mesh.m_position = scenePosition;
     mesh.m_rotation = objectRotation;
     mesh.m_scale = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -2894,7 +2895,7 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
             for (auto& mesh : m_vulkan_global_state->m_meshList) {
                 mesh.m_scale = glm::vec3(100.0f, 100.0f, 100.0f);
                 // Binding the graphics pipeline
-                if (mesh.MeshType == TEXTURED) {
+                if (mesh.m_mesh_type == TEXTURED) {
                     vkCmdBindPipeline(commandBuffer,
                                       VK_PIPELINE_BIND_POINT_GRAPHICS,
                                       m_vulkan_global_state->m_pbrPipeline);
@@ -2902,31 +2903,31 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
                     vkCmdBindDescriptorSets(
                         commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                         m_vulkan_global_state->m_pbrPipelineLayout, 1, 1,
-                        &mesh.m_descriptorSets[m_vulkan_global_state
-                                                   ->m_currentFrame],
+                        &mesh.m_descriptor_sets[m_vulkan_global_state
+                                                    ->m_currentFrame],
                         0, nullptr);
                 }
 
                 m_vulkan_global_state->m_frag_shader_push_constants_bindless
-                    .albedoIdx = mesh.m_materialIndices[MaterialEnums::ALBEDO];
+                    .albedoIdx = mesh.m_material_indices[MaterialEnums::ALBEDO];
                 // std::cout << m_vulkanGlobalState
                 //                  ->m_fragShaderPushConstantsBindless.albedoIdx
                 //           << "\n";
                 m_vulkan_global_state->m_frag_shader_push_constants_bindless
                     .metallicIdx =
-                    mesh.m_materialIndices[MaterialEnums::METALLIC];
+                    mesh.m_material_indices[MaterialEnums::METALLIC];
                 m_vulkan_global_state->m_frag_shader_push_constants_bindless
                     .roughnessIdx =
-                    mesh.m_materialIndices[MaterialEnums::ROUGHNESS];
+                    mesh.m_material_indices[MaterialEnums::ROUGHNESS];
                 m_vulkan_global_state->m_frag_shader_push_constants_bindless
-                    .aoIdx = mesh.m_materialIndices[MaterialEnums::AO];
+                    .aoIdx = mesh.m_material_indices[MaterialEnums::AO];
                 m_vulkan_global_state->m_frag_shader_push_constants_bindless
-                    .normalIdx = mesh.m_materialIndices[MaterialEnums::NORMAL];
+                    .normalIdx = mesh.m_material_indices[MaterialEnums::NORMAL];
                 m_vulkan_global_state->m_frag_shader_push_constants_bindless
                     .emissiveIdx =
-                    mesh.m_materialIndices[MaterialEnums::EMISSIVE];
+                    mesh.m_material_indices[MaterialEnums::EMISSIVE];
                 m_vulkan_global_state->m_frag_shader_push_constants_bindless
-                    .ormIdx = mesh.m_materialIndices[MaterialEnums::ORM];
+                    .ormIdx = mesh.m_material_indices[MaterialEnums::ORM];
 
                 // vkCmdPushConstants(
                 //     commandBuffer,
@@ -2942,8 +2943,8 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
                          ->m_frag_shader_push_constants_bindless);
 
                 vkCmdDrawIndexed(commandBuffer,
-                                 static_cast<uint32_t>(mesh.m_indexCount), 1,
-                                 mesh.m_indexBufferStartIndex, 0, 0);
+                                 static_cast<uint32_t>(mesh.m_index_count), 1,
+                                 mesh.m_index_buffer_start_idx, 0, 0);
             }
         }
     } else {
@@ -3013,8 +3014,8 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
                     sizeof(ShadowPassPushConstants),
                     &m_vulkan_global_state->m_shadowPassPushConstants);
                 vkCmdDrawIndexed(commandBuffer,
-                                 static_cast<uint32_t>(mesh.m_indexCount), 1,
-                                 mesh.m_indexBufferStartIndex, 0, 0);
+                                 static_cast<uint32_t>(mesh.m_index_count), 1,
+                                 mesh.m_index_buffer_start_idx, 0, 0);
             }
         }
         vkCmdEndRenderPass(commandBuffer);
@@ -3074,15 +3075,15 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
             for (auto& mesh : m_vulkan_global_state->m_meshList) {
                 mesh.m_scale = glm::vec3(0.01f, 0.01f, 0.01f);
                 // Binding the graphics pipeline
-                if (mesh.MeshType == TEXTURED) {
+                if (mesh.m_mesh_type == TEXTURED) {
                     vkCmdBindPipeline(commandBuffer,
                                       VK_PIPELINE_BIND_POINT_GRAPHICS,
                                       m_vulkan_global_state->m_pbrPipeline);
                     vkCmdBindDescriptorSets(
                         commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                         m_vulkan_global_state->m_pbrPipelineLayout, 1, 1,
-                        &mesh.m_descriptorSets[m_vulkan_global_state
-                                                   ->m_currentFrame],
+                        &mesh.m_descriptor_sets[m_vulkan_global_state
+                                                    ->m_currentFrame],
                         0, nullptr);
                 }
                 /*
@@ -3115,8 +3116,8 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
                     0, sizeof(PBRPushConstants),
                     &m_vulkan_global_state->m_pbrPushConstants);
                 vkCmdDrawIndexed(commandBuffer,
-                                 static_cast<uint32_t>(mesh.m_indexCount), 1,
-                                 mesh.m_indexBufferStartIndex, 0, 0);
+                                 static_cast<uint32_t>(mesh.m_index_count), 1,
+                                 mesh.m_index_buffer_start_idx, 0, 0);
             }
         }
     }
@@ -3176,13 +3177,13 @@ void VulkanContext::record_command_buffer_compute(
         backend_vk::set_indices(m_indices, landscapeVertices, landscape::DEPTH,
                                 landscape::WIDTH);
 
-        m_vulkan_global_state->m_meshList[0].m_indexBufferStartIndex = 0;
-        m_vulkan_global_state->m_meshList[0].m_indexBufferEndIndex =
+        m_vulkan_global_state->m_meshList[0].m_index_buffer_start_idx = 0;
+        m_vulkan_global_state->m_meshList[0].m_index_buffer_end_idx =
             m_indices.size() - 1;
 
-        m_vulkan_global_state->m_meshList[0].m_indexCount =
+        m_vulkan_global_state->m_meshList[0].m_index_count =
             m_indices.size() -
-            m_vulkan_global_state->m_meshList[0].m_indexBufferStartIndex;
+            m_vulkan_global_state->m_meshList[0].m_index_buffer_start_idx;
         m_buffer_handler->CreateIndexBuffer(m_indices);
     }
     VkBufferMemoryBarrier buffer_barrier{};
@@ -3573,13 +3574,13 @@ void VulkanContext::destroy() {
 
     for (auto& mesh : m_vulkan_global_state->m_meshList) {
         vkDestroySampler(m_vulkan_global_state->m_logical_device,
-                         mesh.m_textureSampler, nullptr);
+                         mesh.m_texture_sampler, nullptr);
         vkDestroyImageView(m_vulkan_global_state->m_logical_device,
-                           mesh.m_textureImageView, nullptr);
+                           mesh.m_texture_image_view, nullptr);
         vkDestroyImage(m_vulkan_global_state->m_logical_device,
-                       mesh.m_textureImage, nullptr);
+                       mesh.m_texture_image, nullptr);
         vkFreeMemory(m_vulkan_global_state->m_logical_device,
-                     mesh.m_textureImageMemory, nullptr);
+                     mesh.m_texture_image_memory, nullptr);
     }
 
     for (size_t i = 0; i < m_maxFramesInFlight; i++) {
@@ -3736,6 +3737,7 @@ void VulkanContext::run_compute_shader(VkPipeline computePipeline,
     in[7].pos.x = landscape::DEPTH;
     in[8].pos.x = landscape::SCALE;
     in[9].pos.x = landscape::AMPLITUDE;
+    in[11].pos.x = landscape::ANIMATION_SPEED;
     if (landscape::SHOULD_ANIMATE) {
         in[10].pos.x = m_landscape_animation_time;
     }

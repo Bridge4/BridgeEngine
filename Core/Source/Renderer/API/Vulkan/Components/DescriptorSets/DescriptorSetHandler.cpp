@@ -435,27 +435,27 @@ void DescriptorSetHandler::CreateTexturedMeshDescriptorSets(Mesh3D* mesh) {
         static_cast<uint32_t>(m_vulkan_global_state->m_maxFramesInFlight);
     allocInfo.pSetLayouts = layouts.data();
 
-    mesh->m_descriptorSets.resize(m_vulkan_global_state->m_maxFramesInFlight);
+    mesh->m_descriptor_sets.resize(m_vulkan_global_state->m_maxFramesInFlight);
     if (vkAllocateDescriptorSets(m_vulkan_global_state->m_logical_device,
-                                 &allocInfo,
-                                 mesh->m_descriptorSets.data()) != VK_SUCCESS) {
+                                 &allocInfo, mesh->m_descriptor_sets.data()) !=
+        VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
 
     for (size_t i = 0; i < m_vulkan_global_state->m_maxFramesInFlight; i++) {
         VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = mesh->m_uniformBuffers[i];
+        bufferInfo.buffer = mesh->m_uniform_buffers[i];
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(ModelUBO);
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = mesh->m_textureImageView;
-        imageInfo.sampler = mesh->m_textureSampler;
+        imageInfo.imageView = mesh->m_texture_image_view;
+        imageInfo.sampler = mesh->m_texture_sampler;
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = mesh->m_descriptorSets[i];
+        descriptorWrites[0].dstSet = mesh->m_descriptor_sets[i];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
         descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -463,7 +463,7 @@ void DescriptorSetHandler::CreateTexturedMeshDescriptorSets(Mesh3D* mesh) {
         descriptorWrites[0].pBufferInfo = &bufferInfo;
 
         descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[1].dstSet = mesh->m_descriptorSets[i];
+        descriptorWrites[1].dstSet = mesh->m_descriptor_sets[i];
         descriptorWrites[1].dstBinding = 1;
         descriptorWrites[1].dstArrayElement = 0;
         descriptorWrites[1].descriptorType =
@@ -588,22 +588,22 @@ void DescriptorSetHandler::CreateTexturedPBRDescriptorSetsBindless(
         static_cast<uint32_t>(m_vulkan_global_state->m_maxFramesInFlight);
     allocInfo.pSetLayouts = layouts.data();
 
-    mesh->m_descriptorSets.resize(m_vulkan_global_state->m_maxFramesInFlight);
+    mesh->m_descriptor_sets.resize(m_vulkan_global_state->m_maxFramesInFlight);
     if (vkAllocateDescriptorSets(m_vulkan_global_state->m_logical_device,
-                                 &allocInfo,
-                                 mesh->m_descriptorSets.data()) != VK_SUCCESS) {
+                                 &allocInfo, mesh->m_descriptor_sets.data()) !=
+        VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
 
     for (size_t i = 0; i < m_vulkan_global_state->m_maxFramesInFlight; i++) {
         VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = mesh->m_uniformBuffers[i];
+        bufferInfo.buffer = mesh->m_uniform_buffers[i];
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(ModelUBO);
 
         std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = mesh->m_descriptorSets[i];
+        descriptorWrites[0].dstSet = mesh->m_descriptor_sets[i];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
         descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -630,61 +630,62 @@ void DescriptorSetHandler::CreateTexturedPBRDescriptorSets(Mesh3D* mesh) {
         static_cast<uint32_t>(m_vulkan_global_state->m_maxFramesInFlight);
     allocInfo.pSetLayouts = layouts.data();
 
-    mesh->m_descriptorSets.resize(m_vulkan_global_state->m_maxFramesInFlight);
+    mesh->m_descriptor_sets.resize(m_vulkan_global_state->m_maxFramesInFlight);
     if (vkAllocateDescriptorSets(m_vulkan_global_state->m_logical_device,
-                                 &allocInfo,
-                                 mesh->m_descriptorSets.data()) != VK_SUCCESS) {
+                                 &allocInfo, mesh->m_descriptor_sets.data()) !=
+        VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
 
     for (size_t i = 0; i < m_vulkan_global_state->m_maxFramesInFlight; i++) {
         VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = mesh->m_uniformBuffers[i];
+        bufferInfo.buffer = mesh->m_uniform_buffers[i];
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(ModelUBO);
 
         VkDescriptorImageInfo albedoImageInfo{};
         albedoImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         albedoImageInfo.imageView =
-            mesh->m_materialDataMap[ALBEDO].m_textureImageView;
+            mesh->m_material_data_map[ALBEDO].m_texture_image_view;
         albedoImageInfo.sampler =
-            mesh->m_materialDataMap[ALBEDO].m_textureSampler;
+            mesh->m_material_data_map[ALBEDO].m_texture_sampler;
 
         VkDescriptorImageInfo metallicImageInfo{};
         metallicImageInfo.imageLayout =
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         metallicImageInfo.imageView =
-            mesh->m_materialDataMap[METALLIC].m_textureImageView;
+            mesh->m_material_data_map[METALLIC].m_texture_image_view;
         metallicImageInfo.sampler =
-            mesh->m_materialDataMap[METALLIC].m_textureSampler;
+            mesh->m_material_data_map[METALLIC].m_texture_sampler;
 
         VkDescriptorImageInfo roughnessImageInfo{};
         roughnessImageInfo.imageLayout =
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         roughnessImageInfo.imageView =
-            mesh->m_materialDataMap[ROUGHNESS].m_textureImageView;
+            mesh->m_material_data_map[ROUGHNESS].m_texture_image_view;
         roughnessImageInfo.sampler =
-            mesh->m_materialDataMap[ROUGHNESS].m_textureSampler;
+            mesh->m_material_data_map[ROUGHNESS].m_texture_sampler;
 
         VkDescriptorImageInfo aoImageInfo{};
         aoImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        aoImageInfo.imageView = mesh->m_materialDataMap[AO].m_textureImageView;
-        aoImageInfo.sampler = mesh->m_materialDataMap[AO].m_textureSampler;
+        aoImageInfo.imageView =
+            mesh->m_material_data_map[AO].m_texture_image_view;
+        aoImageInfo.sampler = mesh->m_material_data_map[AO].m_texture_sampler;
 
         VkDescriptorImageInfo normalImageInfo{};
         normalImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         normalImageInfo.imageView =
-            mesh->m_materialDataMap[NORMAL].m_textureImageView;
+            mesh->m_material_data_map[NORMAL].m_texture_image_view;
         normalImageInfo.sampler =
-            mesh->m_materialDataMap[NORMAL].m_textureSampler;
+            mesh->m_material_data_map[NORMAL].m_texture_sampler;
 
         VkDescriptorImageInfo emissiveImageInfo{};
         emissiveImageInfo.imageLayout =
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         emissiveImageInfo.imageView =
-            mesh->m_materialDataMap[EMISSIVE].m_textureImageView;
+            mesh->m_material_data_map[EMISSIVE].m_texture_image_view;
         emissiveImageInfo.sampler =
-            mesh->m_materialDataMap[EMISSIVE].m_textureSampler;
+            mesh->m_material_data_map[EMISSIVE].m_texture_sampler;
 
         VkDescriptorImageInfo shadowImageInfo{};
         shadowImageInfo.imageLayout =
@@ -699,7 +700,7 @@ void DescriptorSetHandler::CreateTexturedPBRDescriptorSets(Mesh3D* mesh) {
             normalImageInfo, emissiveImageInfo, shadowImageInfo};
         std::array<VkWriteDescriptorSet, 8> descriptorWrites{};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = mesh->m_descriptorSets[i];
+        descriptorWrites[0].dstSet = mesh->m_descriptor_sets[i];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
         descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -709,7 +710,7 @@ void DescriptorSetHandler::CreateTexturedPBRDescriptorSets(Mesh3D* mesh) {
         int j = 1;
         for (auto& imageInfo : imageInfos) {
             descriptorWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[j].dstSet = mesh->m_descriptorSets[i];
+            descriptorWrites[j].dstSet = mesh->m_descriptor_sets[i];
             descriptorWrites[j].dstBinding = j;
             descriptorWrites[j].dstArrayElement = 0;
             descriptorWrites[j].descriptorType =

@@ -13,10 +13,10 @@
 #include "Source/Renderer/RendererTypes.h"
 
 struct TextureData {
-    VkImage m_textureImage;
-    VkDeviceMemory m_textureImageMemory;
-    VkImageView m_textureImageView;
-    VkSampler m_textureSampler;
+    VkImage m_texture_image;
+    VkDeviceMemory m_texture_image_memory;
+    VkImageView m_texture_image_view;
+    VkSampler m_texture_sampler;
 };
 
 // Per-Mesh Data
@@ -28,34 +28,34 @@ class Mesh3D {
    public:
     Mesh3D() {}
 
-    Mesh3DTypes MeshType = TEXTURED;
+    Mesh3DTypes m_mesh_type = TEXTURED;
     // Offsets for shared index and vertex buffers during vkDraw calls
-    int m_indexBufferStartIndex = 0;
-    int m_indexBufferEndIndex = 0;
+    int m_index_buffer_start_idx = 0;
+    int m_index_buffer_end_idx = 0;
 
-    int m_vertexBufferStartIndex = 0;
-    int m_vertexBufferEndIndex = 0;
+    int m_vertex_buffer_start_idx = 0;
+    int m_vertex_buffer_end_idx = 0;
 
-    int m_indexCount = 0;
+    int m_index_count = 0;
 
-    VkImage m_textureImage = VK_NULL_HANDLE;
-    VkDeviceMemory m_textureImageMemory = VK_NULL_HANDLE;
-    VkImageView m_textureImageView = VK_NULL_HANDLE;
-    VkSampler m_textureSampler = VK_NULL_HANDLE;
+    VkImage m_texture_image = VK_NULL_HANDLE;
+    VkDeviceMemory m_texture_image_memory = VK_NULL_HANDLE;
+    VkImageView m_texture_image_view = VK_NULL_HANDLE;
+    VkSampler m_texture_sampler = VK_NULL_HANDLE;
 
-    TextureData m_textureData = {};
-    std::unordered_map<MaterialEnums, TextureData> m_materialDataMap = {};
-    std::unordered_map<MaterialEnums, int32_t> m_materialIndices = {};
-    std::vector<VkBuffer> m_uniformBuffers = {};
-    std::vector<VkDeviceMemory> m_uniformBuffersMemory = {};
-    std::vector<void*> m_uniformBuffersMapped = {};
+    TextureData m_texture_data = {};
+    std::unordered_map<MaterialEnums, TextureData> m_material_data_map = {};
+    std::unordered_map<MaterialEnums, int32_t> m_material_indices = {};
+    std::vector<VkBuffer> m_uniform_buffers = {};
+    std::vector<VkDeviceMemory> m_uniform_buffers_memory = {};
+    std::vector<void*> m_uniform_buffers_mapped = {};
 
-    std::vector<VkDescriptorSet> m_descriptorSets = {};
+    std::vector<VkDescriptorSet> m_descriptor_sets = {};
 
     // Transform
     glm::vec3 m_position = glm::vec3(1.0f, 1.0f, 1.0f);
     glm::vec3 m_rotation = glm::vec3(1.0f, 1.0f, 1.0f);
     glm::vec3 m_scale = glm::vec3(1.0f, 1.0f, 1.0f);
-    glm::mat4 modelMatrix = glm::mat4(1);
+    glm::mat4 m_model_matrix = glm::mat4(1);
 };
 #endif

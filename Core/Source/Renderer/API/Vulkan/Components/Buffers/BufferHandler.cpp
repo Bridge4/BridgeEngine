@@ -235,10 +235,10 @@ void BufferHandler::CreateComputeSSBOs() {
 void BufferHandler::CreateModelUBO(Mesh3D* mesh) {
     VkDeviceSize bufferSize = sizeof(ModelUBO);
 
-    mesh->m_uniformBuffers.resize(m_vulkan_global_state->m_maxFramesInFlight);
-    mesh->m_uniformBuffersMemory.resize(
+    mesh->m_uniform_buffers.resize(m_vulkan_global_state->m_maxFramesInFlight);
+    mesh->m_uniform_buffers_memory.resize(
         m_vulkan_global_state->m_maxFramesInFlight);
-    mesh->m_uniformBuffersMapped.resize(
+    mesh->m_uniform_buffers_mapped.resize(
         m_vulkan_global_state->m_maxFramesInFlight);
 
     for (size_t i = 0; i < m_vulkan_global_state->m_maxFramesInFlight; i++) {
@@ -247,11 +247,11 @@ void BufferHandler::CreateModelUBO(Mesh3D* mesh) {
         CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     mesh->m_uniformBuffers[i],
-                     mesh->m_uniformBuffersMemory[i]);
+                     mesh->m_uniform_buffers[i],
+                     mesh->m_uniform_buffers_memory[i]);
         vkMapMemory(m_vulkan_global_state->m_logical_device,
-                    mesh->m_uniformBuffersMemory[i], 0, bufferSize, 0,
-                    &mesh->m_uniformBuffersMapped[i]);
+                    mesh->m_uniform_buffers_memory[i], 0, bufferSize, 0,
+                    &mesh->m_uniform_buffers_mapped[i]);
     }
 }
 

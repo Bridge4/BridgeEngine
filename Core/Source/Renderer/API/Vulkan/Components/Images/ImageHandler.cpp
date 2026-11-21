@@ -183,6 +183,7 @@ void copy_buffer_to_image(VkDevice& logical_device, VkCommandPool& command_pool,
 
         buffer_image_copy.imageOffset = {0, 0, 0};
         buffer_image_copy.imageExtent = {width, height, 1};
+        buffer_image_copies.push_back(buffer_image_copy);
     }
     vkCmdCopyBufferToImage(
         command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
