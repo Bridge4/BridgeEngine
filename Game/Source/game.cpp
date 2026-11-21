@@ -9,7 +9,7 @@
 #define GAME_API extern "C"
 #endif
 
-#include "../Core/Source/EngineAPI.h"
+#include "EngineAPI.h"
 
 GAME_API void game_init(EngineAPI* engine) {
     engine->set_clear_color(0.0, 0.0, 0.0);
