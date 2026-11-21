@@ -64,8 +64,7 @@ bool check_for_game_code_recompilation(GameCode& game_code) {
 
 bool compile_game_code() {
     PROCESS_INFORMATION procInfo = {};
-    std::string cmd =
-        "cmake --build \"" + std::string(GAME_BUILD_DIR) + "\" --target Game ";
+    std::string cmd = "cmake --build \"" + std::string(GAME_BUILD_DIR) + "\"";
 
     std::cout << "[HotReload] Compiling Game.dll..." << std::endl;
 

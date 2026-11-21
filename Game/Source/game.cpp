@@ -16,5 +16,5 @@ GAME_API void game_init(EngineAPI* engine) {
 }
 
 GAME_API void game_update(EngineAPI* engine) {
-    engine->set_clear_color(0.0, 0.0, 0.0);
+    engine->set_clear_color(0.0, 0.50, 0.50);
 }

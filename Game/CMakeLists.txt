@@ -9,6 +9,15 @@ add_library(Game SHARED
     Source/game.cpp
 )
 
+set(GAME_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../Binaries/Game")
+
+set_target_properties(Game PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${GAME_BIN_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY "${GAME_BIN_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY "${GAME_BIN_DIR}"
+    PDB_OUTPUT_DIRECTORY     "${GAME_BIN_DIR}"
+)
+
 target_include_directories(Game
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/Source"

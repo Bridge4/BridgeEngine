@@ -15,7 +15,7 @@ set(SHADERS_DIR "${CMAKE_SOURCE_DIR}/Core/Shaders/")
 set(MODELS_DIR  "${CMAKE_SOURCE_DIR}/Core/Models/")
 set(GAME_CODE_DIR  "${CMAKE_SOURCE_DIR}/Game/Source/game.cpp")
 set(GAME_DLL_DIR  "${CMAKE_SOURCE_DIR}/Binaries/Game/")
-set(GAME_BUILD_DIR  "${CMAKE_SOURCE_DIR}/Game/")
+set(GAME_BUILD_DIR  "${CMAKE_SOURCE_DIR}/Game/build/")
 
 configure_file(
     "${CMAKE_SOURCE_DIR}/config.h.in"
