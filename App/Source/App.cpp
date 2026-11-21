@@ -1,4 +1,5 @@
 #include <GLFW/glfw3.h>
+#include <windows.h>
 
 #include <chrono>
 
@@ -7,8 +8,29 @@
 #include "Renderer/API/Vulkan/VulkanContext.h"
 #include "Renderer/RendererTypes.h"
 #include "Window/WindowingBackend.h"
+#include "config.h"
+
+using UpdateGameFunc = void (*)();
 
 int main() {
+    const char* game_dll_dir = GAME_DLL_DIR "Game.dll";
+    HMODULE h_dll = LoadLibraryA(game_dll_dir);
+    if (!h_dll) {
+        std::cout << "FAILED TO LOAD GAME DLL\n";
+        return 1;
+    }
+
+    UpdateGameFunc update_game_func =
+        reinterpret_cast<UpdateGameFunc>(GetProcAddress(h_dll, "update"));
+
+    if (!update_game_func) {
+        std::cout << "COULD NOT FIND UPDATE GAME FUNCTION IN DLL\n";
+        return 1;
+    }
+
+    update_game_func();
+    FreeLibrary(h_dll);
+
     WindowingBackend* windowingBackend = new WindowingBackend();
     windowingBackend->CreateWindowVkGLFW(1920, 1080);
 
@@ -60,6 +82,7 @@ int main() {
     engine->m_renderer->DescribeScene(loadedObjects, lightsToRender);
 
     windowingBackend->ShowWindow();
+
     while (!windowingBackend->ShouldCloseGLFW()) {
         auto currentFrameTime = std::chrono::high_resolution_clock::now();
         float deltaTime =

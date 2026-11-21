@@ -5,8 +5,7 @@
 #define GAME_API __declspec(dllimport)
 #endif
 
-#include "Renderer/API/Vulkan/VulkanContext.h"
-
-extern "C" GAME_API void update(VulkanContext context_vk, float deltaTime);
-extern "C" GAME_API void new_landscape(VulkanContext context_vk,
-                                       bool rebuild_indices = false);
+namespace Game {
+extern "C" GAME_API void update();
+extern "C" GAME_API void new_landscape();
+}  // namespace Game
