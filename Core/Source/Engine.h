@@ -19,6 +19,7 @@ class Engine {
     void Tick(float deltaTime);
     void Destroy();
     void set_clear_color(float r, float g, float b);
+    void generate_landscape();
 
     ERenderingMode m_renderingMode;
 };

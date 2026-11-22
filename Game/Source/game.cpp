@@ -16,5 +16,9 @@ GAME_API void game_init(EngineAPI* engine) {
 }
 
 GAME_API void game_update(EngineAPI* engine) {
-    engine->set_clear_color(0.0, 0.50, 0.50);
+    // I want to make it so that the draw list is defined by the game
+    // If I remove the line below, it should remove the landscape from the
+    // draw list
+    engine->generate_landscape();
+    engine->set_clear_color(0.0, 0.0, 0.0);
 }

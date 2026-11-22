@@ -1221,7 +1221,7 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
                 vkDestroyPipeline(m_vulkan_global_state->m_logical_device,
                                   pipeline.pipeline, nullptr);
                 rebuild_compute_shader_pipeline(pipeline);
-                new_landscape();
+                // new_landscape();
                 pipeline.is_dirty = false;
             }
         }
@@ -1257,10 +1257,10 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
             count++;
         }
     }
-    if (landscape::SHOULD_ANIMATE) {
-        m_landscape_animation_time += deltaTime;
-        new_landscape();
-    }
+    // if (landscape::SHOULD_ANIMATE) {
+    //     m_landscape_animation_time += deltaTime;
+    //     new_landscape();
+    // }
 
     // 60 frames per second
     // 1000ms per second
@@ -1405,9 +1405,69 @@ void VulkanContext::new_landscape(bool rebuild_indices) {
             compute_pipeline_data = pipeline;
         }
     }
-    run_compute_shader(
-        compute_pipeline_data.pipeline, compute_pipeline_data.pipeline_layout,
-        m_vulkan_global_state->m_compute_ds, false, rebuild_indices);
+
+    Mesh3D landscape = Mesh3D();
+    landscape.m_mesh_type = TEXTURED;
+    landscape.m_index_buffer_start_idx = m_indices.size();
+    landscape.m_vertex_buffer_start_idx = m_vertices.size();
+    run_compute_shader(compute_pipeline_data.pipeline,
+                       compute_pipeline_data.pipeline_layout,
+                       m_vulkan_global_state->m_compute_ds);
+
+    Vertex* landscapeVertices = static_cast<Vertex*>(
+        m_vulkan_global_state->m_computeOutputBufferMemoryMapped);
+    backend_vk::set_indices(m_indices, landscapeVertices, landscape::DEPTH,
+                            landscape::WIDTH);
+
+    /// for (int i : {0, 1, 1023, 1024, 500000})
+    ///     printf("v%d pos %f %f %f  n %f %f %f\n", i,
+    ///     landscapeVertices[i].pos.x,
+    ///            landscapeVertices[i].pos.y, landscapeVertices[i].pos.z,
+    ///            landscapeVertices[i].normal.x, landscapeVertices[i].normal.y,
+    ///            landscapeVertices[i].normal.z);
+
+    m_vertices.insert(
+        m_vertices.end(), landscapeVertices,
+        landscapeVertices + (landscape::WIDTH * landscape::DEPTH));
+
+    // TODO: Textures in the engine textures folder should be loaded and
+    // accessible through handles that can be passed into the create texture
+    // image functions so we dont have to do filesystem shit in the future
+    TextureResource tex = FileLoader::load_texture_file(
+        MODELS_DIR "EngineDefault/DefaultTile.png");
+
+    create_texture_image(tex, &landscape, ALBEDO);
+    create_texture_image_view(&landscape, ALBEDO);
+    create_texture_sampler(&landscape, ALBEDO);
+
+    // std::vector<MaterialEnums> materialTypes = {
+    //     ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL, EMISSIVE, ORM};
+    landscape.m_material_indices[ALBEDO] = -1;
+    landscape.m_material_indices[METALLIC] = -1;
+    landscape.m_material_indices[ROUGHNESS] = -1;
+    landscape.m_material_indices[AO] = -1;
+    landscape.m_material_indices[EMISSIVE] = -1;
+    landscape.m_material_indices[NORMAL] = -1;
+    landscape.m_material_indices[ORM] = -1;
+    // RegisterTexture(&landscape.m_materialDataMap[ALBEDO].m_textureImageView,
+    //                 &landscape.m_materialDataMap[ALBEDO].m_textureSampler);
+
+    m_buffer_handler->CreateModelUBO(&landscape);
+
+    m_descriptor_set_handler->CreateTexturedPBRDescriptorSetsBindless(
+        &landscape);
+
+    int vertexBufferEndIndex = m_vertices.size() - 1;
+    int indexBufferEndIndex = m_indices.size() - 1;
+    landscape.m_index_buffer_end_idx = indexBufferEndIndex;
+    landscape.m_vertex_buffer_end_idx = vertexBufferEndIndex;
+    landscape.m_index_count =
+        m_indices.size() - landscape.m_index_buffer_start_idx;
+
+    // Loop through all the vertices spat out by our compute shader and
+    // create indices buffer
+
+    m_vulkan_global_state->m_meshList.push_back(landscape);
 }
 
 void VulkanContext::unload_scene_objects() {
@@ -2891,6 +2951,7 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
             vkCmdBindIndexBuffer(commandBuffer, m_buffer_handler->IndexBuffer,
                                  0, VK_INDEX_TYPE_UINT32);
             for (auto& mesh : m_vulkan_global_state->m_meshList) {
+                if (!mesh.should_draw) continue;
                 mesh.m_scale = glm::vec3(100.0f, 100.0f, 100.0f);
                 // Binding the graphics pipeline
                 if (mesh.m_mesh_type == TEXTURED) {

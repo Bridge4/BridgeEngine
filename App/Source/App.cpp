@@ -21,6 +21,8 @@ void engine_set_clear_color(float r, float g, float b) {
     g_engine->set_clear_color(r, g, b);
 }
 
+void engine_generate_landscape() { g_engine->generate_landscape(); }
+
 const char* create_or_update_live_game_dll(const char* game_dll_dir) {
     auto now = std::chrono::floor<std::chrono::seconds>(
         std::chrono::system_clock::now());
@@ -84,6 +86,7 @@ int main() {
 
     EngineAPI engine_api = {};
     engine_api.set_clear_color = &engine_set_clear_color;
+    engine_api.generate_landscape = &engine_generate_landscape;
     // Since we are loading Game.dll, we can't make changes to it
     // We need to copy Game.dll into a new temp file
     // We will load the temp copy of Game.dll so the original can be recompiled
@@ -158,15 +161,6 @@ int main() {
 
     std::chrono::high_resolution_clock::time_point lastFrameTime;
     lastFrameTime = std::chrono::high_resolution_clock::now();
-    // Right now we are describing a scene and then rendering it, we cannot
-    // change it after we describe it
-    // The intention is to be able to modify any scene we are in, meaning we
-    // need to be able to add or delete meshes, lights, etc
-    // At the moment we can only load meshes from files but we want to be able
-    // to programmatically describe meshes
-    // We will need primitives that we can programmatically modify
-    // TODO: Paramaterized Perlin Noise landscape generation vertex shader
-    // TODO: Create shape primitives
     g_engine->m_renderer->DescribeScene(loadedObjects, lightsToRender);
 
     windowingBackend->ShowWindow();

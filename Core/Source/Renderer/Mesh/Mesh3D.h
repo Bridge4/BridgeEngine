@@ -42,6 +42,7 @@ class Mesh3D {
     VkDeviceMemory m_texture_image_memory = VK_NULL_HANDLE;
     VkImageView m_texture_image_view = VK_NULL_HANDLE;
     VkSampler m_texture_sampler = VK_NULL_HANDLE;
+    bool should_draw = true;
 
     TextureData m_texture_data = {};
     std::unordered_map<MaterialEnums, TextureData> m_material_data_map = {};
