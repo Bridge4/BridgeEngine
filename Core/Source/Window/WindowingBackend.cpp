@@ -8,8 +8,7 @@
 // 2. Call API-specific windowing setup
 
 // NOTE: VULKAN WINDOWING
-VkResult WindowingBackend::create_surface_vk_glfw(VkInstance instance,
-                                                  VkSurfaceKHR* surface) {
+VkResult WindowingBackend::create_surface_vk_glfw(VkInstance instance, VkSurfaceKHR* surface) {
     return glfwCreateWindowSurface(instance, m_window, nullptr, surface);
 }
 
@@ -52,15 +51,11 @@ void WindowingBackend::DestroyGLFW() {
     glfwTerminate();
 }
 
-int WindowingBackend::ShouldCloseGLFW() {
-    return glfwWindowShouldClose(m_window);
-}
+int WindowingBackend::ShouldCloseGLFW() { return glfwWindowShouldClose(m_window); }
 
 void WindowingBackend::PollGLFW() { glfwPollEvents(); }
 // Checks if the framebuffer has been resized using GLFW function
-void WindowingBackend::FramebufferResizeCallbackGLFW(GLFWwindow* window,
-                                                     int width, int height) {
-    auto wnd =
-        reinterpret_cast<WindowingBackend*>(glfwGetWindowUserPointer(window));
+void WindowingBackend::FramebufferResizeCallbackGLFW(GLFWwindow* window, int width, int height) {
+    auto wnd = reinterpret_cast<WindowingBackend*>(glfwGetWindowUserPointer(window));
     wnd->framebufferResized = true;
 }

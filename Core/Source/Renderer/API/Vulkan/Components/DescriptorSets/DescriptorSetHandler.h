@@ -86,13 +86,12 @@ class DescriptorSetHandler {
     void CreateShadowPassDescriptorSetLayout();
     void CreateShadowPassDescriptorSet();
     void CreateTexturedMeshDescriptorSetLayout();
-    void CreateTexturedMeshDescriptorSets(Mesh3D* mesh);
     void CreateTexturedPBRDescriptorSetLayout();
-    void CreateTexturedPBRDescriptorSets(Mesh3D* mesh);
+    void CreateTexturedPBRDescriptorSets(Renderable* mesh);
 
     // === BINDLESS === //
     void CreateTexturedPBRDescriptorSetLayoutBindless();
-    void CreateTexturedPBRDescriptorSetsBindless(Mesh3D* mesh);
+    void CreateTexturedPBRDescriptorSetsBindless(Renderable* mesh);
     void RegisterTexture();
     // === COMPUTE === //
     VkDescriptorPool CreateDescriptorPoolCompute(VkDevice& logical_device);

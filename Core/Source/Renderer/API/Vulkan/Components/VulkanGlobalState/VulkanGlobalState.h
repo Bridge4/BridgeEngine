@@ -42,8 +42,7 @@ struct FragShaderPushConstantsBindless {
     // w = ROCK_LEVEL
     glm::vec4 terrain_levels = glm::vec4(1.631f, -1.389f, 1.609f, 2.64f);
     glm::vec3 water_color = glm::vec3(0.02, 0.45, 0.65);
-    glm::vec3 sand_color =
-        glm::vec3(0.1529, 0.4745, 0.1216);  // Vivid orange-gold sunlit sand;
+    glm::vec3 sand_color = glm::vec3(0.1529, 0.4745, 0.1216);  // Vivid orange-gold sunlit sand;
     glm::vec3 grass_color = glm::vec3(0.38, 0.72, 0.12);
     glm::vec3 rock_color = glm::vec3(0.75, 0.32, 0.22);
     glm::vec3 snow_color = glm::vec3(1.00, 0.88, 0.65);
@@ -54,8 +53,7 @@ class VulkanGlobalState {
     // The VulkanGlobalState will hold the resources created by the various
     // handlers
 
-    VulkanGlobalState(VulkanContext* vulkanContext,
-                      ERenderingMode renderingMode) {
+    VulkanGlobalState(VulkanContext* vulkanContext, ERenderingMode renderingMode) {
         this->m_vulkanContext = vulkanContext;
         this->m_renderingMode = renderingMode;
     }
@@ -66,9 +64,7 @@ class VulkanGlobalState {
     VkInstance GetVulkanInstance() { return m_instance; }
     // std::vector<VkImage>* GetRefSwapChainImages() { return
     // &m_swapChainImages; }
-    std::vector<VkImageView>* GetRefSwapChainImageViews() {
-        return &m_swapChainImageViews;
-    }
+    std::vector<VkImageView>* GetRefSwapChainImageViews() { return &m_swapChainImageViews; }
     // TODO: Move this to SwapChainHandler
     VkFormat GetSwapChainImageFormat() { return m_swapChainImageFormat; }
     // TODO: Move this to SwapChainHandler
@@ -79,18 +75,12 @@ class VulkanGlobalState {
     // TODO: Replace all getters with direct access to member variables
     VkSurfaceKHR GetSurface() { return m_surface; }
 
-    void SetSwapChainImageFormat(VkFormat surfaceFormat) {
-        this->m_swapChainImageFormat = surfaceFormat;
-    };
-    void SetSwapChainExtent(VkExtent2D extent) {
-        this->m_swapChainExtent = extent;
-    }
+    void SetSwapChainImageFormat(VkFormat surfaceFormat) { this->m_swapChainImageFormat = surfaceFormat; };
+    void SetSwapChainExtent(VkExtent2D extent) { this->m_swapChainExtent = extent; }
     void SetSwapChainImageViews(std::vector<VkImageView> swapChainImageViews) {
         this->m_swapChainImageViews = swapChainImageViews;
     }
-    void SetSwapChainImages(std::vector<VkImage> swapChainImages) {
-        this->m_swapChainImages = swapChainImages;
-    }
+    void SetSwapChainImages(std::vector<VkImage> swapChainImages) { this->m_swapChainImages = swapChainImages; }
 
     VkPhysicalDevice m_physical_device = nullptr;
     VkDevice m_logical_device = nullptr;
@@ -105,8 +95,7 @@ class VulkanGlobalState {
     VkFormat m_swapChainImageFormat = VK_FORMAT_UNDEFINED;
     VkExtent2D m_swapChainExtent;
 
-    std::unique_ptr<backend_vk::render_pass::RenderPassData>
-        m_render_pass_data = {};
+    std::unique_ptr<backend_vk::render_pass::RenderPassData> m_render_pass_data = {};
 
     VkImage m_shadowPassDepthImage = 0;
     VkDeviceMemory m_shadowPassDepthImageMemory = 0;
@@ -161,16 +150,14 @@ class VulkanGlobalState {
     VkPipeline m_shadowPassPipeline;
 
     std::unordered_map<BeDrawType, VkPipeline*> m_graphicsPipelines = {};
-    std::unordered_map<BeDrawType, std::vector<VkDescriptorSetLayout*>>
-        m_descriptorSetLayouts = {};
+    std::unordered_map<BeDrawType, std::vector<VkDescriptorSetLayout*>> m_descriptorSetLayouts = {};
 
     DescriptorSetLayoutInfo m_dsLayoutInfoScene;
     DescriptorSetLayoutInfo m_dsLayoutInfoTexturedMesh;
     DescriptorSetLayoutInfo m_dsLayoutInfoUntexturedMesh;
     DescriptorSetLayoutInfo m_dsLayoutInfoHeightMap;
-    std::vector<DescriptorSetLayoutInfo> m_dsLayoutInfos = {
-        m_dsLayoutInfoScene, m_dsLayoutInfoTexturedMesh,
-        m_dsLayoutInfoUntexturedMesh, m_dsLayoutInfoHeightMap};
+    std::vector<DescriptorSetLayoutInfo> m_dsLayoutInfos = {m_dsLayoutInfoScene, m_dsLayoutInfoTexturedMesh,
+                                                            m_dsLayoutInfoUntexturedMesh, m_dsLayoutInfoHeightMap};
 
     std::vector<VkFramebuffer> m_renderPassFrameBuffers;
     std::vector<VkFramebuffer> m_shadowPassFrameBuffers;
@@ -181,9 +168,9 @@ class VulkanGlobalState {
     VkBuffer m_computeInputBuffer;
     VkDeviceMemory m_computeInputBufferMemory = {};
     void* m_computeInputBufferMemoryMapped = {};
-    VkBuffer m_computeOutputBuffer;
-    VkDeviceMemory m_computeOutputBufferMemory = {};
-    void* m_computeOutputBufferMemoryMapped = {};
+    VkBuffer m_compute_vertex_buffer;
+    VkDeviceMemory m_compute_vertex_buffer_memory = {};
+    void* m_compute_vertex_buffer_mapped = {};
     std::vector<VkDescriptorSetLayout> m_compute_dsls = {};
     VkDescriptorPool m_compute_dsp = {};
     VkDescriptorSet m_compute_ds = {};
@@ -210,7 +197,7 @@ class VulkanGlobalState {
     std::vector<VkSemaphore> m_renderFinishedSemaphores;
     std::vector<VkFence> m_inFlightFences;
     VkFence m_computeFence;
-    std::vector<Mesh3D> m_meshList = {};
+    std::vector<Renderable> m_render_list = {};
     uint32_t m_currentFrame = 0;
 
     // Window window;
@@ -218,10 +205,8 @@ class VulkanGlobalState {
     uint32_t HEIGHT = 600;
     int m_shadowMapWidth = 4096;
     int m_shadowMapHeight = 4096;
-    const std::vector<const char*> validationLayers = {
-        "VK_LAYER_KHRONOS_validation"};
-    const std::vector<const char*> deviceExtensions = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
+    const std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     VkInstance m_instance;
     VkDebugUtilsMessengerEXT m_debug_messenger;
     int m_maxFramesInFlight = 2;

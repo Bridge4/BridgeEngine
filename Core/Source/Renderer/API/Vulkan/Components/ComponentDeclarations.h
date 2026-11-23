@@ -7,6 +7,6 @@ class SwapChainHandler;
 class BufferHandler;
 class CameraHandler;
 class VulkanGlobalState;
-class Mesh3D;
+class Renderable;
 class DescriptorSetHandler;
 #endif

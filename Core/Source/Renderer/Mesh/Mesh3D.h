@@ -24,11 +24,7 @@ struct ModelUBO {
     alignas(16) glm::mat4 model;
 };
 
-class Mesh3D {
-   public:
-    Mesh3D() {}
-
-    Mesh3DTypes m_mesh_type = TEXTURED;
+struct Renderable {
     // Offsets for shared index and vertex buffers during vkDraw calls
     int m_index_buffer_start_idx = 0;
     int m_index_buffer_end_idx = 0;
@@ -38,10 +34,6 @@ class Mesh3D {
 
     int m_index_count = 0;
 
-    VkImage m_texture_image = VK_NULL_HANDLE;
-    VkDeviceMemory m_texture_image_memory = VK_NULL_HANDLE;
-    VkImageView m_texture_image_view = VK_NULL_HANDLE;
-    VkSampler m_texture_sampler = VK_NULL_HANDLE;
     bool should_draw = true;
 
     TextureData m_texture_data = {};

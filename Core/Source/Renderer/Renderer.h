@@ -3,6 +3,7 @@
 #include "RendererTypes.h"
 #include "Source/Renderer/API/Vulkan/VulkanContext.h"
 #include "Source/Window/WindowingBackend.h"
+
 class Renderer {
    public:
     Renderer() {};
@@ -17,8 +18,10 @@ class Renderer {
     void Destroy();
     void set_clear_color(float r, float g, float b);
     void generate_landscape();
+    void load_renderable(glm::vec3 vertices, int indices[]);
     ERenderingMode m_renderingMode;
     std::vector<ObjResource> m_loadedObjects = {};
+    std::vector<Renderable> render_list = {};
 
     // API Context
     VulkanContext* m_vulkanContext = 0;

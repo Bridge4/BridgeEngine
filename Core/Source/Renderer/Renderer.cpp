@@ -1,7 +1,6 @@
 #include "Renderer.h"
 
-void Renderer::StartUp(ERenderingMode renderingMode,
-                       WindowingBackend* windowingBackend) {
+void Renderer::StartUp(ERenderingMode renderingMode, WindowingBackend* windowingBackend) {
     this->m_vulkanContext = new VulkanContext();
     m_vulkanContext->m_windowing_backend = windowingBackend;
     this->m_renderingMode = renderingMode;
@@ -9,18 +8,16 @@ void Renderer::StartUp(ERenderingMode renderingMode,
 }
 
 void Renderer::Tick(std::vector<ObjResource> loadedObjects, float deltaTime) {
+    // Every tick the renderer passes its render list to the backend for rendering
     m_vulkanContext->tick(m_loadedObjects, deltaTime);
 }
 
-void Renderer::DescribeScene(std::vector<ObjResource> objectsToRender,
-                             std::vector<Light> lightsToRender) {
+void Renderer::DescribeScene(std::vector<ObjResource> objectsToRender, std::vector<Light> lightsToRender) {
     m_vulkanContext->describe_scene(objectsToRender, lightsToRender);
 }
 
-void Renderer::set_clear_color(float r, float g, float b) {
-    m_vulkanContext->CLEAR_COLOR = glm::vec3(r, g, b);
-}
+void Renderer::set_clear_color(float r, float g, float b) { m_vulkanContext->CLEAR_COLOR = glm::vec3(r, g, b); }
 
-void Renderer::generate_landscape() { m_vulkanContext->new_landscape(); }
+void Renderer::generate_landscape() { m_vulkanContext->update_terrain(); }
 
 void Renderer::Destroy() {}

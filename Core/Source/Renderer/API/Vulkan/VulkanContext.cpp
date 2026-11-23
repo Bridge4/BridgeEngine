@@ -92,10 +92,8 @@ std::string read_shader(const std::string& file_name) {
     return buffer;
 }
 
-std::vector<uint32_t> compile_shader(const std::string& source_name,
-                                     shaderc_shader_kind kind,
-                                     const std::string& source_code,
-                                     bool optimize = false) {
+std::vector<uint32_t> compile_shader(const std::string& source_name, shaderc_shader_kind kind,
+                                     const std::string& source_code, bool optimize = false) {
     shaderc::Compiler compiler;
     shaderc::CompileOptions options;
 
@@ -103,12 +101,10 @@ std::vector<uint32_t> compile_shader(const std::string& source_name,
         options.SetOptimizationLevel(shaderc_optimization_level_performance);
     }
 
-    shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(
-        source_code, kind, source_name.c_str(), options);
+    shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source_code, kind, source_name.c_str(), options);
 
     if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
-        std::cout << "Shader compilation error:\n"
-                  << module.GetErrorMessage() << std::endl;
+        std::cout << "Shader compilation error:\n" << module.GetErrorMessage() << std::endl;
         return {};
     }
 
@@ -116,16 +112,14 @@ std::vector<uint32_t> compile_shader(const std::string& source_name,
 }
 namespace fs = std::filesystem;
 
-std::vector<int> check_for_shader_recompilation(
-    std::vector<Shader>& watched_shaders) {
+std::vector<int> check_for_shader_recompilation(std::vector<Shader>& watched_shaders) {
     std::vector<int> shaders_requiring_recompilation = {};
     if (watched_shaders.empty()) {
         return {};
     }
     for (int i = 0; i < watched_shaders.size(); i++) {
         std::error_code ec;
-        fs::file_time_type last_write =
-            fs::last_write_time(watched_shaders[i].file_path, ec);
+        fs::file_time_type last_write = fs::last_write_time(watched_shaders[i].file_path, ec);
         if (ec) {
             continue;
         }
@@ -148,16 +142,14 @@ void render_ui(VulkanContext& context_vk) {
     // ImGui::ShowDemoWindow(&show_demo_window);
     ImGui::Begin("Landscape Settings");
     // Test frame rates (verifies NewFrame delta timing is working)
-    ImGui::Text("Performance: %.3f ms/frame (%.1f FPS)",
-                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::Text("Performance: %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
     glm::mat4 mat = context_vk.m_cameraController->m_cameraUBO.view;
     ImGui::Text("%s:", "Camera View");
     for (int row = 0; row < 4; ++row) {
         // Notice mat[col][row] to display in standard row-major visual
         // order
-        ImGui::Text("[ %7.3f, %7.3f, %7.3f, %7.3f ]", mat[0][row], mat[1][row],
-                    mat[2][row], mat[3][row]);
+        ImGui::Text("[ %7.3f, %7.3f, %7.3f, %7.3f ]", mat[0][row], mat[1][row], mat[2][row], mat[3][row]);
     }
     if (ImGui::Button("Generate New Landscape")) {
         std::random_device rd;
@@ -165,15 +157,14 @@ void render_ui(VulkanContext& context_vk) {
         std::uniform_real_distribution<float> dist(0.0f, 10.0f);
         landscape::BASE_0 = dist(gen);
         landscape::BASE_1 = dist(gen);
-        context_vk.new_landscape();
+        context_vk.update_terrain();
     }
 
     const char* draw_type_options[] = {"Mesh", "Line", "Point"};
     static int draw_type_selection = 0;
 
-    ImGui::SliderInt("Target FPS", &context_vk.m_target_fps, 1, 360);
-    if (ImGui::BeginCombo("Draw Type",
-                          draw_type_options[draw_type_selection])) {
+    ImGui::SliderInt("Target FPS", &context_vk.m_target_fps, 1, 1000);
+    if (ImGui::BeginCombo("Draw Type", draw_type_options[draw_type_selection])) {
         for (int n = 0; n < IM_ARRAYSIZE(draw_type_options); n++) {
             const bool is_selected = (draw_type_selection == n);
             if (ImGui::Selectable(draw_type_options[n], is_selected)) {
@@ -211,105 +202,77 @@ void render_ui(VulkanContext& context_vk) {
     bool depth_changed = ImGui::InputInt("Depth", &landscape::DEPTH);
     if (width_changed || depth_changed) {
         // Recreate the landscape
-        context_vk.new_landscape(true);
+        context_vk.update_terrain(true);
     }
-    bool scale_changed =
-        ImGui::SliderFloat("Scale", &landscape::SCALE, 0.0f, 2000.0f);
+    bool scale_changed = ImGui::SliderFloat("Scale", &landscape::SCALE, 0.0f, 2000.0f);
     ImGui::InputFloat("Max Amplitude", &landscape::MAX_AMPLITUDE);
     // ImGui::InputFloat("Amplitude", &landscape::AMPLITUDE);
-    bool amp_changed = ImGui::SliderFloat("Amplitude", &landscape::AMPLITUDE,
-                                          0.0f, landscape::MAX_AMPLITUDE);
+    bool amp_changed = ImGui::SliderFloat("Amplitude", &landscape::AMPLITUDE, 0.0f, landscape::MAX_AMPLITUDE);
     ImGui::InputFloat("Animation Speed", &landscape::ANIMATION_SPEED);
-    bool lac_changed =
-        ImGui::SliderFloat("Lacunarity", &landscape::LACUNARITY, -2.0f, 2.0f);
+    bool lac_changed = ImGui::SliderFloat("Lacunarity", &landscape::LACUNARITY, -2.0f, 2.0f);
     // context_vk.new_landscape();
-    bool freq_changed =
-        ImGui::SliderFloat("Frequency", &landscape::FREQUENCY, 0.0f, 0.99f);
+    bool freq_changed = ImGui::SliderFloat("Frequency", &landscape::FREQUENCY, 0.0f, 0.99f);
     bool oct_changed = ImGui::SliderInt("Octaves", &landscape::OCTAVES, 1, 32);
-    if (lac_changed || freq_changed || oct_changed || scale_changed ||
-        amp_changed) {
-        context_vk.new_landscape();
+    if (lac_changed || freq_changed || oct_changed || scale_changed || amp_changed) {
+        context_vk.update_terrain();
     }
     float MIN_LEVEL = -20.0;
     float MAX_LEVEL = 10.0;
     // ImGui::ColorPicker3("Background Clear Color", &context_vk.CLEAR_COLOR.x);
-    ImGui::SliderFloat(
-        "Water Level",
-        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
-             .terrain_levels.x,
-        MIN_LEVEL, MAX_LEVEL);
-    ImGui::SliderFloat(
-        "Sand Level",
-        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
-             .terrain_levels.y,
-        MIN_LEVEL, MAX_LEVEL);
+    ImGui::SliderFloat("Water Level",
+                       &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless.terrain_levels.x,
+                       MIN_LEVEL, MAX_LEVEL);
+    ImGui::SliderFloat("Sand Level",
+                       &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless.terrain_levels.y,
+                       MIN_LEVEL, MAX_LEVEL);
 
-    ImGui::SliderFloat(
-        "Grass Level",
-        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
-             .terrain_levels.z,
-        MIN_LEVEL, MAX_LEVEL);
+    ImGui::SliderFloat("Grass Level",
+                       &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless.terrain_levels.z,
+                       MIN_LEVEL, MAX_LEVEL);
 
-    ImGui::SliderFloat(
-        "Rock Level",
-        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
-             .terrain_levels.w,
-        MIN_LEVEL, MAX_LEVEL);
+    ImGui::SliderFloat("Rock Level",
+                       &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless.terrain_levels.w,
+                       MIN_LEVEL, MAX_LEVEL);
 
-    ImGui::ColorPicker3(
-        "Water Color",
-        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
-             .water_color.x);
+    ImGui::ColorPicker3("Water Color",
+                        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless.water_color.x);
 
-    ImGui::ColorPicker3(
-        "Sand Color",
-        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
-             .sand_color.x);
+    ImGui::ColorPicker3("Sand Color",
+                        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless.sand_color.x);
 
-    ImGui::ColorPicker3(
-        "Grass Color",
-        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
-             .grass_color.x);
+    ImGui::ColorPicker3("Grass Color",
+                        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless.grass_color.x);
 
-    ImGui::ColorPicker3(
-        "Rock Color",
-        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
-             .rock_color.x);
+    ImGui::ColorPicker3("Rock Color",
+                        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless.rock_color.x);
 
-    ImGui::ColorPicker3(
-        "Snow Color",
-        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless
-             .snow_color.x);
+    ImGui::ColorPicker3("Snow Color",
+                        &context_vk.m_vulkan_global_state->m_frag_shader_push_constants_bindless.snow_color.x);
 
     ImGui::End();
 
     ImGui::Render();
 }
 
-VkShaderModule CreateShaderModule(std::vector<uint32_t>& code,
-                                  VkDevice& logical_device) {
+VkShaderModule CreateShaderModule(std::vector<uint32_t>& code, VkDevice& logical_device) {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = (code.cend() - code.cbegin()) * sizeof(uint32_t);
     createInfo.pCode = code.data();
     VkShaderModule shaderModule;
-    if (vkCreateShaderModule(logical_device, &createInfo, nullptr,
-                             &shaderModule) != VK_SUCCESS) {
+    if (vkCreateShaderModule(logical_device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module!");
     }
 
     return shaderModule;
 }
 
-Pipeline CreateComputePipeline(
-    std::vector<uint32_t> shader_code_spirv,
-    const std::string& shader_file_path, VkDevice& logical_device,
-    std::vector<VkDescriptorSetLayout> descriptorSetLayouts,
-    VkPipelineLayout& pipeline_layout) {
+Pipeline CreateComputePipeline(std::vector<uint32_t> shader_code_spirv, const std::string& shader_file_path,
+                               VkDevice& logical_device, std::vector<VkDescriptorSetLayout> descriptorSetLayouts,
+                               VkPipelineLayout& pipeline_layout) {
     Pipeline cached_pipeline;
     cached_pipeline.type = COMPUTE;
-    VkShaderModule computeShader =
-        CreateShaderModule(shader_code_spirv, logical_device);
+    VkShaderModule computeShader = CreateShaderModule(shader_code_spirv, logical_device);
     backend_vk::Shader cs;
     cs.source_name = "landscape compute shader";
     cs.file_path = shader_file_path;
@@ -323,8 +286,7 @@ Pipeline CreateComputePipeline(
     backend_vk::Pipeline vk_pipeline = {};
 
     VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
-    shaderStageCreateInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shaderStageCreateInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     shaderStageCreateInfo.module = computeShader;
     shaderStageCreateInfo.pName = "main";
@@ -334,8 +296,7 @@ Pipeline CreateComputePipeline(
     pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
     pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
 
-    if (vkCreatePipelineLayout(logical_device, &pipelineLayoutInfo, nullptr,
-                               &cached_pipeline.pipeline_layout) !=
+    if (vkCreatePipelineLayout(logical_device, &pipelineLayoutInfo, nullptr, &cached_pipeline.pipeline_layout) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     };
@@ -347,9 +308,8 @@ Pipeline CreateComputePipeline(
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
 
-    VkResult result = vkCreateComputePipelines(logical_device, VK_NULL_HANDLE,
-                                               1, &pipelineInfo, nullptr,
-                                               &cached_pipeline.pipeline);
+    VkResult result =
+        vkCreateComputePipelines(logical_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &cached_pipeline.pipeline);
 
     if (result != VK_SUCCESS) {
         throw std::runtime_error("failed to create compute pipeline!");
@@ -362,8 +322,7 @@ Pipeline CreateComputePipeline(
 }
 
 // Courtesy of my code from college :)
-void SetIndex(std::vector<unsigned int>& indices, unsigned int r3,
-              unsigned int r2, unsigned int r1, unsigned int l3,
+void SetIndex(std::vector<unsigned int>& indices, unsigned int r3, unsigned int r2, unsigned int r1, unsigned int l3,
               unsigned int l2, unsigned int l1) {
     indices.push_back(r3);
     indices.push_back(r2);
@@ -373,8 +332,7 @@ void SetIndex(std::vector<unsigned int>& indices, unsigned int r3,
     indices.push_back(l1);
 }
 
-void SetNormal(std::vector<Vertex>& vertices, unsigned int v1, unsigned int v2,
-               unsigned int v3) {
+void SetNormal(std::vector<Vertex>& vertices, unsigned int v1, unsigned int v2, unsigned int v3) {
     /*
         From khronos website
         Set Vector U to (Triangle.p2 minus Triangle.p1)
@@ -408,8 +366,7 @@ void SetNormal(std::vector<Vertex>& vertices, unsigned int v1, unsigned int v2,
     vertices[v3].normal = normal;
 }
 
-void set_indices(std::vector<uint32_t>& indices, Vertex* vertices,
-                 int worldHeight, int worldWidth) {
+void set_indices(std::vector<uint32_t>& indices, Vertex* vertices, int worldHeight, int worldWidth) {
     // DRAW ORDER OF TRIANGLES
     // right facing triangle draw order
     unsigned int r1, r2, r3;
@@ -470,11 +427,12 @@ void set_indices(std::vector<uint32_t>& indices, Vertex* vertices,
         }
     }
 }
-std::vector<VkFramebuffer> create_swapchain_framebuffers(
-    int numberOfFramebuffers, std::vector<VkImageView> perFrameImageViews,
-    std::vector<VkImageView> swapChainImageViews, uint32_t framebufferWidth,
-    uint32_t framebufferHeight, VkDevice& logical_device,
-    render_pass::RenderPassData renderPassData) {
+std::vector<VkFramebuffer> create_swapchain_framebuffers(int numberOfFramebuffers,
+                                                         std::vector<VkImageView> perFrameImageViews,
+                                                         std::vector<VkImageView> swapChainImageViews,
+                                                         uint32_t framebufferWidth, uint32_t framebufferHeight,
+                                                         VkDevice& logical_device,
+                                                         render_pass::RenderPassData renderPassData) {
     // TODO: Check if our targeted render pass is valid
     // TODO: Check if count > 0
     // TODO: Check if attachmentImageViews is not empty
@@ -485,8 +443,7 @@ std::vector<VkFramebuffer> create_swapchain_framebuffers(
 
     VkRenderPass renderPass = renderPassData.render_pass;
     if (renderPass == VK_NULL_HANDLE || renderPass == nullptr) {
-        std::cout << __LINE__
-                  << " FAILED TO CREATE FRAMEBUFFER: INVALID RENDER PASS\n";
+        std::cout << __LINE__ << " FAILED TO CREATE FRAMEBUFFER: INVALID RENDER PASS\n";
         return {};
     }
 
@@ -513,8 +470,7 @@ std::vector<VkFramebuffer> create_swapchain_framebuffers(
         framebufferInfo.height = framebufferHeight;
         framebufferInfo.layers = 1;
 
-        if (vkCreateFramebuffer(logical_device, &framebufferInfo, nullptr,
-                                &framebuffers[i]) != VK_SUCCESS) {
+        if (vkCreateFramebuffer(logical_device, &framebufferInfo, nullptr, &framebuffers[i]) != VK_SUCCESS) {
             throw std::runtime_error("failed to create framebuffer!");
         }
     }
@@ -522,24 +478,17 @@ std::vector<VkFramebuffer> create_swapchain_framebuffers(
     return framebuffers;
 }
 
-bool CheckRenderPassDataValidity(
-    render_pass::RenderPassData::ERenderPassDataState renderPassDataState) {
-    if (renderPassDataState !=
-        render_pass::RenderPassData::ERenderPassDataState::VALID) {
+bool check_render_pass_data_validity(render_pass::RenderPassData::ERenderPassDataState renderPassDataState) {
+    if (renderPassDataState != render_pass::RenderPassData::ERenderPassDataState::VALID) {
         switch (renderPassDataState) {
-            case render_pass::RenderPassData::ERenderPassDataState::
-                RENDER_PASS_INVALID:
+            case render_pass::RenderPassData::ERenderPassDataState::RENDER_PASS_INVALID:
                 std::cout << __LINE__ << " ERROR: RENDER PASS INVALID\n";
                 break;
-            case render_pass::RenderPassData::ERenderPassDataState::
-                ATTACHMENT_COUNT_INVALID:
-                std::cout << __LINE__
-                          << " ERROR: RENDER PASS ATTACHMENT COUNT INVALID\n";
+            case render_pass::RenderPassData::ERenderPassDataState::ATTACHMENT_COUNT_INVALID:
+                std::cout << __LINE__ << " ERROR: RENDER PASS ATTACHMENT COUNT INVALID\n";
                 break;
-            case render_pass::RenderPassData::ERenderPassDataState::
-                FRAMEBUFFERS_INVALID:
-                std::cout << __LINE__
-                          << " ERROR: RENDER PASS FRAMEBUFFERS INVALID\n";
+            case render_pass::RenderPassData::ERenderPassDataState::FRAMEBUFFERS_INVALID:
+                std::cout << __LINE__ << " ERROR: RENDER PASS FRAMEBUFFERS INVALID\n";
                 break;
             default:
                 break;
@@ -550,8 +499,7 @@ bool CheckRenderPassDataValidity(
     return true;
 }
 
-VkCommandBuffer begin_single_time_commands(VkDevice& logical_device,
-                                           VkCommandPool& command_pool) {
+VkCommandBuffer begin_single_time_commands(VkDevice& logical_device, VkCommandPool& command_pool) {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -570,9 +518,7 @@ VkCommandBuffer begin_single_time_commands(VkDevice& logical_device,
     return commandBuffer;
 }
 
-void end_single_time_commands(VkDevice& logical_device,
-                              VkCommandPool& command_pool,
-                              VkQueue& graphics_queue,
+void end_single_time_commands(VkDevice& logical_device, VkCommandPool& command_pool, VkQueue& graphics_queue,
                               VkCommandBuffer command_buffer) {
     vkEndCommandBuffer(command_buffer);
 
@@ -587,17 +533,13 @@ void end_single_time_commands(VkDevice& logical_device,
     vkFreeCommandBuffers(logical_device, command_pool, 1, &command_buffer);
 }
 
-uint32_t find_memory_type(VkPhysicalDevice& physical_device,
-                          uint32_t type_filter,
-                          VkMemoryPropertyFlags properties) {
+uint32_t find_memory_type(VkPhysicalDevice& physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(physical_device, &memProperties);
 
     // Go over this section
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if ((type_filter & (1 << i)) &&
-            (memProperties.memoryTypes[i].propertyFlags & properties) ==
-                properties) {
+        if ((type_filter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
             return i;
         }
     }
@@ -622,64 +564,44 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     m_swap_chain_handler = new SwapChainHandler(this, m_vulkan_global_state);
     m_buffer_handler = new BufferHandler(m_vulkan_global_state);
     m_cameraController =
-        new CameraController(this, m_windowing_backend, m_swap_chain_handler,
-                             m_buffer_handler, m_vulkan_global_state);
+        new CameraController(this, m_windowing_backend, m_swap_chain_handler, m_buffer_handler, m_vulkan_global_state);
 
     m_vulkan_global_state->create_vulkan_instance();
     // NOTE: Windowing code
     // m_windowHandlerVK->vulkanContext = this;
 
-    if (m_windowing_backend->create_surface_vk_glfw(
-            m_vulkan_global_state->m_instance,
-            &m_vulkan_global_state->m_surface) != VK_SUCCESS)
+    if (m_windowing_backend->create_surface_vk_glfw(m_vulkan_global_state->m_instance,
+                                                    &m_vulkan_global_state->m_surface) != VK_SUCCESS)
         throw std::runtime_error("Failed to create window surface");
 
     m_vulkan_global_state->m_physical_device =
-        backend_vk::devices::init_physical_device(
-            m_vulkan_global_state->m_instance,
-            m_vulkan_global_state->m_surface);
-    m_vulkan_global_state->m_logical_device =
-        backend_vk::devices::init_logical_device(
-            m_vulkan_global_state->m_physical_device,
-            m_vulkan_global_state->m_surface, ERenderingMode::Bindless);
+        backend_vk::devices::init_physical_device(m_vulkan_global_state->m_instance, m_vulkan_global_state->m_surface);
+    m_vulkan_global_state->m_logical_device = backend_vk::devices::init_logical_device(
+        m_vulkan_global_state->m_physical_device, m_vulkan_global_state->m_surface, ERenderingMode::Bindless);
     m_vulkan_global_state->m_debug_messenger =
-        backend_vk::devices::init_debug_messenger(
-            m_vulkan_global_state->m_instance)
-            .value();
+        backend_vk::devices::init_debug_messenger(m_vulkan_global_state->m_instance).value();
 
-    QueueFamilyIndices queue_family_indices =
-        backend_vk::devices::find_queue_families(
-            m_vulkan_global_state->m_physical_device,
-            m_vulkan_global_state->m_surface);
+    QueueFamilyIndices queue_family_indices = backend_vk::devices::find_queue_families(
+        m_vulkan_global_state->m_physical_device, m_vulkan_global_state->m_surface);
 
-    m_vulkan_global_state->m_graphicsQueue =
-        backend_vk::devices::get_device_queue(
-            m_vulkan_global_state->m_logical_device,
-            queue_family_indices.graphics_family.value());
+    m_vulkan_global_state->m_graphicsQueue = backend_vk::devices::get_device_queue(
+        m_vulkan_global_state->m_logical_device, queue_family_indices.graphics_family.value());
 
-    m_vulkan_global_state->m_presentQueue =
-        backend_vk::devices::get_device_queue(
-            m_vulkan_global_state->m_logical_device,
-            queue_family_indices.present_family.value());
+    m_vulkan_global_state->m_presentQueue = backend_vk::devices::get_device_queue(
+        m_vulkan_global_state->m_logical_device, queue_family_indices.present_family.value());
 
-    m_vulkan_global_state->m_computeQueue =
-        backend_vk::devices::get_device_queue(
-            m_vulkan_global_state->m_logical_device,
-            queue_family_indices.present_family.value());
+    m_vulkan_global_state->m_computeQueue = backend_vk::devices::get_device_queue(
+        m_vulkan_global_state->m_logical_device, queue_family_indices.present_family.value());
 
     int framebuffer_width, framebuffer_height;
-    m_windowing_backend->get_framebuffer_size_glfw(&framebuffer_width,
-                                                   &framebuffer_height);
+    m_windowing_backend->get_framebuffer_size_glfw(&framebuffer_width, &framebuffer_height);
     m_swap_chain_handler->init(framebuffer_width, framebuffer_height);
     create_command_pool();
 
-    VkFormat render_pass_depth_attachment_format =
-        backend_vk::render_pass::find_supported_format(
-            m_vulkan_global_state->m_physical_device,
-            {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
-             VK_FORMAT_D24_UNORM_S8_UINT},
-            VK_IMAGE_TILING_OPTIMAL,
-            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    VkFormat render_pass_depth_attachment_format = backend_vk::render_pass::find_supported_format(
+        m_vulkan_global_state->m_physical_device,
+        {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT}, VK_IMAGE_TILING_OPTIMAL,
+        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     if (!render_pass_depth_attachment_format) {
         std::cout << "renderPassDepthAttachmentFormat invalid\n";
@@ -687,25 +609,19 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
 
     backend_vk::render_pass::DepthResources render_pass_depth_resources =
         backend_vk::render_pass::create_render_pass_depth_resources(
-            m_vulkan_global_state->m_physical_device,
-            m_vulkan_global_state->m_logical_device,
-            m_vulkan_global_state->m_commandPool,
-            m_vulkan_global_state->m_graphicsQueue,
-            render_pass_depth_attachment_format,
-            m_vulkan_global_state->m_swapChainExtent.width,
+            m_vulkan_global_state->m_physical_device, m_vulkan_global_state->m_logical_device,
+            m_vulkan_global_state->m_commandPool, m_vulkan_global_state->m_graphicsQueue,
+            render_pass_depth_attachment_format, m_vulkan_global_state->m_swapChainExtent.width,
             m_vulkan_global_state->m_swapChainExtent.height);
 
-    backend_vk::render_pass::RenderPassData render_pass_data =
-        backend_vk::render_pass::create_render_pass(
-            m_vulkan_global_state->m_logical_device,
-            m_vulkan_global_state->GetSwapChainImageFormat(),
-            render_pass_depth_attachment_format);
+    backend_vk::render_pass::RenderPassData render_pass_data = backend_vk::render_pass::create_render_pass(
+        m_vulkan_global_state->m_logical_device, m_vulkan_global_state->GetSwapChainImageFormat(),
+        render_pass_depth_attachment_format);
 
     render_pass_data.depth_resources = render_pass_depth_resources;
 
     m_vulkan_global_state->m_render_pass_data =
-        std::make_unique<backend_vk::render_pass::RenderPassData>(
-            render_pass_data);
+        std::make_unique<backend_vk::render_pass::RenderPassData>(render_pass_data);
 
     if (m_vulkan_global_state->m_render_pass_data == nullptr) {
         std::cout << "Vulkan Init Error: m_vulkanGlobalState->m_renderPassData "
@@ -718,110 +634,88 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     // QueueFamilyIndices queue_family_indices =
     //     m_device_handler->find_queue_families(
     //         m_device_handler->m_physical_device);
-    m_vulkan_global_state->m_commandPoolCompute = create_command_pool_compute(
-        m_vulkan_global_state->m_logical_device, queue_family_indices);
+    m_vulkan_global_state->m_commandPoolCompute =
+        create_command_pool_compute(m_vulkan_global_state->m_logical_device, queue_family_indices);
 
     // m_renderPassHandler->CreateRenderPassFrameBuffers();
 
     std::vector<VkImageView> renderPassPerFrameImageViews = {};
 
-    renderPassPerFrameImageViews.push_back(
-        m_vulkan_global_state->m_render_pass_data->depth_resources.image_view);
+    renderPassPerFrameImageViews.push_back(m_vulkan_global_state->m_render_pass_data->depth_resources.image_view);
 
-    m_vulkan_global_state->m_render_pass_data->framebuffers =
-        backend_vk::create_swapchain_framebuffers(
-            m_vulkan_global_state->m_swapChainImageViews.size(),
-            renderPassPerFrameImageViews,
-            m_vulkan_global_state->m_swapChainImageViews,
-            m_vulkan_global_state->GetSwapChainExtent().width,
-            m_vulkan_global_state->GetSwapChainExtent().height,
-            m_vulkan_global_state->m_logical_device,
-            *m_vulkan_global_state->m_render_pass_data);
+    m_vulkan_global_state->m_render_pass_data->framebuffers = backend_vk::create_swapchain_framebuffers(
+        m_vulkan_global_state->m_swapChainImageViews.size(), renderPassPerFrameImageViews,
+        m_vulkan_global_state->m_swapChainImageViews, m_vulkan_global_state->GetSwapChainExtent().width,
+        m_vulkan_global_state->GetSwapChainExtent().height, m_vulkan_global_state->m_logical_device,
+        *m_vulkan_global_state->m_render_pass_data);
     if (m_vulkan_global_state->m_renderingMode == ERenderingMode::Bindless) {
         /*
          * Creating the texture heap descriptor pool
          */
         backend_vk::descriptor_sets::DescriptorPoolData dsp_data = {};
         dsp_data.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
-        dsp_data.descriptor_types[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER] =
-            10000;
+        dsp_data.descriptor_types[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER] = 10000;
         dsp_data.max_sets = 10000 * 2;
         auto create_descriptor_pool_result =
-            backend_vk::descriptor_sets::create_descriptor_pool(
-                m_vulkan_global_state->m_logical_device, dsp_data);
+            backend_vk::descriptor_sets::create_descriptor_pool(m_vulkan_global_state->m_logical_device, dsp_data);
         if (!create_descriptor_pool_result.has_value()) {
             std::cout << "failed to create bindless descriptor pool, cannot "
                          "continue vulkan init\n";
             return;
         }
-        m_vulkan_global_state->m_descriptor_pool_bindless =
-            create_descriptor_pool_result.value();
+        m_vulkan_global_state->m_descriptor_pool_bindless = create_descriptor_pool_result.value();
 
         /*
          * Creating scene data descriptor pool
          */
         backend_vk::descriptor_sets::DescriptorPoolData dsp_scene_data = {};
         dsp_scene_data.descriptor_types.clear();
-        dsp_scene_data.descriptor_types[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER] =
-            100;
+        dsp_scene_data.descriptor_types[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER] = 100;
         dsp_scene_data.max_sets = 100;
 
         create_descriptor_pool_result =
-            backend_vk::descriptor_sets::create_descriptor_pool(
-                m_vulkan_global_state->m_logical_device, dsp_data);
+            backend_vk::descriptor_sets::create_descriptor_pool(m_vulkan_global_state->m_logical_device, dsp_data);
         if (!create_descriptor_pool_result.has_value()) {
             std::cout << "failed to create bindless descriptor pool, cannot "
                          "continue vulkan init\n";
             return;
         }
-        m_vulkan_global_state->m_descriptor_pool_bindless_scene =
-            create_descriptor_pool_result.value();
+        m_vulkan_global_state->m_descriptor_pool_bindless_scene = create_descriptor_pool_result.value();
 
         /*
          * Creating per mesh descriptor pool
          */
-        backend_vk::descriptor_sets::DescriptorPoolData
-            dsp_data_per_mesh_bindless = {};
-        dsp_data_per_mesh_bindless.flags =
-            VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
-        dsp_data_per_mesh_bindless
-            .descriptor_types[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER] = 100;
+        backend_vk::descriptor_sets::DescriptorPoolData dsp_data_per_mesh_bindless = {};
+        dsp_data_per_mesh_bindless.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+        dsp_data_per_mesh_bindless.descriptor_types[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER] = 100;
         dsp_data_per_mesh_bindless.max_sets = 100 * 2;
         auto create_per_mesh_descriptor_pool_result =
-            backend_vk::descriptor_sets::create_descriptor_pool(
-                m_vulkan_global_state->m_logical_device, dsp_data);
+            backend_vk::descriptor_sets::create_descriptor_pool(m_vulkan_global_state->m_logical_device, dsp_data);
         if (!create_descriptor_pool_result.has_value()) {
-            std::cout
-                << "failed to create bindless per mesh descriptor pool, cannot "
-                   "continue vulkan init\n";
+            std::cout << "failed to create bindless per mesh descriptor pool, cannot "
+                         "continue vulkan init\n";
             return;
         }
-        m_vulkan_global_state->m_descriptor_pool_per_mesh_bindless =
-            create_descriptor_pool_result.value();
+        m_vulkan_global_state->m_descriptor_pool_per_mesh_bindless = create_descriptor_pool_result.value();
 
         /*
          * Creating pbr_bindless descriptor set layout
          */
         backend_vk::descriptor_sets::DescriptorSetLayoutData dsl_data;
-        backend_vk::descriptor_sets::DescriptorSetLayoutExtension
-            dsl_data_p_next;
+        backend_vk::descriptor_sets::DescriptorSetLayoutExtension dsl_data_p_next;
 
         VkDescriptorSetLayoutBinding bindless_texture_heap_sampler_binding{};
         bindless_texture_heap_sampler_binding.binding = 0;
         bindless_texture_heap_sampler_binding.descriptorCount = 10000;
-        bindless_texture_heap_sampler_binding.descriptorType =
-            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        bindless_texture_heap_sampler_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         bindless_texture_heap_sampler_binding.pImmutableSamplers = nullptr;
-        bindless_texture_heap_sampler_binding.stageFlags =
-            VK_SHADER_STAGE_FRAGMENT_BIT;
+        bindless_texture_heap_sampler_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
         dsl_data.bindings.push_back(bindless_texture_heap_sampler_binding);
-        dsl_data.flags =
-            VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+        dsl_data.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 
-        VkDescriptorBindingFlags flags =
-            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
-            VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
-            VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
+        VkDescriptorBindingFlags flags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+                                         VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
+                                         VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
 
         VkDescriptorSetLayoutBindingFlagsCreateInfo flags_info{
             VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO};
@@ -831,19 +725,16 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
         dsl_data_p_next.set_bindings_flags_create_info(flags_info);
         dsl_data.p_next = dsl_data_p_next;
 
-        auto create_descriptor_set_layout_bindless_result =
-            backend_vk::descriptor_sets::create_descriptor_set_layout(
-                m_vulkan_global_state->m_logical_device, dsl_data);
+        auto create_descriptor_set_layout_bindless_result = backend_vk::descriptor_sets::create_descriptor_set_layout(
+            m_vulkan_global_state->m_logical_device, dsl_data);
 
         if (!create_descriptor_set_layout_bindless_result.has_value()) {
-            std::cout
-                << "failed to create bindless descriptor set layout, cannot"
-                   "continue vulkan init\n";
+            std::cout << "failed to create bindless descriptor set layout, cannot"
+                         "continue vulkan init\n";
             return;
         }
 
-        m_vulkan_global_state->m_bindlessDescriptorSetLayout =
-            create_descriptor_set_layout_bindless_result.value();
+        m_vulkan_global_state->m_bindlessDescriptorSetLayout = create_descriptor_set_layout_bindless_result.value();
 
         /*
          * Creating bindless descriptor set
@@ -855,36 +746,30 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
          *  These two steps should be abstracted separately from each other as
          * bindless does not write descriptors on allocation
          */
-        auto allocate_descriptor_sets_result =
-            backend_vk::descriptor_sets::allocate_descriptor_sets(
-                m_vulkan_global_state->m_logical_device,
-                m_vulkan_global_state->m_bindlessDescriptorSetLayout,
-                m_vulkan_global_state->m_descriptor_pool_bindless, 1);
+        auto allocate_descriptor_sets_result = backend_vk::descriptor_sets::allocate_descriptor_sets(
+            m_vulkan_global_state->m_logical_device, m_vulkan_global_state->m_bindlessDescriptorSetLayout,
+            m_vulkan_global_state->m_descriptor_pool_bindless, 1);
 
         if (!allocate_descriptor_sets_result.has_value()) {
             std::cout << "failed to allocate bindless descriptor sets cannot "
                          "continue vulkan init\n";
             return;
         }
-        m_vulkan_global_state->m_globalBindlessDescriptorSet =
-            allocate_descriptor_sets_result.value()[0];
+        m_vulkan_global_state->m_globalBindlessDescriptorSet = allocate_descriptor_sets_result.value()[0];
         // m_descriptor_set_handler->CreateDescriptorSetBindless();
     } else {
         // m_descriptor_set_handler->CreateDescriptorPool();
         backend_vk::descriptor_sets::DescriptorPoolData dsp_data = {};
         dsp_data.descriptor_types[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER] = 100;
-        dsp_data.descriptor_types[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER] =
-            100;
+        dsp_data.descriptor_types[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER] = 100;
         auto create_descriptor_pool_result =
-            backend_vk::descriptor_sets::create_descriptor_pool(
-                m_vulkan_global_state->m_logical_device, dsp_data);
+            backend_vk::descriptor_sets::create_descriptor_pool(m_vulkan_global_state->m_logical_device, dsp_data);
         if (!create_descriptor_pool_result.has_value()) {
             std::cout << "failed to create bindless descriptor pool, cannot "
                          "continue vulkan init\n";
             return;
         }
-        m_vulkan_global_state->m_descriptor_pool =
-            create_descriptor_pool_result.value();
+        m_vulkan_global_state->m_descriptor_pool = create_descriptor_pool_result.value();
     }
     // SceneDescriptorSets
     m_descriptor_set_handler->CreateSceneDescriptorSetLayout();
@@ -902,27 +787,19 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
         std::string vert_file_path = SHADERS_DIR "scene.vert";
         std::string frag_file_path = SHADERS_DIR "pbr_bindless.frag";
         std::string vert_scene_code = backend_vk::read_shader(vert_file_path);
-        std::string frag_bindless_code =
-            backend_vk::read_shader(frag_file_path);
+        std::string frag_bindless_code = backend_vk::read_shader(frag_file_path);
 
         std::vector<uint32_t> compiled_vert_scene = backend_vk::compile_shader(
-            "Scene Vertex Shader",
-            shaderc_shader_kind::shaderc_glsl_default_vertex_shader,
-            vert_scene_code);
+            "Scene Vertex Shader", shaderc_shader_kind::shaderc_glsl_default_vertex_shader, vert_scene_code);
 
-        std::vector<uint32_t> compiled_frag_bindless =
-            backend_vk::compile_shader(
-                "Bindless Fragment Shader",
-                shaderc_shader_kind::shaderc_glsl_default_fragment_shader,
-                frag_bindless_code);
+        std::vector<uint32_t> compiled_frag_bindless = backend_vk::compile_shader(
+            "Bindless Fragment Shader", shaderc_shader_kind::shaderc_glsl_default_fragment_shader, frag_bindless_code);
         // std::vector<char> vert_scene = read_file(SHADERS_DIR "scene.spv");
         // std::vector<char> frag_bindless =
         //     read_file(SHADERS_DIR "pbr_bindless.spv");
-        m_descriptor_set_handler
-            ->CreateTexturedPBRDescriptorSetLayoutBindless();
-        m_pipelines.push_back(CreatePBRPipelineBindless(
-            compiled_vert_scene, compiled_frag_bindless, vert_file_path,
-            frag_file_path, &m_vulkan_global_state->m_pbrPipeline));
+        m_descriptor_set_handler->CreateTexturedPBRDescriptorSetLayoutBindless();
+        m_pipelines.push_back(CreatePBRPipelineBindless(compiled_vert_scene, compiled_frag_bindless, vert_file_path,
+                                                        frag_file_path, &m_vulkan_global_state->m_pbrPipeline));
 
         // backend_vk::Shader vs;
         // vs.file_path = SHADERS_DIR "scene.vert";
@@ -955,9 +832,8 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
 
     m_buffer_handler->CreateComputeSSBOs();
     m_buffer_handler->CreateCommandBuffers();
-    m_buffer_handler->CreateCommandBuffersCompute(
-        m_vulkan_global_state->m_logical_device,
-        m_vulkan_global_state->m_commandPoolCompute);
+    m_buffer_handler->CreateCommandBuffersCompute(m_vulkan_global_state->m_logical_device,
+                                                  m_vulkan_global_state->m_commandPoolCompute);
 
     CreateSyncObjects();
 
@@ -965,10 +841,8 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
-    io.ConfigFlags |=
-        ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
-    io.ConfigFlags |=
-        ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
@@ -999,8 +873,7 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     init_info.PipelineCache = VK_NULL_HANDLE;
     // init_info.DescriptorPool = VK_NULL_HANDLE;
     if (m_vulkan_global_state->m_renderingMode == ERenderingMode::Bindless) {
-        init_info.DescriptorPool =
-            m_vulkan_global_state->m_descriptor_pool_bindless_scene;
+        init_info.DescriptorPool = m_vulkan_global_state->m_descriptor_pool_bindless_scene;
 
     } else {
         init_info.DescriptorPool = m_vulkan_global_state->m_descriptor_pool;
@@ -1008,8 +881,7 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     init_info.MinImageCount = 2;
     init_info.ImageCount = m_maxFramesInFlight;
     // init_info.Allocator = g_Allocator;
-    init_info.PipelineInfoMain.RenderPass =
-        m_vulkan_global_state->m_render_pass_data->render_pass;
+    init_info.PipelineInfoMain.RenderPass = m_vulkan_global_state->m_render_pass_data->render_pass;
 
     assert(init_info.PipelineInfoMain.RenderPass != VK_NULL_HANDLE);
     init_info.PipelineInfoMain.Subpass = 0;
@@ -1025,49 +897,36 @@ void VulkanContext::init_vulkan(ERenderingMode rendering_mode) {
     ImGui_ImplVulkan_Init(&init_info);
 
     // m_vulkanGlobalState->m_computeInputBuffer = {2.0f};
-    m_buffer_handler->CreateCommandBuffersCompute(
-        m_vulkan_global_state->m_logical_device,
-        m_vulkan_global_state->m_commandPoolCompute);
-    m_cameraController->m_cameraUBO.view[0] =
-        glm::vec4(0.711, 0.000, -0.703, -0.000);
-    m_cameraController->m_cameraUBO.view[1] =
-        glm::vec4(-0.331, 0.882, -0.334, -0.000);
-    m_cameraController->m_cameraUBO.view[1] =
-        glm::vec4(0.621, 0.470, 0.627, -90.355);
+    m_buffer_handler->CreateCommandBuffersCompute(m_vulkan_global_state->m_logical_device,
+                                                  m_vulkan_global_state->m_commandPoolCompute);
+    m_cameraController->m_cameraUBO.view[0] = glm::vec4(0.711, 0.000, -0.703, -0.000);
+    m_cameraController->m_cameraUBO.view[1] = glm::vec4(-0.331, 0.882, -0.334, -0.000);
+    m_cameraController->m_cameraUBO.view[1] = glm::vec4(0.621, 0.470, 0.627, -90.355);
     m_cameraController->m_cameraUBO.view[1] = glm::vec4(0.0, 0, 0, 1);
 
     // Do compute stuff
     std::string compute_file_path = SHADERS_DIR "compute.comp";
 
-    std::string compute_shader_code_glsl =
-        backend_vk::read_shader(compute_file_path);
+    std::string compute_shader_code_glsl = backend_vk::read_shader(compute_file_path);
 
-    std::vector<uint32_t> compute_shader_code_spirv =
-        backend_vk::compile_shader(
-            "landscape compute shader",
-            shaderc_shader_kind::shaderc_glsl_default_compute_shader,
-            compute_shader_code_glsl);
+    std::vector<uint32_t> compute_shader_code_spirv = backend_vk::compile_shader(
+        "landscape compute shader", shaderc_shader_kind::shaderc_glsl_default_compute_shader, compute_shader_code_glsl);
 
     VkDescriptorSetLayout compute_dsl =
-        m_descriptor_set_handler->CreateComputeDescriptorSetLayout(
-            m_vulkan_global_state->m_logical_device);
+        m_descriptor_set_handler->CreateComputeDescriptorSetLayout(m_vulkan_global_state->m_logical_device);
     VkDescriptorPool compute_dsp =
-        m_descriptor_set_handler->CreateDescriptorPoolCompute(
-            m_vulkan_global_state->m_logical_device);
+        m_descriptor_set_handler->CreateDescriptorPoolCompute(m_vulkan_global_state->m_logical_device);
 
-    m_vulkan_global_state->m_compute_ds =
-        m_descriptor_set_handler->CreateDescriptorSetCompute(
-            compute_dsp, compute_dsl, m_vulkan_global_state->m_logical_device);
+    m_vulkan_global_state->m_compute_ds = m_descriptor_set_handler->CreateDescriptorSetCompute(
+        compute_dsp, compute_dsl, m_vulkan_global_state->m_logical_device);
     m_vulkan_global_state->m_compute_dsls.push_back(compute_dsl);
     VkPipelineLayout compute_pipeline_layout;
     m_pipelines.push_back(backend_vk::CreateComputePipeline(
-        compute_shader_code_spirv, SHADERS_DIR "compute.comp",
-        m_vulkan_global_state->m_logical_device,
+        compute_shader_code_spirv, SHADERS_DIR "compute.comp", m_vulkan_global_state->m_logical_device,
         m_vulkan_global_state->m_compute_dsls, compute_pipeline_layout));
 }
 
-void VulkanContext::describe_scene(std::vector<ObjResource> objectsToRender,
-                                   std::vector<Light> lightsToRender) {
+void VulkanContext::describe_scene(std::vector<ObjResource> objectsToRender, std::vector<Light> lightsToRender) {
     m_objects_to_render = objectsToRender;
 
     LightUBO lightUBO;
@@ -1091,8 +950,7 @@ void VulkanContext::describe_scene(std::vector<ObjResource> objectsToRender,
 }
 // Returns the index of the registered texture so it can be accessed in the
 // bindless shader
-uint32_t VulkanContext::register_texture(VkImageView* textureImageView,
-                                         VkSampler* textureSampler) {
+uint32_t VulkanContext::register_texture(VkImageView* textureImageView, VkSampler* textureSampler) {
     uint32_t idx;
     // Find free slot
     for (int i = 0; i < 22000; i++) {
@@ -1106,8 +964,7 @@ uint32_t VulkanContext::register_texture(VkImageView* textureImageView,
 
     std::cout << "IDX " << idx << "\n";
     // Get free index in our global textures array
-    VkDescriptorImageInfo imageInfo{*textureSampler, *textureImageView,
-                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    VkDescriptorImageInfo imageInfo{*textureSampler, *textureImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     VkWriteDescriptorSet w{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
     // CREATE THE DESCRIPTOR SET YOU DOLT
     w.dstSet = m_vulkan_global_state->m_globalBindlessDescriptorSet;
@@ -1116,65 +973,51 @@ uint32_t VulkanContext::register_texture(VkImageView* textureImageView,
     w.descriptorCount = 1;
     w.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     w.pImageInfo = &imageInfo;
-    vkUpdateDescriptorSets(m_vulkan_global_state->m_logical_device, 1, &w, 0,
-                           nullptr);
+    vkUpdateDescriptorSets(m_vulkan_global_state->m_logical_device, 1, &w, 0, nullptr);
     return idx;  // store in the material
 }
 
-void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
-                         float deltaTime) {
+void VulkanContext::tick(std::vector<ObjResource> objectsToRender, float deltaTime) {
     m_frame_time += deltaTime;
     for (auto& pipeline : m_pipelines) {
         if (pipeline.type == backend_vk::GRAPHICS) {
-            VkGraphicsPipelineCreateInfo gfx_create_info =
-                pipeline.graphics_create_info;
+            VkGraphicsPipelineCreateInfo gfx_create_info = pipeline.graphics_create_info;
 
             // Recompile all edited shaders
-            std::vector<int> edited_shader_indices =
-                backend_vk::check_for_shader_recompilation(pipeline.shaders);
+            std::vector<int> edited_shader_indices = backend_vk::check_for_shader_recompilation(pipeline.shaders);
             if (!edited_shader_indices.empty()) {
                 pipeline.is_dirty = true;
                 for (int i = 0; i < edited_shader_indices.size(); i++) {
-                    backend_vk::Shader& shader =
-                        pipeline.shaders[edited_shader_indices[i]];
-                    std::string shader_code_glsl =
-                        backend_vk::read_shader(shader.file_path);
+                    backend_vk::Shader& shader = pipeline.shaders[edited_shader_indices[i]];
+                    std::string shader_code_glsl = backend_vk::read_shader(shader.file_path);
 
-                    std::cout << "COMPILING SHADER: " << shader.source_name
-                              << "\n"
+                    std::cout << "COMPILING SHADER: " << shader.source_name << "\n"
                               << "FILE_PATH::::: " << shader.file_path << "\n";
 
-                    shaderc_shader_kind shader_compile_type =
-                        shaderc_shader_kind::shaderc_glsl_anyhit_shader;
+                    shaderc_shader_kind shader_compile_type = shaderc_shader_kind::shaderc_glsl_anyhit_shader;
                     if (shader.type == backend_vk::VERT) {
-                        shader_compile_type =
-                            shaderc_glsl_default_vertex_shader;
+                        shader_compile_type = shaderc_glsl_default_vertex_shader;
 
                     } else {
-                        shader_compile_type =
-                            shaderc_glsl_default_fragment_shader;
+                        shader_compile_type = shaderc_glsl_default_fragment_shader;
                     }
-                    auto shader_code_spirv = backend_vk::compile_shader(
-                        shader.source_name, shader_compile_type,
-                        shader_code_glsl);
+                    auto shader_code_spirv =
+                        backend_vk::compile_shader(shader.source_name, shader_compile_type, shader_code_glsl);
 
                     // If compilation fails we don't overwrite the
                     // shader spirv code, and we set the pipeline to
                     // clean so we dont infinitely loop
                     if (!shader_code_spirv.empty()) {
-                        std::cout << "SHADER " << i
-                                  << " SUCCESSFULLY RECOMPILED\n";
+                        std::cout << "SHADER " << i << " SUCCESSFULLY RECOMPILED\n";
                         std::cout << "SHADER: " << shader.source_name << "\n";
                         shader.spirv_code = shader_code_spirv;
                     }
                 }
             }
-            if (pipeline.graphics_pipeline_state_data.input_assembly_state_info
-                    .topology != backend_vk::DRAW_TYPE) {
+            if (pipeline.graphics_pipeline_state_data.input_assembly_state_info.topology != backend_vk::DRAW_TYPE) {
                 std::cout << "CHANGING TOPOLOGY:::::\n";
                 pipeline.is_dirty = true;
-                pipeline.graphics_pipeline_state_data.input_assembly_state_info
-                    .topology = backend_vk::DRAW_TYPE;
+                pipeline.graphics_pipeline_state_data.input_assembly_state_info.topology = backend_vk::DRAW_TYPE;
             }
 
             if (pipeline.is_dirty) {
@@ -1183,33 +1026,25 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
             }
         } else if (pipeline.type == backend_vk::COMPUTE) {
             // Recompile all edited shaders
-            std::vector<int> edited_shader_indices =
-                backend_vk::check_for_shader_recompilation(pipeline.shaders);
+            std::vector<int> edited_shader_indices = backend_vk::check_for_shader_recompilation(pipeline.shaders);
             if (!edited_shader_indices.empty()) {
                 pipeline.is_dirty = true;
                 for (int i = 0; i < edited_shader_indices.size(); i++) {
-                    backend_vk::Shader& shader =
-                        pipeline.shaders[edited_shader_indices[i]];
-                    std::string shader_code_glsl =
-                        backend_vk::read_shader(shader.file_path);
+                    backend_vk::Shader& shader = pipeline.shaders[edited_shader_indices[i]];
+                    std::string shader_code_glsl = backend_vk::read_shader(shader.file_path);
 
-                    std::cout << "COMPILING SHADER: " << shader.source_name
-                              << "\n"
+                    std::cout << "COMPILING SHADER: " << shader.source_name << "\n"
                               << "FILE_PATH::::: " << shader.file_path << "\n";
 
-                    shaderc_shader_kind shader_compile_type =
-                        shaderc_shader_kind::
-                            shaderc_glsl_default_compute_shader;
-                    auto shader_code_spirv = backend_vk::compile_shader(
-                        shader.source_name, shader_compile_type,
-                        shader_code_glsl);
+                    shaderc_shader_kind shader_compile_type = shaderc_shader_kind::shaderc_glsl_default_compute_shader;
+                    auto shader_code_spirv =
+                        backend_vk::compile_shader(shader.source_name, shader_compile_type, shader_code_glsl);
 
                     // If compilation fails we don't overwrite the
                     // shader spirv code, and we set the pipeline to
                     // clean so we dont infinitely loop
                     if (!shader_code_spirv.empty()) {
-                        std::cout << "SHADER " << i
-                                  << " SUCCESSFULLY RECOMPILED\n";
+                        std::cout << "SHADER " << i << " SUCCESSFULLY RECOMPILED\n";
                         std::cout << "SHADER: " << shader.source_name << "\n";
                         shader.spirv_code = shader_code_spirv;
                     }
@@ -1218,8 +1053,7 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
 
             if (pipeline.is_dirty) {
                 vkDeviceWaitIdle(m_vulkan_global_state->m_logical_device);
-                vkDestroyPipeline(m_vulkan_global_state->m_logical_device,
-                                  pipeline.pipeline, nullptr);
+                vkDestroyPipeline(m_vulkan_global_state->m_logical_device, pipeline.pipeline, nullptr);
                 rebuild_compute_shader_pipeline(pipeline);
                 // new_landscape();
                 pipeline.is_dirty = false;
@@ -1229,45 +1063,37 @@ void VulkanContext::tick(std::vector<ObjResource> objectsToRender,
 
     m_cameraController->HandleInputOrbit(deltaTime);
 
-    memcpy(m_vulkan_global_state
-               ->m_lightUBOMapped[m_vulkan_global_state->m_currentFrame],
-           &m_vulkan_global_state->m_lights,
-           sizeof(m_vulkan_global_state->m_lights));
+    memcpy(m_vulkan_global_state->m_lightUBOMapped[m_vulkan_global_state->m_currentFrame],
+           &m_vulkan_global_state->m_lights, sizeof(m_vulkan_global_state->m_lights));
 
-    m_cameraController->UpdateCameraPosition(
-        m_vulkan_global_state->m_currentFrame, deltaTime);
+    m_cameraController->UpdateCameraPosition(m_vulkan_global_state->m_currentFrame, deltaTime);
 
-    if (!m_vulkan_global_state->m_meshList.empty()) {
+    if (!m_vulkan_global_state->m_render_list.empty()) {
         int count = 0;
-        for (auto& mesh : m_vulkan_global_state->m_meshList) {
+        for (auto& mesh : m_vulkan_global_state->m_render_list) {
             if (count > 0) break;
             ModelUBO modelUBO{};
             modelUBO.model = glm::mat4(1.0f);
-            modelUBO.model =
-                glm::translate(modelUBO.model, glm::vec3(0.0f, 0.0f, 0.0f));
-            modelUBO.model = glm::rotate(modelUBO.model, -glm::radians(90.0f),
-                                         glm::vec3(0.0f, 1.0f, 0.0f));
-            modelUBO.model =
-                glm::scale(modelUBO.model, glm::vec3(0.5f, 0.5f, 0.5f));
+            modelUBO.model = glm::translate(modelUBO.model, glm::vec3(0.0f, 0.0f, 0.0f));
+            modelUBO.model = glm::rotate(modelUBO.model, -glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            modelUBO.model = glm::scale(modelUBO.model, glm::vec3(0.5f, 0.5f, 0.5f));
             // glm::scale(modelUBO.model, glm::vec3(00.1f, 00.1f, 00.1f));
 
-            memcpy(mesh.m_uniform_buffers_mapped[m_vulkan_global_state
-                                                     ->m_currentFrame],
-                   &modelUBO, sizeof(modelUBO));
+            memcpy(mesh.m_uniform_buffers_mapped[m_vulkan_global_state->m_currentFrame], &modelUBO, sizeof(modelUBO));
             count++;
         }
     }
-    // if (landscape::SHOULD_ANIMATE) {
-    //     m_landscape_animation_time += deltaTime;
-    //     new_landscape();
-    // }
+    if (landscape::SHOULD_ANIMATE) {
+        m_landscape_animation_time += deltaTime;
+        update_terrain();
+    }
 
     // 60 frames per second
     // 1000ms per second
     // Each frame is a chunk
     if (m_frame_time > 1000.0f / m_target_fps / 1000.0f) {
         backend_vk::render_ui(*this);
-        DrawFrame(deltaTime);
+        draw_frame(deltaTime, m_vulkan_global_state->m_render_list);
         m_frame_time = 0;
     }
 }
@@ -1276,44 +1102,37 @@ void VulkanContext::load_scene_objects() {
     int meshCount = 0;
     float xPos = 0.0f;
     for (auto& obj : m_objects_to_render) {
-        Mesh3D mesh =
-            LoadMesh(obj.objProperties, glm::vec3(xPos, 0.0f, 0.0f),
-                     glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(5.0f, 5.0f, 5.0f));
-        std::vector<MaterialEnums> materialTypes = {
-            ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL, EMISSIVE, ORM};
-        if (m_vulkan_global_state->m_renderingMode ==
-            ERenderingMode::Bindless) {
+        Renderable mesh = LoadMesh(obj.objProperties, glm::vec3(xPos, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+                                   glm::vec3(5.0f, 5.0f, 5.0f));
+        std::vector<MaterialEnums> materialTypes = {ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL, EMISSIVE, ORM};
+        if (m_vulkan_global_state->m_renderingMode == ERenderingMode::Bindless) {
             for (auto& matType : materialTypes) {
                 if (!obj.textureResourceMap.contains(matType)) {
                     std::cout << "DOES NOT CONTAIN " << matType << "\n";
                     mesh.m_material_indices[matType] = -1;
                     continue;
                 }
-                create_texture_image(obj.textureResourceMap[matType], &mesh,
-                                     matType);
+                create_texture_image(obj.textureResourceMap[matType], &mesh, matType);
                 create_texture_image_view(&mesh, matType);
                 create_texture_sampler(&mesh, matType);
 
                 std::cout << "REGISTERING " << matType << "\n";
-                mesh.m_material_indices[matType] = register_texture(
-                    &mesh.m_material_data_map[matType].m_texture_image_view,
-                    &mesh.m_material_data_map[matType].m_texture_sampler);
+                mesh.m_material_indices[matType] =
+                    register_texture(&mesh.m_material_data_map[matType].m_texture_image_view,
+                                     &mesh.m_material_data_map[matType].m_texture_sampler);
             }
 
             // Create Mesh Uniform Buffers
             m_buffer_handler->CreateModelUBO(&mesh);
             meshCount++;
             xPos += 5.0f;
-            m_descriptor_set_handler->CreateTexturedPBRDescriptorSetsBindless(
-                &mesh);
+            m_descriptor_set_handler->CreateTexturedPBRDescriptorSetsBindless(&mesh);
         } else {
             for (auto& matType : materialTypes) {
-                create_texture_image(obj.textureResourceMap[matType], &mesh,
-                                     matType);
+                create_texture_image(obj.textureResourceMap[matType], &mesh, matType);
                 create_texture_image_view(&mesh, matType);
                 create_texture_sampler(&mesh, matType);
-                m_descriptor_set_handler->CreateTexturedPBRDescriptorSets(
-                    &mesh);
+                m_descriptor_set_handler->CreateTexturedPBRDescriptorSets(&mesh);
             }
 
             // Create Mesh Uniform Buffers
@@ -1322,11 +1141,10 @@ void VulkanContext::load_scene_objects() {
             meshCount++;
             xPos += 5.0f;
         }
-        m_vulkan_global_state->m_meshList.push_back(mesh);
+        m_vulkan_global_state->m_render_list.push_back(mesh);
     }
 
-    Mesh3D landscape = Mesh3D();
-    landscape.m_mesh_type = TEXTURED;
+    Renderable landscape = Renderable();
     landscape.m_index_buffer_start_idx = m_indices.size();
     landscape.m_vertex_buffer_start_idx = m_vertices.size();
     backend_vk::Pipeline compute_pipeline_data = {};
@@ -1335,14 +1153,109 @@ void VulkanContext::load_scene_objects() {
             compute_pipeline_data = pipeline;
         }
     }
-    run_compute_shader(compute_pipeline_data.pipeline,
-                       compute_pipeline_data.pipeline_layout,
-                       m_vulkan_global_state->m_compute_ds);
+    // run_compute_shader(compute_pipeline_data.pipeline, compute_pipeline_data.pipeline_layout,
+    //                    m_vulkan_global_state->m_compute_ds);
 
-    Vertex* landscapeVertices = static_cast<Vertex*>(
-        m_vulkan_global_state->m_computeOutputBufferMemoryMapped);
-    backend_vk::set_indices(m_indices, landscapeVertices, landscape::DEPTH,
-                            landscape::WIDTH);
+    // bool rebuild_indices = false;
+    // auto computePipeline = compute_pipeline_data.pipeline;
+    // auto pipelineLayout = compute_pipeline_data.pipeline_layout;
+    // auto descriptorSet = m_vulkan_global_state->m_compute_ds;
+    // vkWaitForFences(m_vulkan_global_state->m_logical_device, 1, &m_vulkan_global_state->m_computeFence, VK_TRUE,
+    //                 UINT64_MAX);
+
+    // VkResult r = vkResetFences(m_vulkan_global_state->m_logical_device, 1, &m_vulkan_global_state->m_computeFence);
+
+    // Vertex* in = static_cast<Vertex*>(m_vulkan_global_state->m_computeInputBufferMemoryMapped);
+    //// Base Random
+    // in[0].pos.x = landscape::BASE_0;
+    // in[1].pos.x = landscape::BASE_1;
+    //// Lacunarity
+    // in[2].pos.x = landscape::LACUNARITY;
+    //// Persistence
+    // in[3].pos.x = landscape::PERSISTENCE;
+    //// Frequency
+    // in[4].pos.x = landscape::FREQUENCY;
+    //// Octaves
+    // in[5].pos.x = landscape::OCTAVES;
+    // in[6].pos.x = landscape::WIDTH;
+    // in[7].pos.x = landscape::DEPTH;
+    // in[8].pos.x = landscape::SCALE;
+    // in[9].pos.x = landscape::AMPLITUDE;
+    // in[11].pos.x = landscape::ANIMATION_SPEED;
+    // if (landscape::SHOULD_ANIMATE) {
+    //     in[10].pos.x = m_landscape_animation_time;
+    // }
+
+    // VkCommandBufferBeginInfo beginInfo = {};
+    // beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    // beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    // auto commandBuffer = m_vulkan_global_state->m_commandBuffersCompute[0];
+    // record_command_buffer_compute(m_vulkan_global_state->m_commandBuffersCompute[0], computePipeline, pipelineLayout,
+    //                               &descriptorSet, rebuild_indices);
+
+    // if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+    //     throw std::runtime_error("failed to begin recording compute command buffer!");
+    // }
+
+    // vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
+    // vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, 1, &descriptorSet, 0,
+    //                         NULL);
+
+    // constexpr uint32_t kLocalSizeX = 128;  // same as local_size_x in shader
+    // uint32_t kVertexCount = landscape::WIDTH * landscape::DEPTH;
+    // vkCmdDispatch(commandBuffer, (kVertexCount + kLocalSizeX - 1) / kLocalSizeX, 1, 1);  // 1024 groups
+    //// vkCmdDispatch(commandBuffer, ((1024 * 2) + 1023) / 1024, 1, 1);
+
+    // VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    // mb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    // mb.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+    // vkCmdPipelineBarrier(m_vulkan_global_state->m_commandBuffersCompute[0], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    //                      VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &mb, 0, nullptr, 0, nullptr);
+
+    // if (rebuild_indices) {
+    //     Vertex* landscapeVertices = static_cast<Vertex*>(m_vulkan_global_state->m_compute_vertex_buffer_mapped);
+
+    //    vkQueueWaitIdle(m_vulkan_global_state->m_presentQueue);
+    //    vkDestroyBuffer(m_vulkan_global_state->m_logical_device, m_buffer_handler->IndexBuffer, nullptr);
+    //    vkFreeMemory(m_vulkan_global_state->m_logical_device, m_buffer_handler->IndexBufferMemory, nullptr);
+    //    m_indices.clear();
+    //    backend_vk::set_indices(m_indices, landscapeVertices, landscape::DEPTH, landscape::WIDTH);
+
+    //    m_vulkan_global_state->m_render_list[0].m_index_buffer_start_idx = 0;
+    //    m_vulkan_global_state->m_render_list[0].m_index_buffer_end_idx = m_indices.size() - 1;
+
+    //    m_vulkan_global_state->m_render_list[0].m_index_count =
+    //        m_indices.size() - m_vulkan_global_state->m_render_list[0].m_index_buffer_start_idx;
+    //    m_buffer_handler->CreateIndexBuffer(m_indices);
+    //}
+    // VkBufferMemoryBarrier buffer_barrier{.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+    //                                     .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
+    //                                     .dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+    //                                     .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+    //                                     .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+    //                                     .buffer = m_vulkan_global_state->m_compute_vertex_buffer,
+    //                                     .offset = 0,
+    //                                     .size = VK_WHOLE_SIZE};
+
+    // vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0,
+    // 0,
+    //                      nullptr, 1, &buffer_barrier, 0, nullptr);
+
+    // if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+    //     throw std::runtime_error("failed to record command buffer!");
+    // }
+    // VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    // si.commandBufferCount = 1;
+    // si.pCommandBuffers = &m_vulkan_global_state->m_commandBuffersCompute[0];
+
+    ////   printf("reset = %d\n", r);
+    // r = vkQueueSubmit(m_vulkan_global_state->m_computeQueue, 1, &si, m_vulkan_global_state->m_computeFence);
+    //     printf("submit = %d\n", r);
+    //  vkDeviceWaitIdle(m_deviceHandler->LogicalDevice);
+
+    Vertex* landscapeVertices = static_cast<Vertex*>(m_vulkan_global_state->m_compute_vertex_buffer_mapped);
+    backend_vk::set_indices(m_indices, landscapeVertices, landscape::DEPTH, landscape::WIDTH);
 
     /// for (int i : {0, 1, 1023, 1024, 500000})
     ///     printf("v%d pos %f %f %f  n %f %f %f\n", i,
@@ -1351,15 +1264,12 @@ void VulkanContext::load_scene_objects() {
     ///            landscapeVertices[i].normal.x, landscapeVertices[i].normal.y,
     ///            landscapeVertices[i].normal.z);
 
-    m_vertices.insert(
-        m_vertices.end(), landscapeVertices,
-        landscapeVertices + (landscape::WIDTH * landscape::DEPTH));
+    m_vertices.insert(m_vertices.end(), landscapeVertices, landscapeVertices + (landscape::WIDTH * landscape::DEPTH));
 
     // TODO: Textures in the engine textures folder should be loaded and
     // accessible through handles that can be passed into the create texture
     // image functions so we dont have to do filesystem shit in the future
-    TextureResource tex = FileLoader::load_texture_file(
-        MODELS_DIR "EngineDefault/DefaultTile.png");
+    TextureResource tex = FileLoader::load_texture_file(MODELS_DIR "EngineDefault/DefaultTile.png");
 
     create_texture_image(tex, &landscape, ALBEDO);
     create_texture_image_view(&landscape, ALBEDO);
@@ -1379,25 +1289,23 @@ void VulkanContext::load_scene_objects() {
 
     m_buffer_handler->CreateModelUBO(&landscape);
 
-    m_descriptor_set_handler->CreateTexturedPBRDescriptorSetsBindless(
-        &landscape);
+    m_descriptor_set_handler->CreateTexturedPBRDescriptorSetsBindless(&landscape);
 
     int vertexBufferEndIndex = m_vertices.size() - 1;
     int indexBufferEndIndex = m_indices.size() - 1;
     landscape.m_index_buffer_end_idx = indexBufferEndIndex;
     landscape.m_vertex_buffer_end_idx = vertexBufferEndIndex;
-    landscape.m_index_count =
-        m_indices.size() - landscape.m_index_buffer_start_idx;
+    landscape.m_index_count = m_indices.size() - landscape.m_index_buffer_start_idx;
 
     // Loop through all the vertices spat out by our compute shader and
     // create indices buffer
 
-    m_vulkan_global_state->m_meshList.push_back(landscape);
+    m_vulkan_global_state->m_render_list.push_back(landscape);
     m_buffer_handler->CreateVertexBuffer(m_vertices);
     m_buffer_handler->CreateIndexBuffer(m_indices);
 }
 
-void VulkanContext::new_landscape(bool rebuild_indices) {
+void VulkanContext::update_terrain(bool rebuild_indices) {
     // auto start = std::chrono::steady_clock::now();
     backend_vk::Pipeline compute_pipeline_data = {};
     for (auto pipeline : m_pipelines) {
@@ -1406,110 +1314,150 @@ void VulkanContext::new_landscape(bool rebuild_indices) {
         }
     }
 
-    Mesh3D landscape = Mesh3D();
-    landscape.m_mesh_type = TEXTURED;
-    landscape.m_index_buffer_start_idx = m_indices.size();
-    landscape.m_vertex_buffer_start_idx = m_vertices.size();
-    run_compute_shader(compute_pipeline_data.pipeline,
-                       compute_pipeline_data.pipeline_layout,
-                       m_vulkan_global_state->m_compute_ds);
+    // Renderable landscape = Renderable();
+    // landscape.m_index_buffer_start_idx = m_indices.size();
+    // landscape.m_vertex_buffer_start_idx = m_vertices.size();
 
-    Vertex* landscapeVertices = static_cast<Vertex*>(
-        m_vulkan_global_state->m_computeOutputBufferMemoryMapped);
-    backend_vk::set_indices(m_indices, landscapeVertices, landscape::DEPTH,
-                            landscape::WIDTH);
+    auto computePipeline = compute_pipeline_data.pipeline;
+    auto pipelineLayout = compute_pipeline_data.pipeline_layout;
+    auto descriptorSet = m_vulkan_global_state->m_compute_ds;
 
-    /// for (int i : {0, 1, 1023, 1024, 500000})
-    ///     printf("v%d pos %f %f %f  n %f %f %f\n", i,
-    ///     landscapeVertices[i].pos.x,
-    ///            landscapeVertices[i].pos.y, landscapeVertices[i].pos.z,
-    ///            landscapeVertices[i].normal.x, landscapeVertices[i].normal.y,
-    ///            landscapeVertices[i].normal.z);
+    vkWaitForFences(m_vulkan_global_state->m_logical_device, 1, &m_vulkan_global_state->m_computeFence, VK_TRUE,
+                    UINT64_MAX);
 
-    m_vertices.insert(
-        m_vertices.end(), landscapeVertices,
-        landscapeVertices + (landscape::WIDTH * landscape::DEPTH));
+    VkResult r = vkResetFences(m_vulkan_global_state->m_logical_device, 1, &m_vulkan_global_state->m_computeFence);
 
-    // TODO: Textures in the engine textures folder should be loaded and
-    // accessible through handles that can be passed into the create texture
-    // image functions so we dont have to do filesystem shit in the future
-    TextureResource tex = FileLoader::load_texture_file(
-        MODELS_DIR "EngineDefault/DefaultTile.png");
+    Vertex* in = static_cast<Vertex*>(m_vulkan_global_state->m_computeInputBufferMemoryMapped);
+    // Base Random
+    in[0].pos.x = landscape::BASE_0;
+    in[1].pos.x = landscape::BASE_1;
+    // Lacunarity
+    in[2].pos.x = landscape::LACUNARITY;
+    // Persistence
+    in[3].pos.x = landscape::PERSISTENCE;
+    // Frequency
+    in[4].pos.x = landscape::FREQUENCY;
+    // Octaves
+    in[5].pos.x = landscape::OCTAVES;
+    in[6].pos.x = landscape::WIDTH;
+    in[7].pos.x = landscape::DEPTH;
+    in[8].pos.x = landscape::SCALE;
+    in[9].pos.x = landscape::AMPLITUDE;
+    in[11].pos.x = landscape::ANIMATION_SPEED;
+    if (landscape::SHOULD_ANIMATE) {
+        in[10].pos.x = m_landscape_animation_time;
+    }
 
-    create_texture_image(tex, &landscape, ALBEDO);
-    create_texture_image_view(&landscape, ALBEDO);
-    create_texture_sampler(&landscape, ALBEDO);
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    // std::vector<MaterialEnums> materialTypes = {
-    //     ALBEDO, METALLIC, ROUGHNESS, AO, NORMAL, EMISSIVE, ORM};
-    landscape.m_material_indices[ALBEDO] = -1;
-    landscape.m_material_indices[METALLIC] = -1;
-    landscape.m_material_indices[ROUGHNESS] = -1;
-    landscape.m_material_indices[AO] = -1;
-    landscape.m_material_indices[EMISSIVE] = -1;
-    landscape.m_material_indices[NORMAL] = -1;
-    landscape.m_material_indices[ORM] = -1;
-    // RegisterTexture(&landscape.m_materialDataMap[ALBEDO].m_textureImageView,
-    //                 &landscape.m_materialDataMap[ALBEDO].m_textureSampler);
+    auto commandBuffer = m_vulkan_global_state->m_commandBuffersCompute[0];
+    record_command_buffer_compute(m_vulkan_global_state->m_commandBuffersCompute[0], computePipeline, pipelineLayout,
+                                  &descriptorSet, rebuild_indices);
 
-    m_buffer_handler->CreateModelUBO(&landscape);
+    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+        throw std::runtime_error("failed to begin recording compute command buffer!");
+    }
 
-    m_descriptor_set_handler->CreateTexturedPBRDescriptorSetsBindless(
-        &landscape);
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, 1, &descriptorSet, 0,
+                            NULL);
 
-    int vertexBufferEndIndex = m_vertices.size() - 1;
-    int indexBufferEndIndex = m_indices.size() - 1;
-    landscape.m_index_buffer_end_idx = indexBufferEndIndex;
-    landscape.m_vertex_buffer_end_idx = vertexBufferEndIndex;
-    landscape.m_index_count =
-        m_indices.size() - landscape.m_index_buffer_start_idx;
+    constexpr uint32_t kLocalSizeX = 128;  // same as local_size_x in shader
+    uint32_t kVertexCount = landscape::WIDTH * landscape::DEPTH;
+    vkCmdDispatch(commandBuffer, (kVertexCount + kLocalSizeX - 1) / kLocalSizeX, 1, 1);  // 1024 groups
+    // vkCmdDispatch(commandBuffer, ((1024 * 2) + 1023) / 1024, 1, 1);
 
-    // Loop through all the vertices spat out by our compute shader and
-    // create indices buffer
+    VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    mb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    mb.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+    vkCmdPipelineBarrier(m_vulkan_global_state->m_commandBuffersCompute[0], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                         VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &mb, 0, nullptr, 0, nullptr);
 
-    m_vulkan_global_state->m_meshList.push_back(landscape);
+    if (rebuild_indices) {
+        std::cout << "REBUILDING INDICES\n";
+        Vertex* landscapeVertices = static_cast<Vertex*>(m_vulkan_global_state->m_compute_vertex_buffer_mapped);
+
+        vkQueueWaitIdle(m_vulkan_global_state->m_presentQueue);
+        vkDestroyBuffer(m_vulkan_global_state->m_logical_device, m_buffer_handler->IndexBuffer, nullptr);
+        vkFreeMemory(m_vulkan_global_state->m_logical_device, m_buffer_handler->IndexBufferMemory, nullptr);
+        m_indices.clear();
+        backend_vk::set_indices(m_indices, landscapeVertices, landscape::DEPTH, landscape::WIDTH);
+
+        m_vulkan_global_state->m_render_list[0].m_index_buffer_start_idx = 0;
+        m_vulkan_global_state->m_render_list[0].m_index_buffer_end_idx = m_indices.size() - 1;
+
+        m_vulkan_global_state->m_render_list[0].m_index_count =
+            m_indices.size() - m_vulkan_global_state->m_render_list[0].m_index_buffer_start_idx;
+        m_buffer_handler->CreateIndexBuffer(m_indices);
+    }
+    VkBufferMemoryBarrier buffer_barrier{};
+    buffer_barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    buffer_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    buffer_barrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+    buffer_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    buffer_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    buffer_barrier.buffer = m_vulkan_global_state->m_compute_vertex_buffer;
+    buffer_barrier.offset = 0;
+    buffer_barrier.size = VK_WHOLE_SIZE;
+
+    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0,
+                         nullptr, 1, &buffer_barrier, 0, nullptr);
+
+    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to record command buffer!");
+    }
+    VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    si.commandBufferCount = 1;
+    si.pCommandBuffers = &m_vulkan_global_state->m_commandBuffersCompute[0];
+
+    //   printf("reset = %d\n", r);
+    r = vkQueueSubmit(m_vulkan_global_state->m_computeQueue, 1, &si, m_vulkan_global_state->m_computeFence);
+    //    printf("submit = %d\n", r);
+    // vkDeviceWaitIdle(m_deviceHandler->LogicalDevice);
+    if (rebuild_indices) {
+        Vertex* landscapeVertices = static_cast<Vertex*>(m_vulkan_global_state->m_compute_vertex_buffer_mapped);
+        backend_vk::set_indices(m_indices, landscapeVertices, landscape::DEPTH, landscape::WIDTH);
+    }
 }
 
 void VulkanContext::unload_scene_objects() {
-    if (!m_vulkan_global_state->m_meshList.empty()) {
+    if (!m_vulkan_global_state->m_render_list.empty()) {
         vkQueueWaitIdle(m_vulkan_global_state->m_presentQueue);
-        vkDestroyDescriptorPool(m_vulkan_global_state->m_logical_device,
-                                m_vulkan_global_state->m_descriptor_pool,
+        vkDestroyDescriptorPool(m_vulkan_global_state->m_logical_device, m_vulkan_global_state->m_descriptor_pool,
                                 nullptr);
-        for (auto& mesh : m_vulkan_global_state->m_meshList) {
-            vkDestroySampler(m_vulkan_global_state->m_logical_device,
-                             mesh.m_texture_sampler, nullptr);
-            vkDestroyImageView(m_vulkan_global_state->m_logical_device,
-                               mesh.m_texture_image_view, nullptr);
-            vkDestroyImage(m_vulkan_global_state->m_logical_device,
-                           mesh.m_texture_image, nullptr);
-            vkFreeMemory(m_vulkan_global_state->m_logical_device,
-                         mesh.m_texture_image_memory, nullptr);
+        for (auto& mesh : m_vulkan_global_state->m_render_list) {
+            // TODO: Destroy samplers based on material index
+            // vkDestroySampler(m_vulkan_global_state->m_logical_device,
+            //                  mesh.m_texture_sampler, nullptr);
+            // vkDestroyImageView(m_vulkan_global_state->m_logical_device,
+            //                    mesh.m_texture_image_view, nullptr);
+            // vkDestroyImage(m_vulkan_global_state->m_logical_device,
+            //                mesh.m_texture_image, nullptr);
+            // vkFreeMemory(m_vulkan_global_state->m_logical_device,
+            //              mesh.m_texture_image_memory, nullptr);
             int bufCount = 0;
             for (auto& buffer : mesh.m_uniform_buffers) {
-                vkDestroyBuffer(m_vulkan_global_state->m_logical_device, buffer,
-                                nullptr);
-                vkFreeMemory(m_vulkan_global_state->m_logical_device,
-                             mesh.m_uniform_buffers_memory[bufCount], nullptr);
+                vkDestroyBuffer(m_vulkan_global_state->m_logical_device, buffer, nullptr);
+                vkFreeMemory(m_vulkan_global_state->m_logical_device, mesh.m_uniform_buffers_memory[bufCount], nullptr);
                 bufCount++;
             }
         }
         m_buffer_handler->DestroyBuffers();
-        m_vulkan_global_state->m_meshList = {};
+        m_vulkan_global_state->m_render_list = {};
     } else {
         std::cout << "No Scene Objects to Unload\n";
     }
 }
 
-void VulkanContext::CreatePBRPipeline(std::vector<uint32_t> vertShaderCode,
-                                      std::vector<uint32_t> fragShaderCode,
+void VulkanContext::CreatePBRPipeline(std::vector<uint32_t> vertShaderCode, std::vector<uint32_t> fragShaderCode,
                                       VkPipeline* pipeline) {
     VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-    vertShaderStageInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
 
     // IMPORTANT NOTE!!!
@@ -1526,44 +1474,37 @@ void VulkanContext::CreatePBRPipeline(std::vector<uint32_t> vertShaderCode,
     vertShaderStageInfo.pName = "main";
 
     VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-    fragShaderStageInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     fragShaderStageInfo.module = fragShaderModule;
     fragShaderStageInfo.pName = "main";
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo,
-                                                      fragShaderStageInfo};
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
     // Dynamic States of pipeline
-    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,
-                                                 VK_DYNAMIC_STATE_SCISSOR};
+    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 
     VkPipelineDynamicStateCreateInfo dynamicState{};
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicState.dynamicStateCount =
-        static_cast<uint32_t>(dynamicStates.size());
+    dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
     // Passing vertex data into pipeline
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-    vertexInputInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
     auto bindingDescription = Vertex::GetBindingDescription();
     auto attributeDescriptions = Vertex::GetAttributeDescriptions();
 
     vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.vertexAttributeDescriptionCount =
-        static_cast<uint32_t>(attributeDescriptions.size());
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 
     vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     // Geometry to be drawn from Vertices passed in
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-    inputAssembly.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssembly.topology = backend_vk::DRAW_TYPE;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
@@ -1595,8 +1536,7 @@ void VulkanContext::CreatePBRPipeline(std::vector<uint32_t> vertShaderCode,
 
     // Rasterizer
     VkPipelineRasterizationStateCreateInfo rasterizer{};
-    rasterizer.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     // depthClampEnable : Whether or not things outside the near and far planes
     // are discarded or clamped to them
     rasterizer.depthClampEnable = VK_FALSE;
@@ -1621,8 +1561,7 @@ void VulkanContext::CreatePBRPipeline(std::vector<uint32_t> vertShaderCode,
     rasterizer.depthBiasSlopeFactor = 0.0f;     // Optional
 
     VkPipelineMultisampleStateCreateInfo multisampling{};
-    multisampling.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     multisampling.minSampleShading = 1.0f;           // Optional
@@ -1631,8 +1570,7 @@ void VulkanContext::CreatePBRPipeline(std::vector<uint32_t> vertShaderCode,
     multisampling.alphaToOneEnable = VK_FALSE;       // Optional
 
     VkPipelineDepthStencilStateCreateInfo depthStencil{};
-    depthStencil.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable = VK_TRUE;
     depthStencil.depthWriteEnable = VK_TRUE;
     depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
@@ -1645,20 +1583,17 @@ void VulkanContext::CreatePBRPipeline(std::vector<uint32_t> vertShaderCode,
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask =
-        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-        VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_TRUE;
     colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    colorBlendAttachment.dstColorBlendFactor =
-        VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
     colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
     colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
     colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 
     VkPipelineColorBlendStateCreateInfo colorBlending{};
-    colorBlending.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.logicOp = VK_LOGIC_OP_COPY;  // Optional
     colorBlending.attachmentCount = 1;
@@ -1669,8 +1604,7 @@ void VulkanContext::CreatePBRPipeline(std::vector<uint32_t> vertShaderCode,
     colorBlending.blendConstants[3] = 0.0f;  // Optional
 
     VkPushConstantRange pushConstantRange{};
-    pushConstantRange.stageFlags =
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     pushConstantRange.offset = 0;
     pushConstantRange.size = sizeof(PBRPushConstants);
 
@@ -1680,17 +1614,13 @@ void VulkanContext::CreatePBRPipeline(std::vector<uint32_t> vertShaderCode,
         m_vulkan_global_state->m_sceneDescriptorSetLayout);
     m_vulkan_global_state->m_texturedMeshDescriptorSetLayouts.push_back(
         m_vulkan_global_state->m_texturedPBRDescriptorSetLayout);
-    pipelineLayoutInfo.setLayoutCount =
-        m_vulkan_global_state->m_texturedMeshDescriptorSetLayouts.size();
-    pipelineLayoutInfo.pSetLayouts =
-        m_vulkan_global_state->m_texturedMeshDescriptorSetLayouts.data();
+    pipelineLayoutInfo.setLayoutCount = m_vulkan_global_state->m_texturedMeshDescriptorSetLayouts.size();
+    pipelineLayoutInfo.pSetLayouts = m_vulkan_global_state->m_texturedMeshDescriptorSetLayouts.data();
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-    if (vkCreatePipelineLayout(m_vulkan_global_state->m_logical_device,
-                               &pipelineLayoutInfo, nullptr,
-                               &m_vulkan_global_state->m_pbrPipelineLayout) !=
-        VK_SUCCESS) {
+    if (vkCreatePipelineLayout(m_vulkan_global_state->m_logical_device, &pipelineLayoutInfo, nullptr,
+                               &m_vulkan_global_state->m_pbrPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     };
 
@@ -1709,34 +1639,28 @@ void VulkanContext::CreatePBRPipeline(std::vector<uint32_t> vertShaderCode,
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = m_vulkan_global_state->m_pbrPipelineLayout;
-    pipelineInfo.renderPass =
-        m_vulkan_global_state->m_render_pass_data->render_pass;
+    pipelineInfo.renderPass = m_vulkan_global_state->m_render_pass_data->render_pass;
 
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
 
-    if (vkCreateGraphicsPipelines(m_vulkan_global_state->m_logical_device,
-                                  VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
+    if (vkCreateGraphicsPipelines(m_vulkan_global_state->m_logical_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
                                   pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
-                          fragShaderModule, nullptr);
-    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
-                          vertShaderModule, nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device, fragShaderModule, nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device, vertShaderModule, nullptr);
 }
 
-void VulkanContext::CreateShadowPassPipeline(
-    std::vector<uint32_t> vertShaderCode, std::vector<uint32_t> fragShaderCode,
-    VkPipeline* pipeline) {
+void VulkanContext::CreateShadowPassPipeline(std::vector<uint32_t> vertShaderCode, std::vector<uint32_t> fragShaderCode,
+                                             VkPipeline* pipeline) {
     VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-    vertShaderStageInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
 
     // IMPORTANT NOTE!!!
@@ -1753,44 +1677,37 @@ void VulkanContext::CreateShadowPassPipeline(
     vertShaderStageInfo.pName = "main";
 
     VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-    fragShaderStageInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     fragShaderStageInfo.module = fragShaderModule;
     fragShaderStageInfo.pName = "main";
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo,
-                                                      fragShaderStageInfo};
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
     // Dynamic States of pipeline
-    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,
-                                                 VK_DYNAMIC_STATE_SCISSOR};
+    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 
     VkPipelineDynamicStateCreateInfo dynamicState{};
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicState.dynamicStateCount =
-        static_cast<uint32_t>(dynamicStates.size());
+    dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
     // Passing vertex data into pipeline
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-    vertexInputInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
     auto bindingDescription = Vertex::GetBindingDescription();
     auto attributeDescriptions = Vertex::GetAttributeDescriptions();
 
     vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.vertexAttributeDescriptionCount =
-        static_cast<uint32_t>(attributeDescriptions.size());
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 
     vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     // Geometry to be drawn from Vertices passed in
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-    inputAssembly.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssembly.topology = backend_vk::DRAW_TYPE;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
@@ -1809,9 +1726,8 @@ void VulkanContext::CreateShadowPassPipeline(
     // Determines which part of the framebuffers will be rasterized.
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    VkExtent2D shadowMapExtent = {
-        static_cast<uint32_t>(m_vulkan_global_state->m_shadowMapWidth),
-        static_cast<uint32_t>(m_vulkan_global_state->m_shadowMapHeight)};
+    VkExtent2D shadowMapExtent = {static_cast<uint32_t>(m_vulkan_global_state->m_shadowMapWidth),
+                                  static_cast<uint32_t>(m_vulkan_global_state->m_shadowMapHeight)};
     scissor.extent = shadowMapExtent;
 
     VkPipelineViewportStateCreateInfo viewportState{};
@@ -1823,8 +1739,7 @@ void VulkanContext::CreateShadowPassPipeline(
 
     // Rasterizer
     VkPipelineRasterizationStateCreateInfo rasterizer{};
-    rasterizer.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     // depthClampEnable : Whether or not things outside the near and far planes
     // are discarded or clamped to them
     rasterizer.depthClampEnable = VK_FALSE;
@@ -1851,8 +1766,7 @@ void VulkanContext::CreateShadowPassPipeline(
     rasterizer.depthBiasClamp = 0.0f;  // Optional
 
     VkPipelineMultisampleStateCreateInfo multisampling{};
-    multisampling.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     multisampling.minSampleShading = 1.0f;           // Optional
@@ -1861,8 +1775,7 @@ void VulkanContext::CreateShadowPassPipeline(
     multisampling.alphaToOneEnable = VK_FALSE;       // Optional
 
     VkPipelineDepthStencilStateCreateInfo depthStencil{};
-    depthStencil.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable = VK_TRUE;
     depthStencil.depthWriteEnable = VK_TRUE;
     depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
@@ -1874,8 +1787,7 @@ void VulkanContext::CreateShadowPassPipeline(
     depthStencil.back = {};   // Optional
 
     VkPipelineColorBlendStateCreateInfo colorBlending{};
-    colorBlending.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.attachmentCount = 0;
     colorBlending.pAttachments = nullptr;
@@ -1894,10 +1806,8 @@ void VulkanContext::CreateShadowPassPipeline(
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-    if (vkCreatePipelineLayout(
-            m_vulkan_global_state->m_logical_device, &pipelineLayoutInfo,
-            nullptr,
-            &m_vulkan_global_state->m_shadowPassPipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(m_vulkan_global_state->m_logical_device, &pipelineLayoutInfo, nullptr,
+                               &m_vulkan_global_state->m_shadowPassPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     };
 
@@ -1920,24 +1830,20 @@ void VulkanContext::CreateShadowPassPipeline(
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
 
-    if (vkCreateGraphicsPipelines(m_vulkan_global_state->m_logical_device,
-                                  VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
+    if (vkCreateGraphicsPipelines(m_vulkan_global_state->m_logical_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
                                   pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shadow pass pipeline!");
     }
 
-    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
-                          fragShaderModule, nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device, fragShaderModule, nullptr);
 
-    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
-                          vertShaderModule, nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device, vertShaderModule, nullptr);
 }
 
-backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
-    std::vector<uint32_t>& vert_shader_code_spirv,
-    std::vector<uint32_t>& frag_shader_code_spirv,
-    const std::string& vert_file_path, const std::string& frag_file_path,
-    VkPipeline* pipeline) {
+backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(std::vector<uint32_t>& vert_shader_code_spirv,
+                                                              std::vector<uint32_t>& frag_shader_code_spirv,
+                                                              const std::string& vert_file_path,
+                                                              const std::string& frag_file_path, VkPipeline* pipeline) {
     backend_vk::Pipeline vk_pipeline;
     // If the pipeline is being rebuilt we will expect a cached_pipeline to be
     // passed with the necessary fields modified so the pipeline can be
@@ -1959,28 +1865,21 @@ backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     std::vector<VkDescriptorSetLayout> bindlessDescriptorSetLayouts;
-    bindlessDescriptorSetLayouts.push_back(
-        m_vulkan_global_state->m_sceneDescriptorSetLayout);
-    bindlessDescriptorSetLayouts.push_back(
-        m_vulkan_global_state->m_texturedPBRDescriptorSetLayoutBindless);
-    bindlessDescriptorSetLayouts.push_back(
-        m_vulkan_global_state->m_bindlessDescriptorSetLayout);
+    bindlessDescriptorSetLayouts.push_back(m_vulkan_global_state->m_sceneDescriptorSetLayout);
+    bindlessDescriptorSetLayouts.push_back(m_vulkan_global_state->m_texturedPBRDescriptorSetLayoutBindless);
+    bindlessDescriptorSetLayouts.push_back(m_vulkan_global_state->m_bindlessDescriptorSetLayout);
     pipelineLayoutInfo.setLayoutCount = bindlessDescriptorSetLayouts.size();
     pipelineLayoutInfo.pSetLayouts = bindlessDescriptorSetLayouts.data();
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
 
-    if (vkCreatePipelineLayout(m_vulkan_global_state->m_logical_device,
-                               &pipelineLayoutInfo, nullptr,
-                               &m_vulkan_global_state->m_pbrPipelineLayout) !=
-        VK_SUCCESS) {
+    if (vkCreatePipelineLayout(m_vulkan_global_state->m_logical_device, &pipelineLayoutInfo, nullptr,
+                               &m_vulkan_global_state->m_pbrPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     };
 
-    VkShaderModule vert_shader_module =
-        CreateShaderModule(vert_shader_code_spirv);
-    VkShaderModule frag_shader_module =
-        CreateShaderModule(frag_shader_code_spirv);
+    VkShaderModule vert_shader_module = CreateShaderModule(vert_shader_code_spirv);
+    VkShaderModule frag_shader_module = CreateShaderModule(frag_shader_code_spirv);
     backend_vk::Shader vs;
     vs.source_name = "scene vertex shader";
     vs.file_path = vert_file_path;
@@ -2006,8 +1905,7 @@ backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
     vk_pipeline.shaders.push_back(fs);
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-    vertShaderStageInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
 
     // Shader module creation
@@ -2015,44 +1913,37 @@ backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
     vertShaderStageInfo.pName = "main";
 
     VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-    fragShaderStageInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     fragShaderStageInfo.module = frag_shader_module;
     fragShaderStageInfo.pName = "main";
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo,
-                                                      fragShaderStageInfo};
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
     // Dynamic States of pipeline
-    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,
-                                                 VK_DYNAMIC_STATE_SCISSOR};
+    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 
     VkPipelineDynamicStateCreateInfo dynamicState{};
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicState.dynamicStateCount =
-        static_cast<uint32_t>(dynamicStates.size());
+    dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
     // Passing vertex data into pipeline
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-    vertexInputInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
     auto bindingDescription = Vertex::GetBindingDescription();
     auto attributeDescriptions = Vertex::GetAttributeDescriptions();
 
     vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.vertexAttributeDescriptionCount =
-        static_cast<uint32_t>(attributeDescriptions.size());
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 
     vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     // Geometry to be drawn from Vertices passed in
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-    inputAssembly.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     // Rather than using the global variable we will use the pipeline data
     inputAssembly.topology = backend_vk::DRAW_TYPE;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
@@ -2086,8 +1977,7 @@ backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
 
     // Rasterizer
     VkPipelineRasterizationStateCreateInfo rasterizer{};
-    rasterizer.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     // depthClampEnable : Whether or not things outside the near and far
     // planes are discarded or clamped to them
     rasterizer.depthClampEnable = VK_FALSE;
@@ -2112,8 +2002,7 @@ backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
     rasterizer.depthBiasSlopeFactor = 0.0f;     // Optional
 
     VkPipelineMultisampleStateCreateInfo multisampling{};
-    multisampling.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     multisampling.minSampleShading = 1.0f;           // Optional
@@ -2122,8 +2011,7 @@ backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
     multisampling.alphaToOneEnable = VK_FALSE;       // Optional
 
     VkPipelineDepthStencilStateCreateInfo depthStencil{};
-    depthStencil.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable = VK_TRUE;
     depthStencil.depthWriteEnable = VK_TRUE;
     depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
@@ -2136,20 +2024,17 @@ backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask =
-        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-        VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_TRUE;
     colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    colorBlendAttachment.dstColorBlendFactor =
-        VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
     colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
     colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
     colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 
     VkPipelineColorBlendStateCreateInfo colorBlending{};
-    colorBlending.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.logicOp = VK_LOGIC_OP_COPY;  // Optional
     colorBlending.attachmentCount = 1;
@@ -2159,8 +2044,7 @@ backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
     colorBlending.blendConstants[2] = 0.0f;  // Optional
     colorBlending.blendConstants[3] = 0.0f;  // Optional
 
-    vk_pipeline.pipeline_layout_ptr =
-        &m_vulkan_global_state->m_pbrPipelineLayout;
+    vk_pipeline.pipeline_layout_ptr = &m_vulkan_global_state->m_pbrPipelineLayout;
 
     // Finally creating graphics pipeline object and populating with
     // necessary information
@@ -2177,80 +2061,58 @@ backend_vk::Pipeline VulkanContext::CreatePBRPipelineBindless(
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = m_vulkan_global_state->m_pbrPipelineLayout;
-    pipelineInfo.renderPass =
-        m_vulkan_global_state->m_render_pass_data->render_pass;
+    pipelineInfo.renderPass = m_vulkan_global_state->m_render_pass_data->render_pass;
 
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
 
-    if (vkCreateGraphicsPipelines(m_vulkan_global_state->m_logical_device,
-                                  VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
+    if (vkCreateGraphicsPipelines(m_vulkan_global_state->m_logical_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
                                   pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    vk_pipeline.graphics_create_info.sType =
-        VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    vk_pipeline.graphics_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     vk_pipeline.graphics_create_info.stageCount = 2;
 
     // auto bindingDescription = Vertex::GetBindingDescription();
     // auto attributeDescriptions = Vertex::GetAttributeDescriptions();
-    vk_pipeline.graphics_pipeline_state_data.vertex_bindings = {
-        Vertex::GetBindingDescription()};
+    vk_pipeline.graphics_pipeline_state_data.vertex_bindings = {Vertex::GetBindingDescription()};
 
-    vk_pipeline.graphics_pipeline_state_data.vertex_attributes =
-        Vertex::GetAttributeDescriptions();
+    vk_pipeline.graphics_pipeline_state_data.vertex_attributes = Vertex::GetAttributeDescriptions();
 
-    vk_pipeline.graphics_pipeline_state_data.color_blend_attachments = {
-        colorBlendAttachment};
-    vk_pipeline.graphics_pipeline_state_data.shader_stages = {shaderStages[0],
-                                                              shaderStages[1]};
-    vk_pipeline.graphics_pipeline_state_data.vertex_state_info =
-        vertexInputInfo;
-    vk_pipeline.graphics_pipeline_state_data.input_assembly_state_info =
-        inputAssembly;
-    vk_pipeline.graphics_pipeline_state_data.viewport_state_info =
-        viewportState;
-    vk_pipeline.graphics_pipeline_state_data.rasterization_state_info =
-        rasterizer;
-    vk_pipeline.graphics_pipeline_state_data.multisampler_state_info =
-        multisampling;
-    vk_pipeline.graphics_pipeline_state_data.depth_stencil_state_info =
-        depthStencil;
-    vk_pipeline.graphics_pipeline_state_data.color_blend_state_info =
-        colorBlending;
+    vk_pipeline.graphics_pipeline_state_data.color_blend_attachments = {colorBlendAttachment};
+    vk_pipeline.graphics_pipeline_state_data.shader_stages = {shaderStages[0], shaderStages[1]};
+    vk_pipeline.graphics_pipeline_state_data.vertex_state_info = vertexInputInfo;
+    vk_pipeline.graphics_pipeline_state_data.input_assembly_state_info = inputAssembly;
+    vk_pipeline.graphics_pipeline_state_data.viewport_state_info = viewportState;
+    vk_pipeline.graphics_pipeline_state_data.rasterization_state_info = rasterizer;
+    vk_pipeline.graphics_pipeline_state_data.multisampler_state_info = multisampling;
+    vk_pipeline.graphics_pipeline_state_data.depth_stencil_state_info = depthStencil;
+    vk_pipeline.graphics_pipeline_state_data.color_blend_state_info = colorBlending;
     vk_pipeline.graphics_pipeline_state_data.dynamic_state_info = dynamicState;
     vk_pipeline.graphics_pipeline_state_data.dynamic_states = dynamicStates;
     vk_pipeline.graphics_create_info.pStages = shaderStages;
-    vk_pipeline.graphics_create_info.layout =
-        m_vulkan_global_state->m_pbrPipelineLayout;
-    vk_pipeline.graphics_create_info.renderPass =
-        m_vulkan_global_state->m_render_pass_data->render_pass;
+    vk_pipeline.graphics_create_info.layout = m_vulkan_global_state->m_pbrPipelineLayout;
+    vk_pipeline.graphics_create_info.renderPass = m_vulkan_global_state->m_render_pass_data->render_pass;
     vk_pipeline.graphics_create_info.subpass = 0;
-    vk_pipeline.graphics_create_info.basePipelineHandle =
-        VK_NULL_HANDLE;                                       // Optional
-    vk_pipeline.graphics_create_info.basePipelineIndex = -1;  // Optional
+    vk_pipeline.graphics_create_info.basePipelineHandle = VK_NULL_HANDLE;  // Optional
+    vk_pipeline.graphics_create_info.basePipelineIndex = -1;               // Optional
     // vk_pipeline.creation_data.graphics_create_info = pipelineInfo;
 
-    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
-                          frag_shader_module, nullptr);
-    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
-                          vert_shader_module, nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device, frag_shader_module, nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device, vert_shader_module, nullptr);
 
     vk_pipeline.pipeline_ptr = pipeline;
 
     return vk_pipeline;
 }
 
-bool VulkanContext::rebuild_compute_shader_pipeline(
-    backend_vk::Pipeline& cached_pipeline) {
-    VkShaderModule compute_shader =
-        CreateShaderModule(cached_pipeline.shaders[0].spirv_code);
+bool VulkanContext::rebuild_compute_shader_pipeline(backend_vk::Pipeline& cached_pipeline) {
+    VkShaderModule compute_shader = CreateShaderModule(cached_pipeline.shaders[0].spirv_code);
 
     VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
-    shaderStageCreateInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shaderStageCreateInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     shaderStageCreateInfo.module = compute_shader;
     shaderStageCreateInfo.pName = "main";
@@ -2262,32 +2124,26 @@ bool VulkanContext::rebuild_compute_shader_pipeline(
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
 
-    VkResult result = vkCreateComputePipelines(
-        m_vulkan_global_state->m_logical_device, VK_NULL_HANDLE, 1,
-        &pipelineInfo, nullptr, &cached_pipeline.pipeline);
+    VkResult result = vkCreateComputePipelines(m_vulkan_global_state->m_logical_device, VK_NULL_HANDLE, 1,
+                                               &pipelineInfo, nullptr, &cached_pipeline.pipeline);
 
     if (result != VK_SUCCESS) {
         throw std::runtime_error("failed to create compute pipeline!");
     }
 
-    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
-                          compute_shader, nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device, compute_shader, nullptr);
 
     return true;
 }
 
-bool VulkanContext::RebuildPBRPipelineBindless(
-    backend_vk::Pipeline& cached_pipeline) {
-    VkShaderModule vert_shader_module =
-        CreateShaderModule(cached_pipeline.shaders[0].spirv_code);
-    VkShaderModule frag_shader_module =
-        CreateShaderModule(cached_pipeline.shaders[1].spirv_code);
+bool VulkanContext::RebuildPBRPipelineBindless(backend_vk::Pipeline& cached_pipeline) {
+    VkShaderModule vert_shader_module = CreateShaderModule(cached_pipeline.shaders[0].spirv_code);
+    VkShaderModule frag_shader_module = CreateShaderModule(cached_pipeline.shaders[1].spirv_code);
     std::cout << "REBUILDING " << cached_pipeline.shaders[0].source_name << "\n"
               << cached_pipeline.shaders[1].source_name << "\n";
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-    vertShaderStageInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
 
     // Shader module creation
@@ -2295,14 +2151,12 @@ bool VulkanContext::RebuildPBRPipelineBindless(
     vertShaderStageInfo.pName = "main";
 
     VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-    fragShaderStageInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     fragShaderStageInfo.module = frag_shader_module;
     fragShaderStageInfo.pName = "main";
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo,
-                                                      fragShaderStageInfo};
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
     // Finally creating graphics pipeline object and populating with
     // necessary information
@@ -2312,89 +2166,65 @@ bool VulkanContext::RebuildPBRPipelineBindless(
     // VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 
     vkDeviceWaitIdle(m_vulkan_global_state->m_logical_device);
-    vkDestroyPipeline(m_vulkan_global_state->m_logical_device,
-                      m_vulkan_global_state->m_pbrPipeline, nullptr);
+    vkDestroyPipeline(m_vulkan_global_state->m_logical_device, m_vulkan_global_state->m_pbrPipeline, nullptr);
 
     VkGraphicsPipelineCreateInfo pipeline_info{};
     pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipeline_info.stageCount = 2;
     pipeline_info.pStages = shaderStages;
-    cached_pipeline.graphics_pipeline_state_data.vertex_state_info
-        .vertexAttributeDescriptionCount =
+    cached_pipeline.graphics_pipeline_state_data.vertex_state_info.vertexAttributeDescriptionCount =
         cached_pipeline.graphics_pipeline_state_data.vertex_attributes.size();
-    cached_pipeline.graphics_pipeline_state_data.vertex_state_info
-        .pVertexAttributeDescriptions =
+    cached_pipeline.graphics_pipeline_state_data.vertex_state_info.pVertexAttributeDescriptions =
         cached_pipeline.graphics_pipeline_state_data.vertex_attributes.data();
 
-    cached_pipeline.graphics_pipeline_state_data.vertex_state_info
-        .vertexBindingDescriptionCount =
+    cached_pipeline.graphics_pipeline_state_data.vertex_state_info.vertexBindingDescriptionCount =
         cached_pipeline.graphics_pipeline_state_data.vertex_bindings.size();
-    cached_pipeline.graphics_pipeline_state_data.vertex_state_info
-        .pVertexBindingDescriptions =
+    cached_pipeline.graphics_pipeline_state_data.vertex_state_info.pVertexBindingDescriptions =
         cached_pipeline.graphics_pipeline_state_data.vertex_bindings.data();
 
-    pipeline_info.pVertexInputState =
-        &cached_pipeline.graphics_pipeline_state_data.vertex_state_info;
-    pipeline_info.pInputAssemblyState =
-        &cached_pipeline.graphics_pipeline_state_data.input_assembly_state_info;
-    pipeline_info.pViewportState =
-        &cached_pipeline.graphics_pipeline_state_data.viewport_state_info;
-    pipeline_info.pRasterizationState =
-        &cached_pipeline.graphics_pipeline_state_data.rasterization_state_info;
-    pipeline_info.pMultisampleState =
-        &cached_pipeline.graphics_pipeline_state_data.multisampler_state_info;
-    pipeline_info.pDepthStencilState =
-        &cached_pipeline.graphics_pipeline_state_data.depth_stencil_state_info;
+    pipeline_info.pVertexInputState = &cached_pipeline.graphics_pipeline_state_data.vertex_state_info;
+    pipeline_info.pInputAssemblyState = &cached_pipeline.graphics_pipeline_state_data.input_assembly_state_info;
+    pipeline_info.pViewportState = &cached_pipeline.graphics_pipeline_state_data.viewport_state_info;
+    pipeline_info.pRasterizationState = &cached_pipeline.graphics_pipeline_state_data.rasterization_state_info;
+    pipeline_info.pMultisampleState = &cached_pipeline.graphics_pipeline_state_data.multisampler_state_info;
+    pipeline_info.pDepthStencilState = &cached_pipeline.graphics_pipeline_state_data.depth_stencil_state_info;
 
-    cached_pipeline.graphics_pipeline_state_data.color_blend_state_info
-        .attachmentCount = cached_pipeline.graphics_pipeline_state_data
-                               .color_blend_attachments.size();
-    cached_pipeline.graphics_pipeline_state_data.color_blend_state_info
-        .pAttachments = cached_pipeline.graphics_pipeline_state_data
-                            .color_blend_attachments.data();
-    pipeline_info.pColorBlendState =
-        &cached_pipeline.graphics_pipeline_state_data.color_blend_state_info;
+    cached_pipeline.graphics_pipeline_state_data.color_blend_state_info.attachmentCount =
+        cached_pipeline.graphics_pipeline_state_data.color_blend_attachments.size();
+    cached_pipeline.graphics_pipeline_state_data.color_blend_state_info.pAttachments =
+        cached_pipeline.graphics_pipeline_state_data.color_blend_attachments.data();
+    pipeline_info.pColorBlendState = &cached_pipeline.graphics_pipeline_state_data.color_blend_state_info;
 
-    cached_pipeline.graphics_pipeline_state_data.dynamic_state_info
-        .dynamicStateCount =
+    cached_pipeline.graphics_pipeline_state_data.dynamic_state_info.dynamicStateCount =
         cached_pipeline.graphics_pipeline_state_data.dynamic_states.size();
-    cached_pipeline.graphics_pipeline_state_data.dynamic_state_info
-        .pDynamicStates =
+    cached_pipeline.graphics_pipeline_state_data.dynamic_state_info.pDynamicStates =
         cached_pipeline.graphics_pipeline_state_data.dynamic_states.data();
-    pipeline_info.pDynamicState =
-        &cached_pipeline.graphics_pipeline_state_data.dynamic_state_info;
+    pipeline_info.pDynamicState = &cached_pipeline.graphics_pipeline_state_data.dynamic_state_info;
 
     pipeline_info.layout = *cached_pipeline.pipeline_layout_ptr;
-    pipeline_info.renderPass =
-        m_vulkan_global_state->m_render_pass_data->render_pass;
+    pipeline_info.renderPass = m_vulkan_global_state->m_render_pass_data->render_pass;
 
     pipeline_info.subpass = 0;
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipeline_info.basePipelineIndex = -1;               // Optional
-    if (vkCreateGraphicsPipelines(m_vulkan_global_state->m_logical_device,
-                                  VK_NULL_HANDLE, 1, &pipeline_info, nullptr,
-                                  &m_vulkan_global_state->m_pbrPipeline) !=
-        VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(m_vulkan_global_state->m_logical_device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr,
+                                  &m_vulkan_global_state->m_pbrPipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
-                          frag_shader_module, nullptr);
-    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
-                          vert_shader_module, nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device, frag_shader_module, nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device, vert_shader_module, nullptr);
 
     return true;
 }
 
-void VulkanContext::CreateShadowPassPipelineBindless(
-    std::vector<uint32_t> vertShaderCode, std::vector<uint32_t> fragShaderCode,
-    VkPipeline* pipeline) {
+void VulkanContext::CreateShadowPassPipelineBindless(std::vector<uint32_t> vertShaderCode,
+                                                     std::vector<uint32_t> fragShaderCode, VkPipeline* pipeline) {
     VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-    vertShaderStageInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
 
     // IMPORTANT NOTE!!!
@@ -2411,44 +2241,37 @@ void VulkanContext::CreateShadowPassPipelineBindless(
     vertShaderStageInfo.pName = "main";
 
     VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-    fragShaderStageInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     fragShaderStageInfo.module = fragShaderModule;
     fragShaderStageInfo.pName = "main";
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo,
-                                                      fragShaderStageInfo};
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
     // Dynamic States of pipeline
-    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,
-                                                 VK_DYNAMIC_STATE_SCISSOR};
+    std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 
     VkPipelineDynamicStateCreateInfo dynamicState{};
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicState.dynamicStateCount =
-        static_cast<uint32_t>(dynamicStates.size());
+    dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
     // Passing vertex data into pipeline
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-    vertexInputInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
     auto bindingDescription = Vertex::GetBindingDescription();
     auto attributeDescriptions = Vertex::GetAttributeDescriptions();
 
     vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.vertexAttributeDescriptionCount =
-        static_cast<uint32_t>(attributeDescriptions.size());
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 
     vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     // Geometry to be drawn from Vertices passed in
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-    inputAssembly.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssembly.topology = backend_vk::DRAW_TYPE;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
@@ -2467,9 +2290,8 @@ void VulkanContext::CreateShadowPassPipelineBindless(
     // Determines which part of the framebuffers will be rasterized.
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    VkExtent2D shadowMapExtent = {
-        static_cast<uint32_t>(m_vulkan_global_state->m_shadowMapWidth),
-        static_cast<uint32_t>(m_vulkan_global_state->m_shadowMapHeight)};
+    VkExtent2D shadowMapExtent = {static_cast<uint32_t>(m_vulkan_global_state->m_shadowMapWidth),
+                                  static_cast<uint32_t>(m_vulkan_global_state->m_shadowMapHeight)};
     scissor.extent = shadowMapExtent;
 
     VkPipelineViewportStateCreateInfo viewportState{};
@@ -2481,8 +2303,7 @@ void VulkanContext::CreateShadowPassPipelineBindless(
 
     // Rasterizer
     VkPipelineRasterizationStateCreateInfo rasterizer{};
-    rasterizer.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     // depthClampEnable : Whether or not things outside the near and far planes
     // are discarded or clamped to them
     rasterizer.depthClampEnable = VK_FALSE;
@@ -2509,8 +2330,7 @@ void VulkanContext::CreateShadowPassPipelineBindless(
     rasterizer.depthBiasClamp = 0.0f;  // Optional
 
     VkPipelineMultisampleStateCreateInfo multisampling{};
-    multisampling.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     multisampling.minSampleShading = 1.0f;           // Optional
@@ -2519,8 +2339,7 @@ void VulkanContext::CreateShadowPassPipelineBindless(
     multisampling.alphaToOneEnable = VK_FALSE;       // Optional
 
     VkPipelineDepthStencilStateCreateInfo depthStencil{};
-    depthStencil.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable = VK_TRUE;
     depthStencil.depthWriteEnable = VK_TRUE;
     depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
@@ -2532,8 +2351,7 @@ void VulkanContext::CreateShadowPassPipelineBindless(
     depthStencil.back = {};   // Optional
 
     VkPipelineColorBlendStateCreateInfo colorBlending{};
-    colorBlending.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.attachmentCount = 0;
     colorBlending.pAttachments = nullptr;
@@ -2552,10 +2370,8 @@ void VulkanContext::CreateShadowPassPipelineBindless(
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-    if (vkCreatePipelineLayout(
-            m_vulkan_global_state->m_logical_device, &pipelineLayoutInfo,
-            nullptr,
-            &m_vulkan_global_state->m_shadowPassPipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(m_vulkan_global_state->m_logical_device, &pipelineLayoutInfo, nullptr,
+                               &m_vulkan_global_state->m_shadowPassPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     };
 
@@ -2578,23 +2394,18 @@ void VulkanContext::CreateShadowPassPipelineBindless(
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
     pipelineInfo.basePipelineIndex = -1;               // Optional
 
-    if (vkCreateGraphicsPipelines(m_vulkan_global_state->m_logical_device,
-                                  VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
+    if (vkCreateGraphicsPipelines(m_vulkan_global_state->m_logical_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
                                   pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shadow pass pipeline!");
     }
 
-    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
-                          fragShaderModule, nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device, fragShaderModule, nullptr);
 
-    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device,
-                          vertShaderModule, nullptr);
+    vkDestroyShaderModule(m_vulkan_global_state->m_logical_device, vertShaderModule, nullptr);
 }
 void VulkanContext::create_command_pool() {
-    QueueFamilyIndices queue_family_indices =
-        backend_vk::devices::find_queue_families(
-            m_vulkan_global_state->m_physical_device,
-            m_vulkan_global_state->m_surface);
+    QueueFamilyIndices queue_family_indices = backend_vk::devices::find_queue_families(
+        m_vulkan_global_state->m_physical_device, m_vulkan_global_state->m_surface);
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -2603,15 +2414,14 @@ void VulkanContext::create_command_pool() {
     // pool
     poolInfo.queueFamilyIndex = queue_family_indices.graphics_family.value();
 
-    if (vkCreateCommandPool(m_vulkan_global_state->m_logical_device, &poolInfo,
-                            nullptr, &m_vulkan_global_state->m_commandPool) !=
-        VK_SUCCESS) {
+    if (vkCreateCommandPool(m_vulkan_global_state->m_logical_device, &poolInfo, nullptr,
+                            &m_vulkan_global_state->m_commandPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create command pool!");
     }
 }
 
-VkCommandPool VulkanContext::create_command_pool_compute(
-    VkDevice& logical_device, QueueFamilyIndices queueFamilyIndices) {
+VkCommandPool VulkanContext::create_command_pool_compute(VkDevice& logical_device,
+                                                         QueueFamilyIndices queueFamilyIndices) {
     VkCommandPool commandPool;
     // QueueFamilyIndices queueFamilyIndices =
     //     m_deviceHandler->FindQueueFamilies(m_deviceHandler->PhysicalDevice);
@@ -2623,16 +2433,14 @@ VkCommandPool VulkanContext::create_command_pool_compute(
     // pool
     poolInfo.queueFamilyIndex = queueFamilyIndices.compute_family.value();
 
-    if (vkCreateCommandPool(logical_device, &poolInfo, nullptr, &commandPool) !=
-        VK_SUCCESS) {
+    if (vkCreateCommandPool(logical_device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create command pool!");
     }
     return commandPool;
 }
 
 // Pass in the Model3D's texture path
-void VulkanContext::create_texture_image(TextureResource props, Mesh3D* mesh,
-                                         MaterialEnums material_type,
+void VulkanContext::create_texture_image(TextureResource props, Renderable* mesh, MaterialEnums material_type,
                                          bool is_cube_map) {
     auto pixels_sdr = props.pixels_sdr;
     auto pixels_hdr = props.pixels_hdr;
@@ -2655,20 +2463,17 @@ void VulkanContext::create_texture_image(TextureResource props, Mesh3D* mesh,
     VkDeviceMemory staging_buffer_memory;
 
     m_buffer_handler->CreateBuffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                    staging_buffer, staging_buffer_memory);
 
     void* data;
-    vkMapMemory(m_vulkan_global_state->m_logical_device, staging_buffer_memory,
-                0, image_size, 0, &data);
+    vkMapMemory(m_vulkan_global_state->m_logical_device, staging_buffer_memory, 0, image_size, 0, &data);
     if (is_cube_map) {
         memcpy(data, pixels_hdr, static_cast<size_t>(image_size));
     } else {
         memcpy(data, pixels_sdr, static_cast<size_t>(image_size));
     }
-    vkUnmapMemory(m_vulkan_global_state->m_logical_device,
-                  staging_buffer_memory);
+    vkUnmapMemory(m_vulkan_global_state->m_logical_device, staging_buffer_memory);
 
     // WARN: Potential for memory leak here
     if (is_cube_map) {
@@ -2679,59 +2484,40 @@ void VulkanContext::create_texture_image(TextureResource props, Mesh3D* mesh,
     }
 
     backend_vk::images::create_image(
-        m_vulkan_global_state->m_physical_device,
-        m_vulkan_global_state->m_logical_device, tex_width, tex_height,
-        VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        mesh->m_material_data_map[material_type].m_texture_image,
-        mesh->m_material_data_map[material_type].m_texture_image_memory,
-        is_cube_map);
+        m_vulkan_global_state->m_physical_device, m_vulkan_global_state->m_logical_device, tex_width, tex_height,
+        VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mesh->m_material_data_map[material_type].m_texture_image,
+        mesh->m_material_data_map[material_type].m_texture_image_memory, is_cube_map);
 
     backend_vk::images::transition_image_layout(
-        m_vulkan_global_state->m_logical_device,
-        m_vulkan_global_state->m_commandPool,
-        m_vulkan_global_state->m_graphicsQueue,
-        mesh->m_material_data_map[material_type].m_texture_image,
-        VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        m_vulkan_global_state->m_logical_device, m_vulkan_global_state->m_commandPool,
+        m_vulkan_global_state->m_graphicsQueue, mesh->m_material_data_map[material_type].m_texture_image,
+        VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     backend_vk::images::copy_buffer_to_image(
-        m_vulkan_global_state->m_logical_device,
-        m_vulkan_global_state->m_commandPool,
+        m_vulkan_global_state->m_logical_device, m_vulkan_global_state->m_commandPool,
         m_vulkan_global_state->m_graphicsQueue, staging_buffer,
-        mesh->m_material_data_map[material_type].m_texture_image,
-        static_cast<uint32_t>(tex_width), static_cast<uint32_t>(tex_height),
-        is_cube_map);
+        mesh->m_material_data_map[material_type].m_texture_image, static_cast<uint32_t>(tex_width),
+        static_cast<uint32_t>(tex_height), is_cube_map);
 
     backend_vk::images::transition_image_layout(
-        m_vulkan_global_state->m_logical_device,
-        m_vulkan_global_state->m_commandPool,
-        m_vulkan_global_state->m_graphicsQueue,
-        mesh->m_material_data_map[material_type].m_texture_image,
-        VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        m_vulkan_global_state->m_logical_device, m_vulkan_global_state->m_commandPool,
+        m_vulkan_global_state->m_graphicsQueue, mesh->m_material_data_map[material_type].m_texture_image,
+        VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    vkDestroyBuffer(m_vulkan_global_state->m_logical_device, staging_buffer,
-                    nullptr);
-    vkFreeMemory(m_vulkan_global_state->m_logical_device, staging_buffer_memory,
-                 nullptr);
+    vkDestroyBuffer(m_vulkan_global_state->m_logical_device, staging_buffer, nullptr);
+    vkFreeMemory(m_vulkan_global_state->m_logical_device, staging_buffer_memory, nullptr);
 }
 
 // TEXTURE IMAGE VIEW
-void VulkanContext::create_texture_image_view(Mesh3D* mesh,
-                                              MaterialEnums material_type,
-                                              bool is_cube_map) {
-    mesh->m_material_data_map[material_type].m_texture_image_view =
-        backend_vk::images::create_image_view(
-            m_vulkan_global_state->m_logical_device,
-            mesh->m_material_data_map[material_type].m_texture_image,
-            VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, is_cube_map);
+void VulkanContext::create_texture_image_view(Renderable* mesh, MaterialEnums material_type, bool is_cube_map) {
+    mesh->m_material_data_map[material_type].m_texture_image_view = backend_vk::images::create_image_view(
+        m_vulkan_global_state->m_logical_device, mesh->m_material_data_map[material_type].m_texture_image,
+        VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, is_cube_map);
 }
 
 // TEXTURE SAMPLER
-void VulkanContext::create_texture_sampler(Mesh3D* mesh,
-                                           MaterialEnums materialType) {
+void VulkanContext::create_texture_sampler(Renderable* mesh, MaterialEnums materialType) {
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -2743,14 +2529,10 @@ void VulkanContext::create_texture_sampler(Mesh3D* mesh,
     samplerInfo.anisotropyEnable = VK_TRUE;
 
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(m_vulkan_global_state->m_physical_device,
-                                  &properties);
-    std::cout << "MAX COMPUTE WORK GROUP SIZE "
-              << properties.limits.maxComputeWorkGroupSize[0] << "\n"
-              << "MAX COMPUTE WORK GROUP COUNT "
-              << properties.limits.maxComputeWorkGroupCount[0] << "\n"
-              << "MAX COMPUTE WORK GROUP INVOCATIONS "
-              << properties.limits.maxComputeWorkGroupInvocations << "\n"
+    vkGetPhysicalDeviceProperties(m_vulkan_global_state->m_physical_device, &properties);
+    std::cout << "MAX COMPUTE WORK GROUP SIZE " << properties.limits.maxComputeWorkGroupSize[0] << "\n"
+              << "MAX COMPUTE WORK GROUP COUNT " << properties.limits.maxComputeWorkGroupCount[0] << "\n"
+              << "MAX COMPUTE WORK GROUP INVOCATIONS " << properties.limits.maxComputeWorkGroupInvocations << "\n"
               << "DEVICE NAME " << properties.deviceName << "\n"
               << "DEVICE TYPE " << properties.deviceType << "\n";
     samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
@@ -2766,10 +2548,8 @@ void VulkanContext::create_texture_sampler(Mesh3D* mesh,
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    if (vkCreateSampler(
-            m_vulkan_global_state->m_logical_device, &samplerInfo, nullptr,
-            &mesh->m_material_data_map[materialType].m_texture_sampler) !=
-        VK_SUCCESS) {
+    if (vkCreateSampler(m_vulkan_global_state->m_logical_device, &samplerInfo, nullptr,
+                        &mesh->m_material_data_map[materialType].m_texture_sampler) != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
 }
@@ -2786,8 +2566,7 @@ void VulkanContext::CreateTextureSamplerShadowPass() {
     samplerInfo.anisotropyEnable = VK_FALSE;
 
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(m_vulkan_global_state->m_physical_device,
-                                  &properties);
+    vkGetPhysicalDeviceProperties(m_vulkan_global_state->m_physical_device, &properties);
     samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 
     samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
@@ -2801,26 +2580,25 @@ void VulkanContext::CreateTextureSamplerShadowPass() {
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    if (vkCreateSampler(
-            m_vulkan_global_state->m_logical_device, &samplerInfo, nullptr,
-            &m_vulkan_global_state->m_shadowPassTextureSampler) != VK_SUCCESS) {
+    if (vkCreateSampler(m_vulkan_global_state->m_logical_device, &samplerInfo, nullptr,
+                        &m_vulkan_global_state->m_shadowPassTextureSampler) != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
 }
-Mesh3D VulkanContext::LoadMesh(ObjProperties props, glm::vec3 scenePosition,
-                               glm::vec3 objectRotation,
-                               glm::vec3 objectScale) {
+
+Renderable VulkanContext::LoadMesh(ObjProperties props, glm::vec3 scenePosition, glm::vec3 objectRotation,
+                                   glm::vec3 objectScale) {
     std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 
-    int indexBufferStartIndex = 0;
-    int vertexBufferStartIndex = 0;
-    int vertexBufferEndIndex = 0;
-    int indexBufferEndIndex = 0;
+    int ib_start = 0;
+    int vb_start = 0;
+    int vb_end = 0;
+    int ib_end = 0;
     if (m_indices.size() > 0) {
-        indexBufferStartIndex = m_indices.size();
+        ib_start = m_indices.size();
     }
     if (m_vertices.size() > 0) {
-        vertexBufferStartIndex = m_vertices.size();
+        vb_start = m_vertices.size();
     }
 
     auto shapes = props.shapes;
@@ -2830,45 +2608,179 @@ Mesh3D VulkanContext::LoadMesh(ObjProperties props, glm::vec3 scenePosition,
         for (const auto& index : shape.mesh.indices) {
             Vertex vertex{};
 
-            vertex.pos = {attrib.vertices[3 * index.vertex_index + 0],
-                          attrib.vertices[3 * index.vertex_index + 1],
+            vertex.pos = {attrib.vertices[3 * index.vertex_index + 0], attrib.vertices[3 * index.vertex_index + 1],
                           attrib.vertices[3 * index.vertex_index + 2]};
 
-            vertex.normal = {attrib.normals[3 * index.normal_index + 0],
-                             attrib.normals[3 * index.normal_index + 1],
+            vertex.normal = {attrib.normals[3 * index.normal_index + 0], attrib.normals[3 * index.normal_index + 1],
                              attrib.normals[3 * index.normal_index + 2]};
 
-            vertex.texCoord = {
-                attrib.texcoords[2 * index.texcoord_index + 0],
-                1.0f - attrib.texcoords[2 * index.texcoord_index + 1]};
+            vertex.texCoord = {attrib.texcoords[2 * index.texcoord_index + 0],
+                               1.0f - attrib.texcoords[2 * index.texcoord_index + 1]};
 
             if (uniqueVertices.count(vertex) == 0) {
-                uniqueVertices[vertex] =
-                    static_cast<uint32_t>(m_vertices.size());
+                uniqueVertices[vertex] = static_cast<uint32_t>(m_vertices.size());
                 m_vertices.push_back(vertex);
             }
             m_indices.push_back(uniqueVertices[vertex]);
 
             vertex.color = {1.0f, 1.0f, 1.0f};
-            vertexBufferEndIndex = m_vertices.size() - 1;
-            indexBufferEndIndex = m_indices.size() - 1;
+            vb_end = m_vertices.size() - 1;
+            ib_end = m_indices.size() - 1;
         }
     }
-    Mesh3D mesh = Mesh3D();
-    mesh.m_mesh_type = TEXTURED;
-    mesh.m_index_buffer_start_idx = indexBufferStartIndex;
-    mesh.m_vertex_buffer_start_idx = vertexBufferStartIndex;
-    mesh.m_index_buffer_end_idx = indexBufferEndIndex;
-    mesh.m_vertex_buffer_end_idx = vertexBufferEndIndex;
-    mesh.m_index_count = indexBufferEndIndex - indexBufferStartIndex;
-    mesh.m_position = scenePosition;
-    mesh.m_rotation = objectRotation;
-    mesh.m_scale = glm::vec3(1.0f, 1.0f, 1.0f);
+    Renderable mesh = Renderable{.m_index_buffer_start_idx = ib_start,
+                                 .m_index_buffer_end_idx = ib_end,
+                                 .m_vertex_buffer_start_idx = vb_start,
+                                 .m_vertex_buffer_end_idx = vb_end,
+                                 .m_index_count = ib_end - ib_start,
+                                 .m_position = scenePosition,
+                                 .m_rotation = objectRotation,
+                                 .m_scale = glm::vec3(1.0f, 1.0f, 1.0f)};
     return mesh;
 }
 
-void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
-                                        uint32_t imageIndex) {
+// void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
+//                                         uint32_t imageIndex) {}
+
+void VulkanContext::record_command_buffer_compute(VkCommandBuffer commandBuffer, VkPipeline pipeline,
+                                                  VkPipelineLayout pipelineLayout, VkDescriptorSet* descriptorSet,
+                                                  bool rebuild_indices) {}
+
+void VulkanContext::CreateSyncObjects() {
+    m_vulkan_global_state->m_imageAvailableSemaphores.resize(m_maxFramesInFlight);
+    m_vulkan_global_state->m_renderFinishedSemaphores.resize(m_maxFramesInFlight);
+    m_vulkan_global_state->m_inFlightFences.resize(m_maxFramesInFlight);
+
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    for (int i = 0; i < m_maxFramesInFlight; i++) {
+        if (vkCreateSemaphore(m_vulkan_global_state->m_logical_device, &semaphoreInfo, nullptr,
+                              &m_vulkan_global_state->m_imageAvailableSemaphores[i]) != VK_SUCCESS ||
+            vkCreateSemaphore(m_vulkan_global_state->m_logical_device, &semaphoreInfo, nullptr,
+                              &m_vulkan_global_state->m_renderFinishedSemaphores[i]) != VK_SUCCESS ||
+            vkCreateFence(m_vulkan_global_state->m_logical_device, &fenceInfo, nullptr,
+                          &m_vulkan_global_state->m_inFlightFences[i]) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create semaphores!");
+        }
+    }
+
+    if (vkCreateFence(m_vulkan_global_state->m_logical_device, &fenceInfo, nullptr,
+                      &m_vulkan_global_state->m_computeFence) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create compute fence!");
+    }
+}
+
+void VulkanContext::draw_frame(float deltaTime, std::vector<Renderable> render_list) {
+    /*
+        - Wait for the previous frame to finish
+        - Acquire an image from the swap chain
+        - Record a command buffer which draws the scene onto that image
+        - Submit the recorded command buffer
+        - Present the swap chain image
+    */
+
+    backend_vk::render_pass::RenderPassData::ERenderPassDataState renderPassDataState =
+        m_vulkan_global_state->m_render_pass_data.get()->GetRenderPassDataState();
+    if (!backend_vk::check_render_pass_data_validity(renderPassDataState)) {
+        return;
+    }
+
+    vkWaitForFences(m_vulkan_global_state->m_logical_device, 1,
+                    &m_vulkan_global_state->m_inFlightFences[m_vulkan_global_state->m_currentFrame], VK_TRUE,
+                    UINT64_MAX);
+
+    // Acquire an image from the swap chain
+    uint32_t image_index;
+
+    // SWAP CHAIN RECREATION
+    VkResult result =
+        vkAcquireNextImageKHR(m_vulkan_global_state->m_logical_device, m_vulkan_global_state->m_swapChain, UINT64_MAX,
+                              m_vulkan_global_state->m_imageAvailableSemaphores[m_vulkan_global_state->m_currentFrame],
+                              VK_NULL_HANDLE, &image_index);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        int frameBufferWidth, frameBufferHeight;
+        // TODO: Call to Renderer Front End to get framebuffer sizes
+        m_windowing_backend->get_framebuffer_size_glfw(&frameBufferWidth, &frameBufferHeight);
+        m_windowing_backend->PollWindowNotMinimizedGLFW();
+        vkDeviceWaitIdle(m_vulkan_global_state->m_logical_device);
+        m_swap_chain_handler->Rebuild(frameBufferWidth, frameBufferHeight);
+        // TODO: MUST NOT FORGET THIS
+        // m_renderPassHandler->CreateRenderPass();
+        VkFormat render_pass_depth_attachment_format = backend_vk::render_pass::find_supported_format(
+            m_vulkan_global_state->m_physical_device,
+            {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT}, VK_IMAGE_TILING_OPTIMAL,
+            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+        if (!render_pass_depth_attachment_format) {
+            std::cout << "renderPassDepthAttachmentFormat invalid\n";
+        }
+
+        backend_vk::render_pass::DepthResources renderPassDepthResources =
+            backend_vk::render_pass::create_render_pass_depth_resources(
+                m_vulkan_global_state->m_physical_device, m_vulkan_global_state->m_logical_device,
+                m_vulkan_global_state->m_commandPool, m_vulkan_global_state->m_graphicsQueue,
+                render_pass_depth_attachment_format, m_vulkan_global_state->m_swapChainExtent.width,
+                m_vulkan_global_state->m_swapChainExtent.height);
+
+        backend_vk::render_pass::RenderPassData renderPassData =
+            // m_render_pass_handler->create_render_pass(
+            //     m_vulkan_global_state->m_logical_device,
+            //     m_vulkan_global_state->GetSwapChainImageFormat(),
+            //     renderPassDepthAttachmentFormat);
+
+            backend_vk::render_pass::create_render_pass(m_vulkan_global_state->m_logical_device,
+                                                        m_vulkan_global_state->GetSwapChainImageFormat(),
+                                                        render_pass_depth_attachment_format);
+
+        renderPassData.depth_resources = renderPassDepthResources;
+
+        m_vulkan_global_state->m_render_pass_data =
+            std::make_unique<backend_vk::render_pass::RenderPassData>(renderPassData);
+
+        if (m_vulkan_global_state->m_render_pass_data == nullptr) {
+            std::cout << "Vulkan Init Error: m_vulkanGlobalState->m_renderPassData "
+                         "is INVALID!\n";
+            return;
+        }
+
+        std::vector<VkImageView> renderPassPerFrameImageViews = {};
+
+        renderPassPerFrameImageViews.push_back(m_vulkan_global_state->m_render_pass_data->depth_resources.image_view);
+
+        m_vulkan_global_state->m_render_pass_data->framebuffers = backend_vk::create_swapchain_framebuffers(
+            m_vulkan_global_state->m_swapChainImageViews.size(), renderPassPerFrameImageViews,
+            m_vulkan_global_state->m_swapChainImageViews, m_vulkan_global_state->GetSwapChainExtent().width,
+            m_vulkan_global_state->GetSwapChainExtent().height, m_vulkan_global_state->m_logical_device,
+            *m_vulkan_global_state->m_render_pass_data);
+
+        if (!backend_vk::check_render_pass_data_validity(renderPassData.GetRenderPassDataState())) {
+            return;
+        }
+        // m_render_pass_handler->create_shadow_pass();
+        // m_render_pass_handler->create_shadow_pass_framebuffers();
+        return;
+    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        throw std::runtime_error("failed to acquire swap chain image!");
+    }
+
+    // Only reset fences if we are submitting work
+    vkResetFences(m_vulkan_global_state->m_logical_device, 1,
+                  &m_vulkan_global_state->m_inFlightFences[m_vulkan_global_state->m_currentFrame]);
+
+    // Record a command buffer which draws the scene onto that image
+    vkResetCommandBuffer(m_vulkan_global_state->m_commandBuffers[m_vulkan_global_state->m_currentFrame], 0);
+
+    auto command_buffer = m_vulkan_global_state->m_commandBuffers[m_vulkan_global_state->m_currentFrame];
+    // RecordCommandBuffer(
+    //     m_vulkan_global_state
+    //         ->m_commandBuffers[m_vulkan_global_state->m_currentFrame],
+    //     imageIndex);
+
     /*
         If the command buffer was already recorded once, then a call to
        vkBeginCommandBuffer will implicitly reset it. It's not possible to
@@ -2885,585 +2797,123 @@ void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer,
     */
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+    if (vkBeginCommandBuffer(command_buffer, &beginInfo) != VK_SUCCESS) {
         throw std::runtime_error("failed to begin recording command buffer!");
     }
-    if (m_vulkan_global_state->m_renderingMode == ERenderingMode::Bindless) {
-        VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = static_cast<float>(
-            m_vulkan_global_state->GetSwapChainExtent().width);
-        viewport.height = static_cast<float>(
-            m_vulkan_global_state->GetSwapChainExtent().height);
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+    VkViewport viewport{.x = 0.0f,
+                        .y = 0.0f,
+                        .width = static_cast<float>(m_vulkan_global_state->GetSwapChainExtent().width),
+                        .height = static_cast<float>(m_vulkan_global_state->GetSwapChainExtent().height),
+                        .minDepth = 0.0f,
+                        .maxDepth = 1.0f};
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 
-        VkRect2D scissor{};
-        scissor.offset = {0, 0};
-        scissor.extent = m_vulkan_global_state->GetSwapChainExtent();
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+    VkRect2D scissor{.offset = {0, 0}, .extent = m_vulkan_global_state->GetSwapChainExtent()};
+    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass =
-            m_vulkan_global_state->m_render_pass_data->render_pass;
+    std::array<VkClearValue, 2> clear_values{};
+    clear_values[0].color = {{CLEAR_COLOR.x, CLEAR_COLOR.y, CLEAR_COLOR.z, 1.0f}};
+    clear_values[1].depthStencil = {1.0f, 0};
+    VkRect2D render_area{
+        .offset{.x = 0, .y = 0},
+        .extent = m_vulkan_global_state->GetSwapChainExtent(),
+    };
+
+    VkRenderPassBeginInfo render_pass_info{
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .renderPass = m_vulkan_global_state->m_render_pass_data->render_pass,
         // DEBUG
         // printf("imageIndex DEBUG: %d\n", imageIndex);
-        renderPassInfo.framebuffer =
-            m_vulkan_global_state->m_render_pass_data->framebuffers[imageIndex];
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent =
-            m_vulkan_global_state->GetSwapChainExtent();
+        .framebuffer = m_vulkan_global_state->m_render_pass_data->framebuffers[image_index],
+        .renderArea = render_area,
+        .clearValueCount = static_cast<uint32_t>(clear_values.size()),
+        .pClearValues = clear_values.data(),
 
-        // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
-        std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {
-            {CLEAR_COLOR.x, CLEAR_COLOR.y, CLEAR_COLOR.z, 1.0f}};
-        clearValues[1].depthStencil = {1.0f, 0};
-        renderPassInfo.clearValueCount =
-            static_cast<uint32_t>(clearValues.size());
-        renderPassInfo.pClearValues = clearValues.data();
+    };
 
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
-                             VK_SUBPASS_CONTENTS_INLINE);
+    // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
+    vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
-        // BIND SCENE DESCRIPTOR SET
-        vkCmdBindDescriptorSets(
-            commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            m_vulkan_global_state->m_pbrPipelineLayout, 0, 1,
-            &m_vulkan_global_state
-                 ->m_sceneDescriptorSets[m_vulkan_global_state->m_currentFrame],
-            0, nullptr);
-        vkCmdBindDescriptorSets(
-            commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            m_vulkan_global_state->m_pbrPipelineLayout, 2, 1,
-            &m_vulkan_global_state->m_globalBindlessDescriptorSet, 0, nullptr);
-        std::vector<VkDescriptorSet> descriptorSetsToBind;
-        if (!m_vulkan_global_state->m_meshList.empty()) {
-            VkBuffer vertexBuffers[] = {
-                m_vulkan_global_state->m_computeOutputBuffer};
-            // VkBuffer vertexBuffers[] = {m_buffer_handler->VertexBuffer};
-            VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+    // BIND SCENE DESCRIPTOR SET
+    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vulkan_global_state->m_pbrPipelineLayout,
+                            0, 1, &m_vulkan_global_state->m_sceneDescriptorSets[m_vulkan_global_state->m_currentFrame],
+                            0, nullptr);
+    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vulkan_global_state->m_pbrPipelineLayout,
+                            2, 1, &m_vulkan_global_state->m_globalBindlessDescriptorSet, 0, nullptr);
+    if (!m_vulkan_global_state->m_render_list.empty()) {
+        VkBuffer vertex_buffers[] = {m_vulkan_global_state->m_compute_vertex_buffer};
+        // VkBuffer vertexBuffers[] = {m_buffer_handler->VertexBuffer};
+        VkDeviceSize offsets[] = {0};
+        // We have two sets of buffers, mesh buffers and terrain buffers
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
 
-            vkCmdBindIndexBuffer(commandBuffer, m_buffer_handler->IndexBuffer,
-                                 0, VK_INDEX_TYPE_UINT32);
-            for (auto& mesh : m_vulkan_global_state->m_meshList) {
-                if (!mesh.should_draw) continue;
-                mesh.m_scale = glm::vec3(100.0f, 100.0f, 100.0f);
-                // Binding the graphics pipeline
-                if (mesh.m_mesh_type == TEXTURED) {
-                    vkCmdBindPipeline(commandBuffer,
-                                      VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                      m_vulkan_global_state->m_pbrPipeline);
-                    // BIND PER MESH DESCRIPTOR SET
-                    vkCmdBindDescriptorSets(
-                        commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                        m_vulkan_global_state->m_pbrPipelineLayout, 1, 1,
-                        &mesh.m_descriptor_sets[m_vulkan_global_state
-                                                    ->m_currentFrame],
-                        0, nullptr);
-                }
+        vkCmdBindIndexBuffer(command_buffer, m_buffer_handler->IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        // I need to render the world in one pass then render individual meshes
+        // in another
+        for (auto& mesh : render_list) {
+            if (!mesh.should_draw) continue;
+            mesh.m_scale = glm::vec3(100.0f, 100.0f, 100.0f);
+            // Binding the graphics pipeline
+            vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vulkan_global_state->m_pbrPipeline);
+            // BIND PER MESH DESCRIPTOR SET
+            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    m_vulkan_global_state->m_pbrPipelineLayout, 1, 1,
+                                    &mesh.m_descriptor_sets[m_vulkan_global_state->m_currentFrame], 0, nullptr);
 
-                m_vulkan_global_state->m_frag_shader_push_constants_bindless
-                    .albedoIdx = mesh.m_material_indices[MaterialEnums::ALBEDO];
-                // std::cout << m_vulkanGlobalState
-                //                  ->m_fragShaderPushConstantsBindless.albedoIdx
-                //           << "\n";
-                m_vulkan_global_state->m_frag_shader_push_constants_bindless
-                    .metallicIdx =
-                    mesh.m_material_indices[MaterialEnums::METALLIC];
-                m_vulkan_global_state->m_frag_shader_push_constants_bindless
-                    .roughnessIdx =
-                    mesh.m_material_indices[MaterialEnums::ROUGHNESS];
-                m_vulkan_global_state->m_frag_shader_push_constants_bindless
-                    .aoIdx = mesh.m_material_indices[MaterialEnums::AO];
-                m_vulkan_global_state->m_frag_shader_push_constants_bindless
-                    .normalIdx = mesh.m_material_indices[MaterialEnums::NORMAL];
-                m_vulkan_global_state->m_frag_shader_push_constants_bindless
-                    .emissiveIdx =
-                    mesh.m_material_indices[MaterialEnums::EMISSIVE];
-                m_vulkan_global_state->m_frag_shader_push_constants_bindless
-                    .ormIdx = mesh.m_material_indices[MaterialEnums::ORM];
+            m_vulkan_global_state->m_frag_shader_push_constants_bindless.albedoIdx =
+                mesh.m_material_indices[MaterialEnums::ALBEDO];
+            m_vulkan_global_state->m_frag_shader_push_constants_bindless.metallicIdx =
+                mesh.m_material_indices[MaterialEnums::METALLIC];
+            m_vulkan_global_state->m_frag_shader_push_constants_bindless.roughnessIdx =
+                mesh.m_material_indices[MaterialEnums::ROUGHNESS];
+            m_vulkan_global_state->m_frag_shader_push_constants_bindless.aoIdx =
+                mesh.m_material_indices[MaterialEnums::AO];
+            m_vulkan_global_state->m_frag_shader_push_constants_bindless.normalIdx =
+                mesh.m_material_indices[MaterialEnums::NORMAL];
+            m_vulkan_global_state->m_frag_shader_push_constants_bindless.emissiveIdx =
+                mesh.m_material_indices[MaterialEnums::EMISSIVE];
+            m_vulkan_global_state->m_frag_shader_push_constants_bindless.ormIdx =
+                mesh.m_material_indices[MaterialEnums::ORM];
 
-                // vkCmdPushConstants(
-                //     commandBuffer,
-                //     m_vulkan_global_state->m_pbrPipelineLayout,
-                //     VK_SHADER_STAGE_VERTEX_BIT, 0,
-                //     sizeof(VertexShaderPushConstants),
-                //     &m_vulkan_global_state->m_vertexShaderPushConstants);
-                vkCmdPushConstants(
-                    commandBuffer, m_vulkan_global_state->m_pbrPipelineLayout,
-                    VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                    sizeof(FragShaderPushConstantsBindless),
-                    &m_vulkan_global_state
-                         ->m_frag_shader_push_constants_bindless);
+            vkCmdPushConstants(command_buffer, m_vulkan_global_state->m_pbrPipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT,
+                               0, sizeof(FragShaderPushConstantsBindless),
+                               &m_vulkan_global_state->m_frag_shader_push_constants_bindless);
 
-                vkCmdDrawIndexed(commandBuffer,
-                                 static_cast<uint32_t>(mesh.m_index_count), 1,
-                                 mesh.m_index_buffer_start_idx, 0, 0);
-            }
-        }
-    } else {
-        // We set the viewport and scissor state as dynamic in the pipeline
-        // We need to set those up in the command buffer now
-        VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width =
-            static_cast<float>(m_vulkan_global_state->m_shadowMapWidth);
-        viewport.height =
-            static_cast<float>(m_vulkan_global_state->m_shadowMapHeight);
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
-        VkExtent2D shadowMapExtent = {
-            static_cast<uint32_t>(m_vulkan_global_state->m_shadowMapWidth),
-            static_cast<uint32_t>(m_vulkan_global_state->m_shadowMapHeight)};
-        VkRect2D scissor{};
-        scissor.offset = {0, 0};
-        scissor.extent = shadowMapExtent;
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-        VkRenderPassBeginInfo shadowPassInfo{};
-        shadowPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        shadowPassInfo.renderPass = m_vulkan_global_state->m_shadowPass;
-        shadowPassInfo.renderArea.offset = {0, 0};
-        shadowPassInfo.renderArea.extent = shadowMapExtent;
-
-        // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
-        std::array<VkClearValue, 1> shadowPassClearValues{};
-        shadowPassClearValues[0].depthStencil = {1.0f, 0};
-        shadowPassInfo.clearValueCount = 1;
-        shadowPassInfo.pClearValues = shadowPassClearValues.data();
-        // for (auto& light : m_vulkanGlobalState->m_lights.lights) {
-        // WARN: HARDCODING SHADOWPASS FRAMEBBUFFERS.
-        // THIS SHOULD BE CHANGED IF MORE THAN 1 SHADOW CASTER
-        shadowPassInfo.framebuffer =
-            m_vulkan_global_state->m_shadowPassFrameBuffers[0];
-        vkCmdBeginRenderPass(commandBuffer, &shadowPassInfo,
-                             VK_SUBPASS_CONTENTS_INLINE);
-
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          m_vulkan_global_state->m_shadowPassPipeline);
-
-        if (!m_vulkan_global_state->m_meshList.empty()) {
-            VkBuffer vertexBuffers[] = {m_buffer_handler->VertexBuffer};
-            VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-
-            vkCmdBindIndexBuffer(commandBuffer, m_buffer_handler->IndexBuffer,
-                                 0, VK_INDEX_TYPE_UINT32);
-            for (auto& mesh : m_vulkan_global_state->m_meshList) {
-                glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-                model = glm::rotate(model, -glm::radians(90.0f),
-                                    glm::vec3(0.0f, 1.0f, 0.0f));
-                model = glm::scale(model, glm::vec3(0.05f, 0.05f, 0.05f));
-
-                m_vulkan_global_state->m_shadowPassPushConstants.model = model;
-
-                vkCmdPushConstants(
-                    commandBuffer,
-                    m_vulkan_global_state->m_shadowPassPipelineLayout,
-                    VK_SHADER_STAGE_VERTEX_BIT, 0,
-                    sizeof(ShadowPassPushConstants),
-                    &m_vulkan_global_state->m_shadowPassPushConstants);
-                vkCmdDrawIndexed(commandBuffer,
-                                 static_cast<uint32_t>(mesh.m_index_count), 1,
-                                 mesh.m_index_buffer_start_idx, 0, 0);
-            }
-        }
-        vkCmdEndRenderPass(commandBuffer);
-        //}
-
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = static_cast<float>(
-            m_vulkan_global_state->GetSwapChainExtent().width);
-        viewport.height = static_cast<float>(
-            m_vulkan_global_state->GetSwapChainExtent().height);
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
-        scissor.offset = {0, 0};
-        scissor.extent = m_vulkan_global_state->GetSwapChainExtent();
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass =
-            m_vulkan_global_state->m_render_pass_data->render_pass;
-        // DEBUG
-        // printf("imageIndex DEBUG: %d\n", imageIndex);
-        renderPassInfo.framebuffer =
-            m_vulkan_global_state->m_renderPassFrameBuffers[imageIndex];
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent =
-            m_vulkan_global_state->GetSwapChainExtent();
-
-        // VK_ATTACHMENT_LOAD_OP_3 clear values for color and depth stencil
-        std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-        clearValues[1].depthStencil = {1.0f, 0};
-        renderPassInfo.clearValueCount =
-            static_cast<uint32_t>(clearValues.size());
-        renderPassInfo.pClearValues = clearValues.data();
-
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
-                             VK_SUBPASS_CONTENTS_INLINE);
-
-        vkCmdBindDescriptorSets(
-            commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            m_vulkan_global_state->m_pbrPipelineLayout, 0, 1,
-            &m_vulkan_global_state
-                 ->m_sceneDescriptorSets[m_vulkan_global_state->m_currentFrame],
-            0, nullptr);
-        std::vector<VkDescriptorSet> descriptorSetsToBind;
-        if (!m_vulkan_global_state->m_meshList.empty()) {
-            VkBuffer vertexBuffers[] = {m_buffer_handler->VertexBuffer};
-            VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-
-            vkCmdBindIndexBuffer(commandBuffer, m_buffer_handler->IndexBuffer,
-                                 0, VK_INDEX_TYPE_UINT32);
-            for (auto& mesh : m_vulkan_global_state->m_meshList) {
-                mesh.m_scale = glm::vec3(0.01f, 0.01f, 0.01f);
-                // Binding the graphics pipeline
-                if (mesh.m_mesh_type == TEXTURED) {
-                    vkCmdBindPipeline(commandBuffer,
-                                      VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                      m_vulkan_global_state->m_pbrPipeline);
-                    vkCmdBindDescriptorSets(
-                        commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                        m_vulkan_global_state->m_pbrPipelineLayout, 1, 1,
-                        &mesh.m_descriptor_sets[m_vulkan_global_state
-                                                    ->m_currentFrame],
-                        0, nullptr);
-                }
-                /*
-                    vkCmdDraw(VkCommandBuffer, vertexCount, instanceCount,
-                   firstVertex, firstInstance) vertexCount: Even though we don't
-                   have a vertex buffer, we technically still have 3 vertices to
-                   draw. instanceCount: Used for instanced rendering, use 1 if
-                   you're not doing that. firstVertex: Used as an offset into
-                   the vertex buffer, defines the lowest value of
-                   gl_VertexIndex. firstInstance: Used as an offset for
-                   instanced rendering, defines the lowest value of
-                   gl_InstanceIndex.
-                */
-                // vkCmdDraw(commandBuffer,
-                // static_cast<uint32_t>(vertices.size()), 1, 0, 0);
-                // m_vulkanGlobalState->m_pbrPushConstants = {
-                //    m_vulkanGlobalState->m_shadowPassPushConstants.lightViewProj,
-                //    m_vulkanGlobalState->m_shadowBias};
-
-                m_vulkan_global_state->m_pbrPushConstants.lightViewProj =
-                    m_vulkan_global_state->m_shadowPassPushConstants
-                        .lightViewProj;
-
-                m_vulkan_global_state->m_pbrPushConstants.bias =
-                    m_vulkan_global_state->m_shadowBias;
-
-                vkCmdPushConstants(
-                    commandBuffer, m_vulkan_global_state->m_pbrPipelineLayout,
-                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                    0, sizeof(PBRPushConstants),
-                    &m_vulkan_global_state->m_pbrPushConstants);
-                vkCmdDrawIndexed(commandBuffer,
-                                 static_cast<uint32_t>(mesh.m_index_count), 1,
-                                 mesh.m_index_buffer_start_idx, 0, 0);
-            }
+            vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(mesh.m_index_count), 1,
+                             mesh.m_index_buffer_start_idx, 0, 0);
         }
     }
 
     ImDrawData* draw_data = ImGui::GetDrawData();
 
-    ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer);
-    vkCmdEndRenderPass(commandBuffer);
-    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+    ImGui_ImplVulkan_RenderDrawData(draw_data, command_buffer);
+    vkCmdEndRenderPass(command_buffer);
+    if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to record command buffer!");
     }
     ImGui::EndFrame();
-}
-
-void VulkanContext::record_command_buffer_compute(
-    VkCommandBuffer commandBuffer, VkPipeline pipeline,
-    VkPipelineLayout pipelineLayout, VkDescriptorSet* descriptorSet,
-    bool rebuild_indices) {
-    VkCommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-        throw std::runtime_error(
-            "failed to begin recording compute command buffer!");
-    }
-
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                            pipelineLayout, 0, 1, descriptorSet, 0, NULL);
-
-    constexpr uint32_t kLocalSizeX = 128;  // same as local_size_x in shader
-    uint32_t kVertexCount = landscape::WIDTH * landscape::DEPTH;
-    vkCmdDispatch(commandBuffer, (kVertexCount + kLocalSizeX - 1) / kLocalSizeX,
-                  1, 1);  // 1024 groups
-    // vkCmdDispatch(commandBuffer, ((1024 * 2) + 1023) / 1024, 1, 1);
-
-    VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
-    mb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    mb.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
-    vkCmdPipelineBarrier(m_vulkan_global_state->m_commandBuffersCompute[0],
-                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                         VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &mb, 0, nullptr, 0,
-                         nullptr);
-
-    if (rebuild_indices) {
-        std::cout << "REBUILDING INDICES\n";
-        Vertex* landscapeVertices = static_cast<Vertex*>(
-            m_vulkan_global_state->m_computeOutputBufferMemoryMapped);
-
-        vkQueueWaitIdle(m_vulkan_global_state->m_presentQueue);
-        vkDestroyBuffer(m_vulkan_global_state->m_logical_device,
-                        m_buffer_handler->IndexBuffer, nullptr);
-        vkFreeMemory(m_vulkan_global_state->m_logical_device,
-                     m_buffer_handler->IndexBufferMemory, nullptr);
-        m_indices.clear();
-        backend_vk::set_indices(m_indices, landscapeVertices, landscape::DEPTH,
-                                landscape::WIDTH);
-
-        m_vulkan_global_state->m_meshList[0].m_index_buffer_start_idx = 0;
-        m_vulkan_global_state->m_meshList[0].m_index_buffer_end_idx =
-            m_indices.size() - 1;
-
-        m_vulkan_global_state->m_meshList[0].m_index_count =
-            m_indices.size() -
-            m_vulkan_global_state->m_meshList[0].m_index_buffer_start_idx;
-        m_buffer_handler->CreateIndexBuffer(m_indices);
-    }
-    VkBufferMemoryBarrier buffer_barrier{};
-    buffer_barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-    buffer_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    buffer_barrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
-    buffer_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    buffer_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    buffer_barrier.buffer = m_vulkan_global_state->m_computeOutputBuffer;
-    buffer_barrier.offset = 0;
-    buffer_barrier.size = VK_WHOLE_SIZE;
-
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                         VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, 1,
-                         &buffer_barrier, 0, nullptr);
-
-    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("failed to record command buffer!");
-    }
-}
-
-void VulkanContext::CreateSyncObjects() {
-    m_vulkan_global_state->m_imageAvailableSemaphores.resize(
-        m_maxFramesInFlight);
-    m_vulkan_global_state->m_renderFinishedSemaphores.resize(
-        m_maxFramesInFlight);
-    m_vulkan_global_state->m_inFlightFences.resize(m_maxFramesInFlight);
-
-    VkSemaphoreCreateInfo semaphoreInfo{};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    VkFenceCreateInfo fenceInfo{};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-    for (int i = 0; i < m_maxFramesInFlight; i++) {
-        if (vkCreateSemaphore(
-                m_vulkan_global_state->m_logical_device, &semaphoreInfo,
-                nullptr,
-                &m_vulkan_global_state->m_imageAvailableSemaphores[i]) !=
-                VK_SUCCESS ||
-            vkCreateSemaphore(
-                m_vulkan_global_state->m_logical_device, &semaphoreInfo,
-                nullptr,
-                &m_vulkan_global_state->m_renderFinishedSemaphores[i]) !=
-                VK_SUCCESS ||
-            vkCreateFence(
-                m_vulkan_global_state->m_logical_device, &fenceInfo, nullptr,
-                &m_vulkan_global_state->m_inFlightFences[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create semaphores!");
-        }
-    }
-
-    if (vkCreateFence(m_vulkan_global_state->m_logical_device, &fenceInfo,
-                      nullptr,
-                      &m_vulkan_global_state->m_computeFence) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create compute fence!");
-    }
-}
-
-void VulkanContext::DrawFrame(float deltaTime) {
-    /*
-        - Wait for the previous frame to finish
-        - Acquire an image from the swap chain
-        - Record a command buffer which draws the scene onto that image
-        - Submit the recorded command buffer
-        - Present the swap chain image
-    */
-
-    backend_vk::render_pass::RenderPassData::ERenderPassDataState
-        renderPassDataState = m_vulkan_global_state->m_render_pass_data.get()
-                                  ->GetRenderPassDataState();
-    if (!backend_vk::CheckRenderPassDataValidity(renderPassDataState)) {
-        return;
-    }
-
-    vkWaitForFences(
-        m_vulkan_global_state->m_logical_device, 1,
-        &m_vulkan_global_state
-             ->m_inFlightFences[m_vulkan_global_state->m_currentFrame],
-        VK_TRUE, UINT64_MAX);
-
-    // Acquire an image from the swap chain
-    uint32_t imageIndex;
-
-    // SWAP CHAIN RECREATION
-    VkResult result = vkAcquireNextImageKHR(
-        m_vulkan_global_state->m_logical_device,
-        m_vulkan_global_state->m_swapChain, UINT64_MAX,
-        m_vulkan_global_state
-            ->m_imageAvailableSemaphores[m_vulkan_global_state->m_currentFrame],
-        VK_NULL_HANDLE, &imageIndex);
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        int frameBufferWidth, frameBufferHeight;
-        // TODO: Call to Renderer Front End to get framebuffer sizes
-        m_windowing_backend->get_framebuffer_size_glfw(&frameBufferWidth,
-                                                       &frameBufferHeight);
-        m_windowing_backend->PollWindowNotMinimizedGLFW();
-        vkDeviceWaitIdle(m_vulkan_global_state->m_logical_device);
-        m_swap_chain_handler->Rebuild(frameBufferWidth, frameBufferHeight);
-        // TODO: MUST NOT FORGET THIS
-        // m_renderPassHandler->CreateRenderPass();
-        VkFormat render_pass_depth_attachment_format =
-            backend_vk::render_pass::find_supported_format(
-                m_vulkan_global_state->m_physical_device,
-                {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
-                 VK_FORMAT_D24_UNORM_S8_UINT},
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-
-        if (!render_pass_depth_attachment_format) {
-            std::cout << "renderPassDepthAttachmentFormat invalid\n";
-        }
-
-        backend_vk::render_pass::DepthResources renderPassDepthResources =
-            backend_vk::render_pass::create_render_pass_depth_resources(
-                m_vulkan_global_state->m_physical_device,
-                m_vulkan_global_state->m_logical_device,
-                m_vulkan_global_state->m_commandPool,
-                m_vulkan_global_state->m_graphicsQueue,
-                render_pass_depth_attachment_format,
-                m_vulkan_global_state->m_swapChainExtent.width,
-                m_vulkan_global_state->m_swapChainExtent.height);
-
-        backend_vk::render_pass::RenderPassData renderPassData =
-            // m_render_pass_handler->create_render_pass(
-            //     m_vulkan_global_state->m_logical_device,
-            //     m_vulkan_global_state->GetSwapChainImageFormat(),
-            //     renderPassDepthAttachmentFormat);
-
-            backend_vk::render_pass::create_render_pass(
-                m_vulkan_global_state->m_logical_device,
-                m_vulkan_global_state->GetSwapChainImageFormat(),
-                render_pass_depth_attachment_format);
-
-        renderPassData.depth_resources = renderPassDepthResources;
-
-        m_vulkan_global_state->m_render_pass_data =
-            std::make_unique<backend_vk::render_pass::RenderPassData>(
-                renderPassData);
-
-        if (m_vulkan_global_state->m_render_pass_data == nullptr) {
-            std::cout
-                << "Vulkan Init Error: m_vulkanGlobalState->m_renderPassData "
-                   "is INVALID!\n";
-            return;
-        }
-
-        std::vector<VkImageView> renderPassPerFrameImageViews = {};
-
-        renderPassPerFrameImageViews.push_back(
-            m_vulkan_global_state->m_render_pass_data->depth_resources
-                .image_view);
-
-        m_vulkan_global_state->m_render_pass_data->framebuffers =
-            backend_vk::create_swapchain_framebuffers(
-                m_vulkan_global_state->m_swapChainImageViews.size(),
-                renderPassPerFrameImageViews,
-                m_vulkan_global_state->m_swapChainImageViews,
-                m_vulkan_global_state->GetSwapChainExtent().width,
-                m_vulkan_global_state->GetSwapChainExtent().height,
-                m_vulkan_global_state->m_logical_device,
-                *m_vulkan_global_state->m_render_pass_data);
-
-        if (!backend_vk::CheckRenderPassDataValidity(
-                renderPassData.GetRenderPassDataState())) {
-            return;
-        }
-        // m_render_pass_handler->create_shadow_pass();
-        // m_render_pass_handler->create_shadow_pass_framebuffers();
-        return;
-    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        throw std::runtime_error("failed to acquire swap chain image!");
-    }
-
-    // Only reset fences if we are submitting work
-    vkResetFences(
-        m_vulkan_global_state->m_logical_device, 1,
-        &m_vulkan_global_state
-             ->m_inFlightFences[m_vulkan_global_state->m_currentFrame]);
-
-    // Record a command buffer which draws the scene onto that image
-    vkResetCommandBuffer(
-        m_vulkan_global_state
-            ->m_commandBuffers[m_vulkan_global_state->m_currentFrame],
-        0);
-
-    RecordCommandBuffer(
-        m_vulkan_global_state
-            ->m_commandBuffers[m_vulkan_global_state->m_currentFrame],
-        imageIndex);
 
     // Submit the recorded command buffer
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
     VkSemaphore waitSemaphores[] = {
-        m_vulkan_global_state->m_imageAvailableSemaphores
-            [m_vulkan_global_state->m_currentFrame]};
-    VkPipelineStageFlags waitStages[] = {
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+        m_vulkan_global_state->m_imageAvailableSemaphores[m_vulkan_global_state->m_currentFrame]};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
 
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers =
-        &m_vulkan_global_state
-             ->m_commandBuffers[m_vulkan_global_state->m_currentFrame];
+    submitInfo.pCommandBuffers = &m_vulkan_global_state->m_commandBuffers[m_vulkan_global_state->m_currentFrame];
 
     VkSemaphore signalSemaphores[] = {
-        m_vulkan_global_state->m_renderFinishedSemaphores
-            [m_vulkan_global_state->m_currentFrame]};
+        m_vulkan_global_state->m_renderFinishedSemaphores[m_vulkan_global_state->m_currentFrame]};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (vkQueueSubmit(
-            m_vulkan_global_state->m_graphicsQueue, 1, &submitInfo,
-            m_vulkan_global_state
-                ->m_inFlightFences[m_vulkan_global_state->m_currentFrame]) !=
-        VK_SUCCESS) {
+    if (vkQueueSubmit(m_vulkan_global_state->m_graphicsQueue, 1, &submitInfo,
+                      m_vulkan_global_state->m_inFlightFences[m_vulkan_global_state->m_currentFrame]) != VK_SUCCESS) {
         throw std::runtime_error("Failed to submit draw command buffer");
     }
 
@@ -3478,19 +2928,16 @@ void VulkanContext::DrawFrame(float deltaTime) {
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapChains;
 
-    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pImageIndices = &image_index;
     // presentInfo.pResults = nullptr; // Optional
 
     // SWAP CHAIN RECREATION
-    result =
-        vkQueuePresentKHR(m_vulkan_global_state->m_presentQueue, &presentInfo);
+    result = vkQueuePresentKHR(m_vulkan_global_state->m_presentQueue, &presentInfo);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
-        m_windowing_backend->framebufferResized) {
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_windowing_backend->framebufferResized) {
         m_windowing_backend->framebufferResized = false;
         int frameBufferWidth, frameBufferHeight;
-        m_windowing_backend->get_framebuffer_size_glfw(&frameBufferWidth,
-                                                       &frameBufferHeight);
+        m_windowing_backend->get_framebuffer_size_glfw(&frameBufferWidth, &frameBufferHeight);
         m_windowing_backend->PollWindowNotMinimizedGLFW();
         vkDeviceWaitIdle(m_vulkan_global_state->m_logical_device);
         m_swap_chain_handler->Rebuild(frameBufferWidth, frameBufferHeight);
@@ -3505,22 +2952,17 @@ void VulkanContext::DrawFrame(float deltaTime) {
 
             backend_vk::render_pass::find_supported_format(
                 m_vulkan_global_state->m_physical_device,
-                {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
-                 VK_FORMAT_D24_UNORM_S8_UINT},
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+                {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+                VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
         if (!render_pass_depth_attachment_format) {
             std::cout << "renderPassDepthAttachmentFormat invalid\n";
         }
 
         backend_vk::render_pass::DepthResources render_pass_depth_resources =
             backend_vk::render_pass::create_render_pass_depth_resources(
-                m_vulkan_global_state->m_physical_device,
-                m_vulkan_global_state->m_logical_device,
-                m_vulkan_global_state->m_commandPool,
-                m_vulkan_global_state->m_graphicsQueue,
-                render_pass_depth_attachment_format,
-                m_vulkan_global_state->m_swapChainExtent.width,
+                m_vulkan_global_state->m_physical_device, m_vulkan_global_state->m_logical_device,
+                m_vulkan_global_state->m_commandPool, m_vulkan_global_state->m_graphicsQueue,
+                render_pass_depth_attachment_format, m_vulkan_global_state->m_swapChainExtent.width,
                 m_vulkan_global_state->m_swapChainExtent.height);
 
         backend_vk::render_pass::RenderPassData renderPassData =
@@ -3529,38 +2971,29 @@ void VulkanContext::DrawFrame(float deltaTime) {
             //     m_vulkan_global_state->GetSwapChainImageFormat(),
             //     renderPassDepthAttachmentFormat);
 
-            backend_vk::render_pass::create_render_pass(
-                m_vulkan_global_state->m_logical_device,
-                m_vulkan_global_state->GetSwapChainImageFormat(),
-                render_pass_depth_attachment_format);
+            backend_vk::render_pass::create_render_pass(m_vulkan_global_state->m_logical_device,
+                                                        m_vulkan_global_state->GetSwapChainImageFormat(),
+                                                        render_pass_depth_attachment_format);
 
         renderPassData.depth_resources = render_pass_depth_resources;
 
         m_vulkan_global_state->m_render_pass_data =
-            std::make_unique<backend_vk::render_pass::RenderPassData>(
-                renderPassData);
+            std::make_unique<backend_vk::render_pass::RenderPassData>(renderPassData);
 
         if (m_vulkan_global_state->m_render_pass_data == nullptr) {
-            std::cout
-                << "Vulkan Init Error: m_vulkanGlobalState->m_renderPassData "
-                   "is INVALID!\n";
+            std::cout << "Vulkan Init Error: m_vulkanGlobalState->m_renderPassData "
+                         "is INVALID!\n";
             return;
         }
         std::vector<VkImageView> renderPassPerFrameImageViews = {};
 
-        renderPassPerFrameImageViews.push_back(
-            m_vulkan_global_state->m_render_pass_data->depth_resources
-                .image_view);
+        renderPassPerFrameImageViews.push_back(m_vulkan_global_state->m_render_pass_data->depth_resources.image_view);
 
-        m_vulkan_global_state->m_render_pass_data->framebuffers =
-            backend_vk::create_swapchain_framebuffers(
-                m_vulkan_global_state->m_swapChainImageViews.size(),
-                renderPassPerFrameImageViews,
-                m_vulkan_global_state->m_swapChainImageViews,
-                m_vulkan_global_state->GetSwapChainExtent().width,
-                m_vulkan_global_state->GetSwapChainExtent().height,
-                m_vulkan_global_state->m_logical_device,
-                *m_vulkan_global_state->m_render_pass_data);
+        m_vulkan_global_state->m_render_pass_data->framebuffers = backend_vk::create_swapchain_framebuffers(
+            m_vulkan_global_state->m_swapChainImageViews.size(), renderPassPerFrameImageViews,
+            m_vulkan_global_state->m_swapChainImageViews, m_vulkan_global_state->GetSwapChainExtent().width,
+            m_vulkan_global_state->GetSwapChainExtent().height, m_vulkan_global_state->m_logical_device,
+            *m_vulkan_global_state->m_render_pass_data);
         // m_render_pass_handler->create_shadow_pass();
         // m_render_pass_handler->create_shadow_pass_framebuffers();
     } else if (result != VK_SUCCESS) {
@@ -3568,13 +3001,11 @@ void VulkanContext::DrawFrame(float deltaTime) {
     }
 
     // Progress to next frame
-    m_vulkan_global_state->m_currentFrame =
-        (m_vulkan_global_state->m_currentFrame + 1) % m_maxFramesInFlight;
+    m_vulkan_global_state->m_currentFrame = (m_vulkan_global_state->m_currentFrame + 1) % m_maxFramesInFlight;
 }
 
 // Helpers
-static bool CheckValidationLayerSupport(
-    const std::vector<const char*>* validationLayers) {
+static bool CheckValidationLayerSupport(const std::vector<const char*>* validationLayers) {
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
@@ -3599,14 +3030,12 @@ static bool CheckValidationLayerSupport(
     return true;
 }
 
-static std::vector<const char*> GetRequiredExtensions(
-    const bool* enableValidationLayers) {
+static std::vector<const char*> GetRequiredExtensions(const bool* enableValidationLayers) {
     uint32_t glfwExtensionCount = 0;
     const char** glfwExtensions;
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-    std::vector<const char*> extensions(glfwExtensions,
-                                        glfwExtensions + glfwExtensionCount);
+    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
     if (*enableValidationLayers) {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -3615,11 +3044,10 @@ static std::vector<const char*> GetRequiredExtensions(
     return extensions;
 }
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL
-DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-              VkDebugUtilsMessageTypeFlagsEXT messageType,
-              const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-              void* pUserData) {
+static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                    VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                    void* pUserData) {
     std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
     return VK_FALSE;
@@ -3631,65 +3059,53 @@ void VulkanContext::destroy() {
     m_swap_chain_handler->Destroy();
     // DestroySwapChain();
 
-    for (auto& mesh : m_vulkan_global_state->m_meshList) {
-        vkDestroySampler(m_vulkan_global_state->m_logical_device,
-                         mesh.m_texture_sampler, nullptr);
-        vkDestroyImageView(m_vulkan_global_state->m_logical_device,
-                           mesh.m_texture_image_view, nullptr);
-        vkDestroyImage(m_vulkan_global_state->m_logical_device,
-                       mesh.m_texture_image, nullptr);
-        vkFreeMemory(m_vulkan_global_state->m_logical_device,
-                     mesh.m_texture_image_memory, nullptr);
+    for (auto& mesh : m_vulkan_global_state->m_render_list) {
+        // TODO: Destroy texture samplers based on material indices in a mesh
+        // vkDestroySampler(m_vulkan_global_state->m_logical_device,
+        //                 mesh.m_texture_sampler, nullptr);
+        // vkDestroyImageView(m_vulkan_global_state->m_logical_device,
+        //                   mesh.m_texture_image_view, nullptr);
+        // vkDestroyImage(m_vulkan_global_state->m_logical_device,
+        //               mesh.m_texture_image, nullptr);
+        // vkFreeMemory(m_vulkan_global_state->m_logical_device,
+        //             mesh.m_texture_image_memory, nullptr);
     }
 
     for (size_t i = 0; i < m_maxFramesInFlight; i++) {
-        vkDestroyBuffer(m_vulkan_global_state->m_logical_device,
-                        m_buffer_handler->UniformBuffers[i], nullptr);
-        vkFreeMemory(m_vulkan_global_state->m_logical_device,
-                     m_buffer_handler->UniformBuffersMemory[i], nullptr);
+        vkDestroyBuffer(m_vulkan_global_state->m_logical_device, m_buffer_handler->UniformBuffers[i], nullptr);
+        vkFreeMemory(m_vulkan_global_state->m_logical_device, m_buffer_handler->UniformBuffersMemory[i], nullptr);
     }
 
-    vkDestroyDescriptorPool(m_vulkan_global_state->m_logical_device,
-                            m_vulkan_global_state->m_descriptor_pool, nullptr);
+    vkDestroyDescriptorPool(m_vulkan_global_state->m_logical_device, m_vulkan_global_state->m_descriptor_pool, nullptr);
 
-    vkDestroyDescriptorSetLayout(
-        m_vulkan_global_state->m_logical_device,
-        m_vulkan_global_state->m_meshDescriptorSetLayout, nullptr);
+    vkDestroyDescriptorSetLayout(m_vulkan_global_state->m_logical_device,
+                                 m_vulkan_global_state->m_meshDescriptorSetLayout, nullptr);
 
     // Buffer cleanup
     // Call BufferHandler::DestroyBuffers
     m_buffer_handler->DestroyBuffers();
 
-    vkDestroyPipeline(m_vulkan_global_state->m_logical_device,
-                      m_vulkan_global_state->m_pbrPipeline, nullptr);
-    vkDestroyPipelineLayout(m_vulkan_global_state->m_logical_device,
-                            m_vulkan_global_state->m_pbrPipelineLayout,
+    vkDestroyPipeline(m_vulkan_global_state->m_logical_device, m_vulkan_global_state->m_pbrPipeline, nullptr);
+    vkDestroyPipelineLayout(m_vulkan_global_state->m_logical_device, m_vulkan_global_state->m_pbrPipelineLayout,
                             nullptr);
 
-    vkDestroyRenderPass(m_vulkan_global_state->m_logical_device,
-                        m_vulkan_global_state->m_render_pass_data->render_pass,
+    vkDestroyRenderPass(m_vulkan_global_state->m_logical_device, m_vulkan_global_state->m_render_pass_data->render_pass,
                         nullptr);
 
     for (size_t i = 0; i < m_maxFramesInFlight; i++) {
         vkDestroySemaphore(m_vulkan_global_state->m_logical_device,
-                           m_vulkan_global_state->m_renderFinishedSemaphores[i],
-                           nullptr);
+                           m_vulkan_global_state->m_renderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(m_vulkan_global_state->m_logical_device,
-                           m_vulkan_global_state->m_imageAvailableSemaphores[i],
-                           nullptr);
-        vkDestroyFence(m_vulkan_global_state->m_logical_device,
-                       m_vulkan_global_state->m_inFlightFences[i], nullptr);
+                           m_vulkan_global_state->m_imageAvailableSemaphores[i], nullptr);
+        vkDestroyFence(m_vulkan_global_state->m_logical_device, m_vulkan_global_state->m_inFlightFences[i], nullptr);
     }
-    vkDestroyCommandPool(m_vulkan_global_state->m_logical_device,
-                         m_vulkan_global_state->m_commandPool, nullptr);
+    vkDestroyCommandPool(m_vulkan_global_state->m_logical_device, m_vulkan_global_state->m_commandPool, nullptr);
 
     // DEVICE DESTRUCTION
     // m_device_handler->Destroy();
-    backend_vk::devices::destroy_devices(
-        m_vulkan_global_state->m_physical_device,
-        m_vulkan_global_state->m_logical_device,
-        m_vulkan_global_state->m_surface, m_vulkan_global_state->m_instance,
-        m_vulkan_global_state->m_debug_messenger);
+    backend_vk::devices::destroy_devices(m_vulkan_global_state->m_physical_device,
+                                         m_vulkan_global_state->m_logical_device, m_vulkan_global_state->m_surface,
+                                         m_vulkan_global_state->m_instance, m_vulkan_global_state->m_debug_messenger);
     // GLFW DESTRUCTION
     m_windowing_backend->DestroyGLFW();
 }
@@ -3700,9 +3116,8 @@ VkShaderModule VulkanContext::CreateShaderModule(std::vector<uint32_t>& code) {
     createInfo.codeSize = (code.cend() - code.cbegin()) * sizeof(uint32_t);
     createInfo.pCode = code.data();
     VkShaderModule shaderModule;
-    if (vkCreateShaderModule(m_vulkan_global_state->m_logical_device,
-                             &createInfo, nullptr,
-                             &shaderModule) != VK_SUCCESS) {
+    if (vkCreateShaderModule(m_vulkan_global_state->m_logical_device, &createInfo, nullptr, &shaderModule) !=
+        VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module!");
     }
 
@@ -3710,8 +3125,7 @@ VkShaderModule VulkanContext::CreateShaderModule(std::vector<uint32_t>& code) {
 }
 // Helpers
 
-void VulkanContext::CopyBufferToImage(VkBuffer buffer, VkImage image,
-                                      uint32_t width, uint32_t height) {
+void VulkanContext::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
     VkCommandBuffer commandBuffer = begin_single_time_commands();
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
@@ -3725,8 +3139,7 @@ void VulkanContext::CopyBufferToImage(VkBuffer buffer, VkImage image,
 
     region.imageOffset = {0, 0, 0};
     region.imageExtent = {width, height, 1};
-    vkCmdCopyBufferToImage(commandBuffer, buffer, image,
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     end_single_time_commands(commandBuffer);
 }
 
@@ -3739,8 +3152,7 @@ VkCommandBuffer VulkanContext::begin_single_time_commands() {
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(m_vulkan_global_state->m_logical_device,
-                             &allocInfo, &commandBuffer);
+    vkAllocateCommandBuffers(m_vulkan_global_state->m_logical_device, &allocInfo, &commandBuffer);
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -3759,58 +3171,9 @@ void VulkanContext::end_single_time_commands(VkCommandBuffer commandBuffer) {
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    vkQueueSubmit(m_vulkan_global_state->m_graphicsQueue, 1, &submitInfo,
-                  VK_NULL_HANDLE);
+    vkQueueSubmit(m_vulkan_global_state->m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(m_vulkan_global_state->m_graphicsQueue);
 
-    vkFreeCommandBuffers(m_vulkan_global_state->m_logical_device,
-                         m_vulkan_global_state->m_commandPool, 1,
+    vkFreeCommandBuffers(m_vulkan_global_state->m_logical_device, m_vulkan_global_state->m_commandPool, 1,
                          &commandBuffer);
-}
-
-void VulkanContext::run_compute_shader(VkPipeline computePipeline,
-                                       VkPipelineLayout pipelineLayout,
-                                       VkDescriptorSet& descriptorSet,
-                                       bool is_random, bool rebuild_indices) {
-    vkWaitForFences(m_vulkan_global_state->m_logical_device, 1,
-                    &m_vulkan_global_state->m_computeFence, VK_TRUE,
-                    UINT64_MAX);
-
-    VkResult r = vkResetFences(m_vulkan_global_state->m_logical_device, 1,
-                               &m_vulkan_global_state->m_computeFence);
-
-    Vertex* in = static_cast<Vertex*>(
-        m_vulkan_global_state->m_computeInputBufferMemoryMapped);
-    // Base Random
-    in[0].pos.x = landscape::BASE_0;
-    in[1].pos.x = landscape::BASE_1;
-    // Lacunarity
-    in[2].pos.x = landscape::LACUNARITY;
-    // Persistence
-    in[3].pos.x = landscape::PERSISTENCE;
-    // Frequency
-    in[4].pos.x = landscape::FREQUENCY;
-    // Octaves
-    in[5].pos.x = landscape::OCTAVES;
-    in[6].pos.x = landscape::WIDTH;
-    in[7].pos.x = landscape::DEPTH;
-    in[8].pos.x = landscape::SCALE;
-    in[9].pos.x = landscape::AMPLITUDE;
-    in[11].pos.x = landscape::ANIMATION_SPEED;
-    if (landscape::SHOULD_ANIMATE) {
-        in[10].pos.x = m_landscape_animation_time;
-    }
-
-    record_command_buffer_compute(
-        m_vulkan_global_state->m_commandBuffersCompute[0], computePipeline,
-        pipelineLayout, &descriptorSet, rebuild_indices);
-    VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
-    si.commandBufferCount = 1;
-    si.pCommandBuffers = &m_vulkan_global_state->m_commandBuffersCompute[0];
-
-    //   printf("reset = %d\n", r);
-    r = vkQueueSubmit(m_vulkan_global_state->m_computeQueue, 1, &si,
-                      m_vulkan_global_state->m_computeFence);
-    //    printf("submit = %d\n", r);
-    // vkDeviceWaitIdle(m_deviceHandler->LogicalDevice);
 }

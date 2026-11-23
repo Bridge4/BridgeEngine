@@ -37,7 +37,7 @@ class BufferHandler {
 
     void CreateComputeSSBOs();
 
-    void CreateModelUBO(Mesh3D* mesh);
+    void CreateModelUBO(Renderable* mesh);
 
     void CreateCommandBuffers();
     void CreateCommandBuffersCompute(VkDevice& logical_device,

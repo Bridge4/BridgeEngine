@@ -86,7 +86,6 @@ int main() {
 
     EngineAPI engine_api = {};
     engine_api.set_clear_color = &engine_set_clear_color;
-    engine_api.generate_landscape = &engine_generate_landscape;
     // Since we are loading Game.dll, we can't make changes to it
     // We need to copy Game.dll into a new temp file
     // We will load the temp copy of Game.dll so the original can be recompiled
